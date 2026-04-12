@@ -1,0 +1,766 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-04-11",
+  "categories": [
+    {
+      "id": "algorithm",
+      "name": "算法方向",
+      "icon": "🧠",
+      "description": "机器学习、深度学习、NLP、CV等算法研发岗位",
+      "positions": [
+        {
+          "id": "nlp_engineer",
+          "name": "NLP算法工程师",
+          "name_en": "NLP Algorithm Engineer",
+          "level": "中级",
+          "summary": "负责自然语言处理相关算法的研发与优化，包括文本理解、生成、对话系统等方向",
+          "positioning": "AI产品链路中的核心算法支撑角色，将前沿NLP研究转化为可落地的产品能力",
+          "capability_requirements": {
+            "must_have": [
+              "扎实的NLP基础（分词、NER、文本分类、信息抽取等）",
+              "熟练使用PyTorch/TensorFlow",
+              "熟悉Transformer架构及预训练模型（BERT、GPT等）",
+              "Python编程能力",
+              "机器学习基础理论"
+            ],
+            "nice_to_have": [
+              "大模型微调经验（LoRA、QLoRA等）",
+              "RAG系统搭建经验",
+              "知识图谱相关经验",
+              "ACL/EMNLP等顶会论文",
+              "多语言NLP经验"
+            ],
+            "tools": ["PyTorch", "HuggingFace", "LangChain", "vLLM", "DeepSpeed", "ONNX"]
+          },
+          "career_path": {
+            "junior": "NLP算法工程师（1-3年）",
+            "mid": "高级NLP算法工程师（3-5年）",
+            "senior": "算法专家/架构师（5-8年）",
+            "leadership": "算法团队负责人/技术总监（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 20, "max": 35, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 35, "max": 60, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 60, "max": 100, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "大模型时代，纯NLP算法岗位正在向LLM应用方向转型。RAG、Agent、Prompt Engineering成为新热点。传统NLP技能仍为基础，但需叠加大模型理解和应用能力。单纯做文本分类/NER的岗位在减少，大模型相关岗位在增加。",
+          "related_positions": ["llm_engineer", "ai_product_manager"],
+          "common_interview_topics": [
+            "Transformer原理与注意力机制手推",
+            "BERT/GPT训练流程与loss设计",
+            "文本分类/匹配方案设计",
+            "大模型微调方案选择与对比",
+            "线上serving与性能优化"
+          ]
+        },
+        {
+          "id": "cv_engineer",
+          "name": "CV算法工程师",
+          "name_en": "Computer Vision Engineer",
+          "level": "中级",
+          "summary": "负责计算机视觉算法的研发与优化，包括目标检测、图像分割、OCR等方向",
+          "positioning": "视觉AI产品的核心研发角色，将图像/视频理解能力转化为产品功能",
+          "capability_requirements": {
+            "must_have": [
+              "扎实的CV基础（图像处理、特征提取、目标检测等）",
+              "熟练使用PyTorch",
+              "熟悉CNN架构及Vision Transformer",
+              "Python与C++编程能力",
+              "OpenCV使用经验"
+            ],
+            "nice_to_have": [
+              "多模态模型经验（CLIP、BLIP等）",
+              "3D视觉或点云处理经验",
+              "模型压缩与部署优化经验",
+              "CVPR/ICCV/ECCV论文",
+              "自动驾驶或工业质检领域经验"
+            ],
+            "tools": ["PyTorch", "OpenCV", "MMDetection", "TensorRT", "ONNX"]
+          },
+          "career_path": {
+            "junior": "CV算法工程师（1-3年）",
+            "mid": "高级CV算法工程师（3-5年）",
+            "senior": "视觉算法专家（5-8年）",
+            "leadership": "视觉AI团队负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 20, "max": 35, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 35, "max": 55, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 55, "max": 90, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "多模态大模型正在重塑CV领域，纯CV算法岗受到一定冲击。具身智能、3D视觉、视频理解是新兴方向。传统CV技能结合多模态能力是转型关键。自动驾驶和工业视觉仍有稳定需求。",
+          "related_positions": ["llm_engineer", "ai_application_dev"],
+          "common_interview_topics": [
+            "目标检测算法对比（YOLO/DETR等）",
+            "图像分割方案设计",
+            "Vision Transformer原理",
+            "模型轻量化与边缘部署",
+            "数据增强与长尾问题处理"
+          ]
+        },
+        {
+          "id": "llm_engineer",
+          "name": "大模型算法工程师",
+          "name_en": "LLM Algorithm Engineer",
+          "level": "中高级",
+          "summary": "负责大语言模型的训练、微调、对齐与优化，构建基座模型或行业模型",
+          "positioning": "大模型时代最核心的算法角色，直接决定AI产品的模型能力上限",
+          "capability_requirements": {
+            "must_have": [
+              "深度学习基础扎实，理解Transformer架构",
+              "大模型预训练/SFT/RLHF实战经验",
+              "分布式训练经验（DeepSpeed/Megatron等）",
+              "熟练使用PyTorch",
+              "高性能计算基础（GPU优化、显存管理）"
+            ],
+            "nice_to_have": [
+              "基座模型训练经验（从零训练）",
+              "MoE架构经验",
+              "长上下文优化经验",
+              "模型量化与推理优化（GPTQ、AWQ等）",
+              "NeurIPS/ICML论文"
+            ],
+            "tools": ["PyTorch", "DeepSpeed", "Megatron-LM", "vLLM", "HuggingFace", "TRL"]
+          },
+          "career_path": {
+            "junior": "大模型算法工程师（1-3年）",
+            "mid": "高级大模型算法工程师（3-5年）",
+            "senior": "大模型算法专家（5-8年）",
+            "leadership": "大模型团队技术负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 30, "max": 50, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 50, "max": 80, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 80, "max": 150, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "当前AI行业最热门岗位之一。基座模型竞争进入后半场，行业大模型和垂直领域微调是主要需求。对算力资源和工程能力要求极高，门槛显著高于一般算法岗。Agent和推理能力是新的技术热点。",
+          "related_positions": ["nlp_engineer", "mlops_engineer"],
+          "common_interview_topics": [
+            "大模型训练流程（预训练→SFT→RLHF）",
+            "分布式训练策略与通信优化",
+            "LoRA/QLoRA原理与适用场景",
+            "注意力机制优化（Flash Attention等）",
+            "模型对齐与安全"
+          ]
+        },
+        {
+          "id": "recsys_engineer",
+          "name": "推荐算法工程师",
+          "name_en": "Recommendation Algorithm Engineer",
+          "level": "中级",
+          "summary": "负责推荐系统的算法研发与优化，包括召回、排序、重排等环节",
+          "positioning": "互联网产品增长和变现的核心引擎，直接驱动用户体验和商业指标",
+          "capability_requirements": {
+            "must_have": [
+              "推荐系统全链路理解（召回→粗排→精排→重排）",
+              "机器学习基础扎实",
+              "特征工程与数据处理能力",
+              "Python + SQL/Spark",
+              "A/B测试经验"
+            ],
+            "nice_to_have": [
+              "深度学习推荐模型经验（DIN/DIEN等）",
+              "大规模分布式系统经验",
+              "实时推荐系统经验",
+              "强化学习在推荐中的应用",
+              "KDD/SIGIR论文"
+            ],
+            "tools": ["TensorFlow", "PyTorch", "Spark", "Flink", "Redis", "Faiss"]
+          },
+          "career_path": {
+            "junior": "推荐算法工程师（1-3年）",
+            "mid": "高级推荐算法工程师（3-5年）",
+            "senior": "推荐系统专家（5-8年）",
+            "leadership": "推荐/AI平台负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 25, "max": 40, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 40, "max": 65, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 65, "max": 100, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "推荐系统正在被大模型重塑，传统召回+排序架构中开始融入LLM能力。但大规模工业推荐仍是刚需，岗位需求稳定。短视频和电商领域的推荐岗位最多。大模型+推荐系统的复合能力是未来方向。",
+          "related_positions": ["data_analyst", "ai_product_manager"],
+          "common_interview_topics": [
+            "推荐系统全链路设计",
+            "召回策略与多路召回方案",
+            "排序模型演进（LR→FM→DNN→Transformer）",
+            "冷启动问题解决方案",
+            "特征工程与在线学习"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "工程方向",
+      "icon": "⚙️",
+      "description": "AI基础设施、模型部署、MLOps等工程相关岗位",
+      "positions": [
+        {
+          "id": "mlops_engineer",
+          "name": "MLOps/AI平台工程师",
+          "name_en": "MLOps / AI Platform Engineer",
+          "level": "中级",
+          "summary": "负责AI模型的全生命周期管理，包括训练平台、推理服务、监控运维等基础设施建设",
+          "positioning": "连接算法与产品的桥梁角色，让AI模型从实验走向生产的关键保障",
+          "capability_requirements": {
+            "must_have": [
+              "Python开发能力扎实",
+              "Docker/Kubernetes使用经验",
+              "CI/CD流水线搭建",
+              "Linux系统与Shell脚本",
+              "模型部署与服务化经验"
+            ],
+            "nice_to_have": [
+              "GPU集群管理经验",
+              "模型推理优化（TensorRT/ONNX Runtime等）",
+              "分布式系统设计经验",
+              "监控与可观测性体系搭建",
+              "云平台经验（AWS/阿里云等）"
+            ],
+            "tools": ["Docker", "Kubernetes", "MLflow", "Kubeflow", "TensorRT", "Prometheus"]
+          },
+          "career_path": {
+            "junior": "MLOps工程师（1-3年）",
+            "mid": "高级MLOps/AI平台工程师（3-5年）",
+            "senior": "AI基础设施架构师（5-8年）",
+            "leadership": "AI平台团队负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 20, "max": 35, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 35, "max": 55, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 55, "max": 90, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "大模型时代MLOps重要性大幅提升。模型训练成本飙升使得训练效率和资源调度成为核心问题。推理优化和成本控制是当前最紧迫的需求。这个岗位的需求正在快速增长，但人才供给相对不足。",
+          "related_positions": ["ai_infra_engineer", "llm_engineer"],
+          "common_interview_topics": [
+            "模型服务化方案设计（API/批处理）",
+            "容器化部署最佳实践",
+            "GPU资源调度与利用率优化",
+            "模型版本管理与A/B测试",
+            "故障排查与性能调优"
+          ]
+        },
+        {
+          "id": "ai_infra_engineer",
+          "name": "AI基础设施工程师",
+          "name_en": "AI Infrastructure Engineer",
+          "level": "中高级",
+          "summary": "负责AI训练/推理集群的基础设施建设，包括GPU集群管理、存储优化、网络优化等",
+          "positioning": "AI算力时代的基础设施守护者，直接影响模型训练效率和成本",
+          "capability_requirements": {
+            "must_have": [
+              "Linux系统深度使用经验",
+              "GPU集群管理与调度经验",
+              "分布式存储经验（Ceph/Lustre等）",
+              "网络优化经验（RDMA/NCCL等）",
+              "Python/C++开发能力"
+            ],
+            "nice_to_have": [
+              "超大规模集群（千卡以上）管理经验",
+              "训练框架深度优化经验",
+              "异构计算经验（CPU/GPU/NPU）",
+              "云原生AI经验",
+              "编译优化经验"
+            ],
+            "tools": ["Kubernetes", "Slurm", "NCCL", "CUDA", "RDMA", "Prometheus"]
+          },
+          "career_path": {
+            "junior": "AI基础设施工程师（1-3年）",
+            "mid": "高级AI基础设施工程师（3-5年）",
+            "senior": "AI基础设施架构师（5-8年）",
+            "leadership": "AI基础设施负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 25, "max": 40, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 40, "max": 65, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 65, "max": 110, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "大模型军备竞赛使AI基础设施成为战略性岗位。万卡集群的管理和优化是最高壁垒方向。国产芯片适配是新兴需求。这个方向门槛高、竞争小、薪资天花板高。",
+          "related_positions": ["mlops_engineer", "llm_engineer"],
+          "common_interview_topics": [
+            "GPU集群调度策略设计",
+            "NCCL通信优化",
+            "训练容错与断点续训",
+            "显存优化与梯度检查点",
+            "多机多卡训练问题排查"
+          ]
+        },
+        {
+          "id": "model_deployment_engineer",
+          "name": "模型部署/推理优化工程师",
+          "name_en": "Model Deployment & Inference Optimization Engineer",
+          "level": "中级",
+          "summary": "负责AI模型的推理部署与性能优化，在保证效果的前提下最大化推理效率、降低成本",
+          "positioning": "AI模型从实验室到生产线的最后一公里，直接影响服务质量和运营成本",
+          "capability_requirements": {
+            "must_have": [
+              "Python/C++开发能力",
+              "模型量化与剪枝经验",
+              "TensorRT/ONNX Runtime使用经验",
+              "Docker容器化部署",
+              "Linux性能分析工具"
+            ],
+            "nice_to_have": [
+              "CUDA编程经验",
+              "大模型推理优化经验（vLLM/TGI等）",
+              "边缘部署经验（移动端/嵌入式）",
+              "编译器优化经验（TVM/XLA等）",
+              "服务网格经验"
+            ],
+            "tools": ["TensorRT", "ONNX", "vLLM", "Triton Inference Server", "CUDA", "TVM"]
+          },
+          "career_path": {
+            "junior": "模型部署工程师（1-3年）",
+            "mid": "高级推理优化工程师（3-5年）",
+            "senior": "推理引擎架构师（5-8年）",
+            "leadership": "推理平台负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 22, "max": 38, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 38, "max": 60, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 60, "max": 100, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "大模型推理成本是AI落地的最大瓶颈之一，推理优化工程师需求暴增。vLLM、PagedAttention等新技术使这个领域快速迭代。量化部署（INT8/INT4）成为标配技能。这个岗位薪资增长速度超过行业平均。",
+          "related_positions": ["mlops_engineer", "ai_infra_engineer"],
+          "common_interview_topics": [
+            "模型量化方案对比（FP16/INT8/INT4）",
+            "KV Cache优化策略",
+            "批处理与动态 batching",
+            "CUDA kernel优化基础",
+            "推理延迟与吞吐的trade-off"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "product",
+      "name": "产品方向",
+      "icon": "📊",
+      "description": "AI产品经理、数据产品等方向",
+      "positions": [
+        {
+          "id": "ai_product_manager",
+          "name": "AI产品经理",
+          "name_en": "AI Product Manager",
+          "level": "中级",
+          "summary": "负责AI产品的规划、设计与落地，连接用户需求与AI技术能力",
+          "positioning": "AI技术商业化的关键角色，决定AI能力以何种形态触达用户并创造价值",
+          "capability_requirements": {
+            "must_have": [
+              "产品经理基础能力（需求分析、PRD、原型设计）",
+              "AI技术理解力（能与技术团队有效沟通）",
+              "数据分析能力",
+              "用户研究与洞察",
+              "项目管理与跨团队协作"
+            ],
+            "nice_to_have": [
+              "大模型应用产品设计经验",
+              "对话式产品经验",
+              "Prompt Engineering实践",
+              "技术背景（CS/统计/数学）",
+              "商业化与GTM经验"
+            ],
+            "tools": ["Figma", "Jira", "Notion", "SQL", "Mixpanel", "ChatGPT/Claude"]
+          },
+          "career_path": {
+            "junior": "AI产品经理（1-3年）",
+            "mid": "高级AI产品经理（3-5年）",
+            "senior": "AI产品总监（5-8年）",
+            "leadership": "AI产品VP/业务负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 18, "max": 30, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 30, "max": 50, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 50, "max": 80, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "AI产品经理是目前需求增长最快的非技术岗之一。大模型应用爆发使每个互联网产品都在考虑AI化，但真正懂AI能力边界的PM稀缺。能定义AI原生产品形态的PM尤其抢手。纯互联网PM转型AI PM需要补足技术理解力。",
+          "related_positions": ["ai_application_dev", "nlp_engineer"],
+          "common_interview_topics": [
+            "AI产品设计方法论（如何定义AI功能边界）",
+            "大模型应用场景分析",
+            "AI产品的用户体验设计",
+            "Prompt Engineering最佳实践",
+            "AI产品的数据飞轮设计"
+          ]
+        },
+        {
+          "id": "data_product_manager",
+          "name": "数据产品经理",
+          "name_en": "Data Product Manager",
+          "level": "中级",
+          "summary": "负责数据产品的规划与设计，包括数据平台、数据中台、BI工具等",
+          "positioning": "企业数据价值释放的推动者，让数据从存储变为可用的产品和服务",
+          "capability_requirements": {
+            "must_have": [
+              "产品经理基础能力",
+              "数据领域知识（数据仓库、ETL、指标体系）",
+              "SQL能力",
+              "数据分析与洞察",
+              "跨部门沟通与推动"
+            ],
+            "nice_to_have": [
+              "大数据平台设计经验",
+              "实时数据处理经验",
+              "AI/ML模型产品化经验",
+              "数据治理与合规经验",
+              "BI工具设计经验"
+            ],
+            "tools": ["SQL", "Tableau/PowerBI", "Figma", "Jira", "Airflow", "dbt"]
+          },
+          "career_path": {
+            "junior": "数据产品经理（1-3年）",
+            "mid": "高级数据产品经理（3-5年）",
+            "senior": "数据产品总监（5-8年）",
+            "leadership": "数据平台负责人/CDO（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 18, "max": 30, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 30, "max": 50, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 50, "max": 80, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "数据产品经理正在与AI产品经理融合。数据平台需要AI能力，AI产品需要数据基础。Data+AI复合型PM是趋势。数据治理和数据安全合规需求增长。大模型时代，数据质量直接决定AI效果，数据产品价值被重新定义。",
+          "related_positions": ["ai_product_manager", "data_analyst"],
+          "common_interview_topics": [
+            "数据指标体系设计",
+            "数据产品质量管理",
+            "数据中台架构理解",
+            "数据安全与合规",
+            "从0到1数据产品规划"
+          ]
+        },
+        {
+          "id": "ai_ops_specialist",
+          "name": "AI运营/增长专家",
+          "name_en": "AI Operations & Growth Specialist",
+          "level": "初中级",
+          "summary": "负责AI产品的运营策略、用户增长和社区运营，推动AI产品从0到1的用户积累",
+          "positioning": "AI产品增长的引擎角色，让好技术被更多人使用并产生商业价值",
+          "capability_requirements": {
+            "must_have": [
+              "用户增长与运营经验",
+              "数据分析能力",
+              "内容运营与社区管理",
+              "对AI产品的深度理解",
+              "A/B测试与数据驱动决策"
+            ],
+            "nice_to_have": [
+              "AI工具深度使用经验",
+              "Prompt Engineering能力",
+              "技术社区运营经验",
+              "海外市场运营经验",
+              "商业化运营经验"
+            ],
+            "tools": ["Google Analytics", "Mixpanel", "Notion", "飞书/钉钉", "ChatGPT/Claude"]
+          },
+          "career_path": {
+            "junior": "AI运营专员（1-2年）",
+            "mid": "AI运营经理/增长负责人（3-5年）",
+            "senior": "AI运营总监（5-8年）",
+            "leadership": "COO/业务负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 12, "max": 22, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 22, "max": 40, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 40, "max": 65, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "AI产品运营是新兴岗位，大量传统互联网运营在转型。懂AI产品特点的运营稀缺，尤其是能做Prompt运营、模型效果运营的。AI工具的爆发式增长使得获客方式与传统互联网不同，需要新的增长方法论。",
+          "related_positions": ["ai_product_manager", "ai_application_dev"],
+          "common_interview_topics": [
+            "AI产品增长策略设计",
+            "用户留存与活跃指标优化",
+            "AI产品的用户教育方案",
+            "Prompt运营与效果优化",
+            "社区冷启动策略"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "name": "数据方向",
+      "icon": "📈",
+      "description": "数据工程师、数据分析、数据挖掘等方向",
+      "positions": [
+        {
+          "id": "data_engineer",
+          "name": "数据工程师",
+          "name_en": "Data Engineer",
+          "level": "中级",
+          "summary": "负责数据管道、数据仓库的建设与维护，保障数据质量和数据供给效率",
+          "positioning": "AI时代的数据基建角色，高质量数据是AI模型效果的前提保障",
+          "capability_requirements": {
+            "must_have": [
+              "SQL能力扎实",
+              "Python/Java开发能力",
+              "ETL/ELT流程设计与开发",
+              "数据仓库建模（维度建模等）",
+              "大数据处理框架经验（Spark/Flink等）"
+            ],
+            "nice_to_have": [
+              "实时数据处理经验",
+              "数据湖架构设计经验",
+              "数据质量治理经验",
+              "数据安全与合规经验",
+              "Airflow/Databricks等平台经验"
+            ],
+            "tools": ["Spark", "Flink", "Airflow", "dbt", "Hive", "Kafka"]
+          },
+          "career_path": {
+            "junior": "数据工程师（1-3年）",
+            "mid": "高级数据工程师（3-5年）",
+            "senior": "数据架构师（5-8年）",
+            "leadership": "数据团队负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 18, "max": 30, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 30, "max": 50, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 50, "max": 80, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "大模型训练需要海量高质量数据，数据工程师的价值被重新定义。合成数据、数据清洗、数据标注管理成为新需求。Data+AI平台融合是趋势。传统数仓在向湖仓一体演进。",
+          "related_positions": ["data_analyst", "mlops_engineer"],
+          "common_interview_topics": [
+            "数据仓库架构设计",
+            "ETL性能优化",
+            "数据质量保障方案",
+            "实时与离线数仓方案选择",
+            "数据治理体系设计"
+          ]
+        },
+        {
+          "id": "data_analyst",
+          "name": "数据分析师",
+          "name_en": "Data Analyst",
+          "level": "初中级",
+          "summary": "通过数据分析为业务决策提供洞察支持，构建指标体系，产出分析报告",
+          "positioning": "数据驱动决策的核心执行者，将数据转化为可操作的业务洞察",
+          "capability_requirements": {
+            "must_have": [
+              "SQL能力扎实",
+              "Python/R数据分析",
+              "数据可视化能力",
+              "统计学基础",
+              "业务理解与沟通能力"
+            ],
+            "nice_to_have": [
+              "A/B测试设计经验",
+              "Python机器学习库使用经验",
+              "大数据平台使用经验",
+              "行业领域深度知识",
+              "数据产品思维"
+            ],
+            "tools": ["SQL", "Python", "Tableau/PowerBI", "Excel", "Jupyter", "Amplitude"]
+          },
+          "career_path": {
+            "junior": "数据分析师（1-2年）",
+            "mid": "高级数据分析师（3-5年）",
+            "senior": "数据分析专家/DS（5-8年）",
+            "leadership": "数据分析团队负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 12, "max": 22, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 22, "max": 38, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 38, "max": 60, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "AI工具正在重塑数据分析工作流，基础描述性分析的价值在降低。能结合AI工具做深度归因分析和预测性分析的DA更有竞争力。数据分析师需要向数据科学家或数据产品方向升级。",
+          "related_positions": ["data_engineer", "data_product_manager"],
+          "common_interview_topics": [
+            "指标体系设计",
+            "A/B测试方案与结果解读",
+            "归因分析方法",
+            "数据异常排查",
+            "SQL复杂查询编写"
+          ]
+        },
+        {
+          "id": "data_scientist",
+          "name": "数据科学家",
+          "name_en": "Data Scientist",
+          "level": "中高级",
+          "summary": "通过统计建模和机器学习方法解决复杂业务问题，驱动数据洞察和决策优化",
+          "positioning": "企业数据价值的深度挖掘者，用科学方法从数据中提取战略级洞察",
+          "capability_requirements": {
+            "must_have": [
+              "统计学/数学基础扎实",
+              "机器学习建模经验",
+              "Python/R编程能力",
+              "SQL数据处理能力",
+              "实验设计与因果推断"
+            ],
+            "nice_to_have": [
+              "深度学习经验",
+              "大规模数据处理经验",
+              "特定领域深度知识（金融/医疗等）",
+              "论文发表经历",
+              "因果推断高级方法"
+            ],
+            "tools": ["Python", "R", "SQL", "Spark", "Jupyter", "scikit-learn"]
+          },
+          "career_path": {
+            "junior": "数据科学家（1-3年）",
+            "mid": "高级数据科学家（3-5年）",
+            "senior": "首席数据科学家（5-8年）",
+            "leadership": "数据科学负责人/CDO（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 25, "max": 40, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 40, "max": 65, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 65, "max": 100, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "数据科学家角色正在分化：一部分向机器学习工程师靠拢（偏工程），一部分向决策科学靠拢（偏业务）。大模型使传统特征工程和简单建模的价值降低，需要向更复杂的因果分析和策略优化方向升级。",
+          "related_positions": ["data_analyst", "nlp_engineer"],
+          "common_interview_topics": [
+            "因果推断方法与应用",
+            "A/B测试设计与分析",
+            "特征工程方案设计",
+            "模型选型与评估",
+            "业务问题建模思路"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "applied",
+      "name": "应用方向",
+      "icon": "🚀",
+      "description": "AI应用开发、全栈AI等应用层岗位",
+      "positions": [
+        {
+          "id": "ai_application_dev",
+          "name": "AI应用开发工程师",
+          "name_en": "AI Application Developer",
+          "level": "中级",
+          "summary": "负责AI应用的开发与交付，将大模型能力集成到产品中，构建对话、搜索、Agent等应用",
+          "positioning": "大模型时代最落地的角色，让AI能力真正变成用户可用的产品功能",
+          "capability_requirements": {
+            "must_have": [
+              "Python后端开发能力",
+              "大模型API调用与集成经验",
+              "Prompt Engineering实践",
+              "RAG系统开发经验",
+              "Web应用开发基础"
+            ],
+            "nice_to_have": [
+              "Agent框架开发经验（LangChain/AutoGen等）",
+              "向量数据库使用经验",
+              "前端开发能力",
+              "微服务架构经验",
+              "多模态应用开发经验"
+            ],
+            "tools": ["LangChain", "LlamaIndex", "Chroma/Pinecone", "FastAPI", "Docker", "Redis"]
+          },
+          "career_path": {
+            "junior": "AI应用开发工程师（1-2年）",
+            "mid": "高级AI应用工程师（3-5年）",
+            "senior": "AI应用架构师（5-8年）",
+            "leadership": "AI应用团队负责人（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 18, "max": 32, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 32, "max": 55, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 55, "max": 90, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "当前AI行业需求增长最快的岗位之一。大模型API的普及使AI应用开发门槛大幅降低，但做好仍有高壁垒。RAG、Agent、Workflow是三大主流应用范式。从传统后端/全栈转AI应用开发是最平滑的职业转型路径。",
+          "related_positions": ["ai_product_manager", "mlops_engineer"],
+          "common_interview_topics": [
+            "RAG系统设计与优化",
+            "Prompt Engineering最佳实践",
+            "Agent架构设计",
+            "向量数据库选型与优化",
+            "大模型API集成与异常处理"
+          ]
+        },
+        {
+          "id": "prompt_engineer",
+          "name": "Prompt工程师",
+          "name_en": "Prompt Engineer",
+          "level": "初中级",
+          "summary": "专注于大模型Prompt设计、优化与评估，提升模型输出质量和稳定性",
+          "positioning": "大模型时代的'驯兽师'，通过精巧的指令设计释放模型潜力",
+          "capability_requirements": {
+            "must_have": [
+              "大模型深度使用经验",
+              "Prompt设计方法论（CoT、Few-shot等）",
+              "Python脚本能力",
+              "模型输出评估与质量把控",
+              "逻辑思维与表达能力"
+            ],
+            "nice_to_have": [
+              "自动化Prompt优化经验",
+              "多模型对比评估经验",
+              "特定领域Prompt库建设经验",
+              "语言学/认知科学背景",
+              "训练数据标注经验"
+            ],
+            "tools": ["OpenAI API", "LangChain", "Python", "Weights & Biases", "各种LLM API"]
+          },
+          "career_path": {
+            "junior": "Prompt工程师（0-2年）",
+            "mid": "高级Prompt工程师/AI应用工程师（2-4年）",
+            "senior": "AI应用架构师（4-7年）",
+            "leadership": "AI产品/工程负责人（7年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 15, "max": 28, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 28, "max": 45, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 45, "max": 70, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "Prompt Engineer是一个争议性岗位——部分人认为这会被更好的模型取代，但也有观点认为高级Prompt设计是长期技能。目前市场对这个岗位的需求在分化：纯Prompt编写岗位在减少，但结合应用开发的Prompt Engineering能力越来越重要。建议向AI应用开发方向发展。",
+          "related_positions": ["ai_application_dev", "ai_product_manager"],
+          "common_interview_topics": [
+            "Prompt设计方法论与最佳实践",
+            "CoT/Few-shot/ReAct等技巧应用",
+            "Prompt注入防御",
+            "模型输出评估体系",
+            "多轮对话Prompt设计"
+          ]
+        },
+        {
+          "id": "ai_fullstack",
+          "name": "AI全栈工程师",
+          "name_en": "AI Full-Stack Engineer",
+          "level": "中高级",
+          "summary": "具备前后端+AI能力的全栈开发者，能独立完成AI产品的端到端开发交付",
+          "positioning": "创业公司和小团队的理想角色，一人扛起从模型调用到前端展示的全链路",
+          "capability_requirements": {
+            "must_have": [
+              "前端开发能力（React/Vue）",
+              "后端开发能力（Python/Node.js）",
+              "大模型API集成经验",
+              "数据库设计与管理",
+              "DevOps基础能力"
+            ],
+            "nice_to_have": [
+              "RAG/Agent开发经验",
+              "移动端开发能力",
+              "云服务架构经验",
+              "UI/UX设计能力",
+              "产品思维"
+            ],
+            "tools": ["React/Vue", "Python/FastAPI", "PostgreSQL", "Docker", "LangChain", "Vercel"]
+          },
+          "career_path": {
+            "junior": "AI全栈工程师（1-3年）",
+            "mid": "高级AI全栈工程师（3-5年）",
+            "senior": "AI技术负责人/CTO（5-8年）",
+            "leadership": "技术VP/CTO（8年+）"
+          },
+          "salary_range": {
+            "junior": {"min": 20, "max": 35, "unit": "万/年", "city_tier": "一线城市"},
+            "mid": {"min": 35, "max": 60, "unit": "万/年", "city_tier": "一线城市"},
+            "senior": {"min": 60, "max": 100, "unit": "万/年", "city_tier": "一线城市"}
+          },
+          "industry_trends": "AI全栈工程师是创业公司最青睐的角色。大模型极大降低了AI应用开发门槛，前后端开发者转型AI全栈是最自然的路径。独立开发者和AI创业者多为此背景。这个方向的天花板取决于商业能力而非纯技术。",
+          "related_positions": ["ai_application_dev", "ai_product_manager"],
+          "common_interview_topics": [
+            "AI应用全链路架构设计",
+            "前后端技术选型",
+            "大模型API集成方案",
+            "性能优化与成本控制",
+            "从0到1产品交付经验"
+          ]
+        }
+      ]
+    }
+  ]
+}
