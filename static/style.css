@@ -1,0 +1,388 @@
+/* ===== AI求职助手 - 全局样式 ===== */
+
+/* ---------- 配色变量 ---------- */
+:root {
+    --primary: #2563EB;
+    --primary-light: #DBEAFE;
+    --primary-dark: #1D4ED8;
+    --success: #059669;
+    --success-light: #D1FAE5;
+    --warning: #D97706;
+    --warning-light: #FEF3C7;
+    --danger: #DC2626;
+    --danger-light: #FEE2E2;
+    --gray: #6B7280;
+    --gray-light: #F3F4F6;
+    --gray-dark: #374151;
+    --bg: #F8FAFC;
+    --card-bg: #FFFFFF;
+    --text: #1E293B;
+    --text-secondary: #64748B;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* ---------- 通用重置 ---------- */
+.stApp {
+    background-color: var(--bg);
+}
+
+/* 隐藏 Streamlit 默认顶部栏和footer */
+header[data-testid="stHeader"] {
+    display: none;
+}
+#MainMenu, footer {visibility: hidden;}
+
+/* ---------- 卡片 ---------- */
+.aic-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid #E2E8F0;
+}
+.aic-card-border-left {
+    border-left: 4px solid var(--primary);
+}
+.aic-card-success {
+    border-left-color: var(--success);
+}
+.aic-card-warning {
+    border-left-color: var(--warning);
+}
+.aic-card-danger {
+    border-left-color: var(--danger);
+}
+
+/* ---------- 标签徽章 ---------- */
+.aic-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin: 3px 4px 3px 0;
+    line-height: 1.6;
+}
+.aic-tag-blue {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+.aic-tag-green {
+    background: var(--success-light);
+    color: var(--success);
+}
+.aic-tag-orange {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+.aic-tag-red {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+.aic-tag-gray {
+    background: var(--gray-light);
+    color: var(--gray-dark);
+}
+
+/* ---------- 带色条标题 ---------- */
+.aic-section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    padding-left: 14px;
+    margin: 20px 0 12px 0;
+    border-left: 4px solid var(--primary);
+    line-height: 1.5;
+}
+.aic-section-title-green { border-left-color: var(--success); }
+.aic-section-title-orange { border-left-color: var(--warning); }
+.aic-section-title-red { border-left-color: var(--danger); }
+
+/* ---------- 匹配分数圆环 ---------- */
+.aic-score-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0 8px 0;
+}
+.aic-score-ring svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+.aic-score-ring-label {
+    margin-top: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ---------- 渐变进度条 ---------- */
+.aic-progress-container {
+    margin: 8px 0;
+}
+.aic-progress-label {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+.aic-progress-track {
+    height: 10px;
+    background: #E2E8F0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.aic-progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+}
+.aic-progress-fill-blue { background: linear-gradient(90deg, #3B82F6, #2563EB); }
+.aic-progress-fill-green { background: linear-gradient(90deg, #34D399, #059669); }
+.aic-progress-fill-orange { background: linear-gradient(90deg, #FBBF24, #D97706); }
+.aic-progress-fill-red { background: linear-gradient(90deg, #F87171, #DC2626); }
+
+/* ---------- 时间线 ---------- */
+.aic-timeline {
+    padding: 8px 0 8px 20px;
+    position: relative;
+}
+.aic-timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--primary-light);
+}
+.aic-timeline-item {
+    position: relative;
+    padding: 6px 0 6px 22px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.aic-timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--card-bg);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+.aic-timeline-label {
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+/* ---------- 指标卡片 ---------- */
+.aic-metric-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid #E2E8F0;
+}
+.aic-metric-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 4px;
+}
+.aic-metric-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* ---------- Hero 渐变区 ---------- */
+.aic-hero {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+    color: white;
+    text-align: center;
+    padding: 48px 24px 36px 24px;
+    margin: -16px -16px 0 -16px;
+    border-radius: 0 0 24px 24px;
+}
+.aic-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+}
+.aic-hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* ---------- 功能卡片 ---------- */
+.aic-feature-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 28px 20px 20px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    border: 1px solid #E2E8F0;
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: default;
+}
+.aic-feature-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+.aic-feature-icon {
+    font-size: 2.4rem;
+    margin-bottom: 8px;
+}
+.aic-feature-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 4px 0;
+}
+.aic-feature-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ---------- 步骤指示器 ---------- */
+.aic-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 16px 0;
+}
+.aic-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 120px;
+}
+.aic-step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(37,99,235,0.3);
+}
+.aic-step-text {
+    font-size: 0.82rem;
+    color: var(--text);
+    font-weight: 600;
+    margin-top: 6px;
+}
+.aic-step-desc {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.aic-step-arrow {
+    font-size: 1.4rem;
+    color: #CBD5E1;
+    margin: 0 8px;
+    padding-bottom: 24px;
+}
+
+/* ---------- 深色 Footer ---------- */
+.aic-footer {
+    background: #1E293B;
+    color: #94A3B8;
+    text-align: center;
+    padding: 16px;
+    margin: 24px -16px -40px -16px;
+    font-size: 0.8rem;
+    border-radius: 24px 24px 0 0;
+}
+
+/* ---------- 差距/优势列表项 ---------- */
+.aic-gap-item {
+    padding: 10px 14px;
+    margin: 6px 0;
+    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid #E2E8F0;
+    box-shadow: var(--shadow);
+}
+.aic-gap-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+}
+.aic-gap-detail {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.aic-severity-high {
+    border-left: 4px solid var(--danger);
+}
+.aic-severity-mid {
+    border-left: 4px solid var(--warning);
+}
+.aic-severity-low {
+    border-left: 4px solid var(--success);
+}
+
+/* ---------- 薪资卡片 ---------- */
+.aic-salary-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid #E2E8F0;
+}
+.aic-salary-level {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.aic-salary-amount {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 4px 0;
+}
+.aic-salary-note {
+    font-size: 0.72rem;
+    color: var(--gray);
+}
+
+/* ---------- 提升计划卡片 ---------- */
+.aic-plan-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid #E2E8F0;
+    border-top: 3px solid var(--primary);
+}
+.aic-plan-card-immediate { border-top-color: var(--danger); }
+.aic-plan-card-short { border-top-color: var(--warning); }
+.aic-plan-card-medium { border-top-color: var(--success); }
+.aic-plan-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+.aic-plan-item {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    padding: 2px 0;
+}

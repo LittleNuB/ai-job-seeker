@@ -3,21 +3,25 @@ from services.glm_client import get_glm_client
 from services.position_service import PositionService
 from services.resume_service import match_resume
 from utils.validators import validate_resume_text
-from utils.formatters import render_match_score, render_score_bar
 from utils.rate_limiter import check_rate_limit, increment_usage, show_usage_hint
+from utils.formatters import (
+    inject_global_style, card, section_title, tag, tag_row,
+    render_match_score, render_score_bar, gap_item, plan_card,
+)
 
 position_svc = PositionService()
 
 
 def show():
+    inject_global_style()
+
     st.title("🎯 简历匹配")
     st.markdown("智能匹配简历与目标岗位，明确核心优势与能力缺口")
 
-    # 显示剩余次数
     show_usage_hint()
 
     # Step 1: 输入简历
-    st.markdown("### Step 1：输入你的简历")
+    section_title("Step 1：输入你的简历")
     resume_placeholder = st.session_state.get("resume_text", "")
     resume_text = st.text_area(
         "粘贴简历内容",
@@ -30,16 +34,13 @@ def show():
         st.session_state["resume_text"] = resume_text
 
     # Step 2: 选择目标岗位
-    st.markdown("### Step 2：选择目标岗位")
+    section_title("Step 2：选择目标岗位")
 
     all_positions = position_svc.get_all_positions_flat()
-
-    # 构建选项列表
     position_options = {}
     for pos in all_positions:
         position_options[f"{pos['name']} - {pos['category_name']}"] = pos
 
-    # 如果有JD解析结果，添加特殊选项
     jd_result = st.session_state.get("jd_analysis_result")
     use_jd = False
     if jd_result:
@@ -47,7 +48,6 @@ def show():
 
     selected_pos = None
     if not use_jd:
-        # 预选：从岗位探索跳转过来的
         default_idx = 0
         pre_selected = st.session_state.get("selected_position_id")
         if pre_selected:
@@ -63,7 +63,7 @@ def show():
         )
         selected_pos = position_options[selected_label]
 
-    # 构建岗位描述文本（发给模型）
+    # 构建岗位描述文本
     position_details = ""
     if use_jd and jd_result:
         overview = jd_result.get("position_overview", {})
@@ -91,7 +91,6 @@ def show():
     # 匹配分析按钮
     st.markdown("---")
     if st.button("🎯 开始匹配分析", type="primary", use_container_width=True):
-        # 校验
         valid, msg = validate_resume_text(resume_text)
         if not valid:
             st.error(msg)
@@ -101,13 +100,11 @@ def show():
             st.error("请选择目标岗位或使用JD解析结果")
             return
 
-        # 频率限制检查
         allowed, remaining = check_rate_limit()
         if not allowed:
             st.warning("今日分析次数已用完，请明天再试。每个会话每天最多使用20次。")
             return
 
-        # 调用API
         try:
             glm_client = get_glm_client()
         except ValueError as e:
@@ -127,20 +124,20 @@ def show():
     # 展示结果
     result = st.session_state.get("match_result")
     if result:
-        st.markdown("---")
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
         render_match_result(result)
 
 
 def render_match_result(result: dict):
     """渲染匹配结果"""
 
-    # 匹配分数
+    # 匹配分数圆环
     score = result.get("match_score", 0)
     render_match_score(score)
 
     # 四维得分
     breakdown = result.get("score_breakdown", {})
-    st.markdown("### 📊 维度得分")
+    section_title("📊 维度得分")
     col1, col2 = st.columns(2)
     with col1:
         render_score_bar("硬技能匹配", breakdown.get("hard_skills_match", 0))
@@ -152,72 +149,79 @@ def render_match_result(result: dict):
     # 核心优势
     advantages = result.get("core_advantages", [])
     if advantages:
-        st.markdown("### ✅ 核心优势")
+        section_title("✅ 核心优势", color="green")
         for adv in advantages:
-            st.markdown(f"**{adv.get('advantage', '')}**")
+            detail_parts = []
             if adv.get("evidence"):
-                st.markdown(f"　佐证：{adv['evidence']}")
+                detail_parts.append(f"佐证：{adv['evidence']}")
             if adv.get("why_matters"):
-                st.markdown(f"　为什么重要：{adv['why_matters']}")
+                detail_parts.append(f"为什么重要：{adv['why_matters']}")
+            gap_item(
+                title=adv.get("advantage", ""),
+                detail=" | ".join(detail_parts) if detail_parts else "",
+                severity="低",  # 绿色
+            )
 
     # 能力差距
     gaps = result.get("capability_gaps", [])
     if gaps:
-        st.markdown("### ⚠️ 能力差距")
-        for gap in gaps:
-            severity = gap.get("severity", "中")
-            icon = {"高": "🔴", "中": "🟡", "低": "🟢"}.get(severity, "⚪")
-            st.markdown(f"{icon} **{gap.get('gap', '')}**（{severity}优先级）")
-            if gap.get("impact"):
-                st.markdown(f"　影响：{gap['impact']}")
-            if gap.get("mitigation"):
-                st.markdown(f"　弥补措施：{gap['mitigation']}")
+        section_title("⚠️ 能力差距", color="red")
+        for gap_item_data in gaps:
+            severity = gap_item_data.get("severity", "中")
+            detail_parts = []
+            if gap_item_data.get("impact"):
+                detail_parts.append(f"影响：{gap_item_data['impact']}")
+            if gap_item_data.get("mitigation"):
+                detail_parts.append(f"弥补：{gap_item_data['mitigation']}")
+            gap_item(
+                title=gap_item_data.get("gap", ""),
+                detail=" | ".join(detail_parts) if detail_parts else "",
+                severity=severity,
+            )
 
     # 提升计划
     plan = result.get("improvement_plan", {})
     if plan:
-        st.markdown("### 📈 提升计划")
+        section_title("📈 提升计划", color="orange")
         col1, col2, col3 = st.columns(3)
-
         with col1:
-            st.markdown("**⚡ 即刻（1-2周）**")
-            for item in plan.get("immediate", []):
-                st.markdown(f"- {item}")
-
+            plan_card("⚡ 即刻（1-2周）", plan.get("immediate", []), "immediate")
         with col2:
-            st.markdown("**📅 短期（1-3月）**")
-            for item in plan.get("short_term", []):
-                st.markdown(f"- {item}")
-
+            plan_card("📅 短期（1-3月）", plan.get("short_term", []), "short")
         with col3:
-            st.markdown("**🎯 中期（3-6月）**")
-            for item in plan.get("medium_term", []):
-                st.markdown(f"- {item}")
+            plan_card("🎯 中期（3-6月）", plan.get("medium_term", []), "medium")
 
     # 面试策略
     strategy = result.get("interview_strategy", {})
     if strategy:
-        st.markdown("### 🎤 面试策略")
+        section_title("🎤 面试策略", color="blue")
 
         col1, col2 = st.columns(2)
         with col1:
             highlights = strategy.get("highlight_topics", [])
             if highlights:
-                st.markdown("**主动引导话题**")
-                for item in highlights:
-                    st.markdown(f"- {item}")
+                card(
+                    "".join(f'<div style="margin:3px 0;">💡 {item}</div>' for item in highlights),
+                    title="主动引导话题",
+                    color="blue",
+                )
 
             prepare = strategy.get("prepare_for", [])
             if prepare:
-                st.markdown("**重点准备方向**")
-                for item in prepare:
-                    st.markdown(f"- {item}")
+                card(
+                    "".join(f'<div style="margin:3px 0;">📌 {item}</div>' for item in prepare),
+                    title="重点准备方向",
+                    color="warning",
+                )
 
         with col2:
             angle = strategy.get("narrative_angle", "")
             if angle:
-                st.markdown("**叙述角度建议**")
-                st.markdown(angle)
+                card(
+                    f"<div style='line-height:1.7;'>{angle}</div>",
+                    title="叙述角度建议",
+                    color="success",
+                )
 
 
 show()

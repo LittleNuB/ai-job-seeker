@@ -3,13 +3,17 @@ from services.glm_client import get_glm_client
 from services.jd_service import analyze_jd
 from utils.validators import validate_jd_text
 from utils.rate_limiter import check_rate_limit, increment_usage, show_usage_hint
+from utils.formatters import (
+    inject_global_style, card, tag_row, section_title, metric_card, tag,
+)
 
 
 def show():
+    inject_global_style()
+
     st.title("📋 JD解析器")
     st.markdown("一键深度解析AI岗位JD，看透表面要求、隐藏需求和面试考点")
 
-    # 显示剩余次数
     show_usage_hint()
 
     # 输入区
@@ -30,19 +34,16 @@ def show():
 
     # 解析按钮
     if st.button("🔍 开始深度解析", type="primary", use_container_width=True):
-        # 校验输入
         valid, msg = validate_jd_text(jd_text)
         if not valid:
             st.error(msg)
             return
 
-        # 频率限制检查
         allowed, remaining = check_rate_limit()
         if not allowed:
             st.warning("今日分析次数已用完，请明天再试。每个会话每天最多使用20次。")
             return
 
-        # 调用API
         try:
             glm_client = get_glm_client()
         except ValueError as e:
@@ -63,10 +64,9 @@ def show():
     # 展示结果
     result = st.session_state.get("jd_analysis_result")
     if result:
-        st.markdown("---")
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
         render_analysis_result(result)
 
-        # 跳转按钮
         st.markdown("---")
         if st.button("🎯 用此JD匹配我的简历", type="primary", use_container_width=True):
             st.switch_page("pages/3_简历匹配.py")
@@ -75,86 +75,110 @@ def show():
 def render_analysis_result(result: dict):
     """渲染JD解析结果"""
 
-    # 岗位概览
+    # 岗位概览 - 三指标卡片
     overview = result.get("position_overview", {})
-    st.markdown("### 📌 岗位概览")
+    section_title("📌 岗位概览")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("推断角色", overview.get("inferred_role", "-"))
+        metric_card(overview.get("inferred_role", "-"), "推断角色")
     with col2:
-        st.metric("推断职级", overview.get("seniority_level", "-"))
+        metric_card(overview.get("seniority_level", "-"), "推断职级")
     with col3:
-        st.metric("推断公司类型", overview.get("company_type_hint", "-"))
+        metric_card(overview.get("company_type_hint", "-"), "推断公司类型")
 
     # 表面要求
     surface = result.get("surface_requirements", {})
-    st.markdown("### 📝 表面要求")
+    section_title("📝 表面要求")
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("**硬技能**")
-        for skill in surface.get("hard_skills", []):
-            st.markdown(f"- {skill}")
+        card(
+            "".join(tag(s, "blue") for s in surface.get("hard_skills", []))
+            or "<span style='color:#94A3B8;'>无</span>",
+            title="硬技能",
+        )
     with col2:
-        st.markdown("**软技能**")
-        for skill in surface.get("soft_skills", []):
-            st.markdown(f"- {skill}")
+        card(
+            "".join(tag(s, "green") for s in surface.get("soft_skills", []))
+            or "<span style='color:#94A3B8;'>无</span>",
+            title="软技能",
+        )
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"**经验要求**：{surface.get('experience', '-')}")
+        card(f"<b>经验：</b>{surface.get('experience', '-')}", color="blue")
     with col2:
-        st.markdown(f"**学历要求**：{surface.get('education', '-')}")
+        card(f"<b>学历：</b>{surface.get('education', '-')}", color="blue")
 
     # 隐藏需求（核心价值）
     hidden = result.get("hidden_needs", {})
-    st.markdown("### 🔎 隐藏需求")
+    section_title("🔎 隐藏需求", color="orange")
     st.info("💡 以下分析基于AI行业招聘经验和JD文本推断，帮助你看到JD背后的真实需求")
 
-    st.markdown("**团队真实挑战**")
-    st.markdown(hidden.get("team_context", "-"))
+    card(
+        hidden.get("team_context", "-"),
+        title="团队真实挑战",
+        color="orange",
+    )
 
-    st.markdown("**团队最看重的3个能力（按优先级）**")
-    for i, priority in enumerate(hidden.get("real_priorities", []), 1):
-        st.markdown(f"{i}. **{priority}**")
+    priorities = hidden.get("real_priorities", [])
+    if priorities:
+        card(
+            "".join(f'<div style="margin:4px 0;"><b>{i}.</b> {p}</div>' for i, p in enumerate(priorities, 1)),
+            title="团队最看重的3个能力（按优先级）",
+            color="orange",
+        )
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("**文化信号**")
-        for signal in hidden.get("culture_signals", []):
-            st.markdown(f"- {signal}")
+        signals = hidden.get("culture_signals", [])
+        if signals:
+            card(
+                "".join(tag(s, "gray") for s in signals),
+                title="文化信号",
+            )
     with col2:
-        st.markdown(f"**招人原因推断**\n{hidden.get('why_this_role', '-')}")
+        why = hidden.get("why_this_role", "-")
+        card(f"{why}", title="招人原因推断", color="blue")
 
     # 面试聚焦
     interview = result.get("interview_focus", {})
-    st.markdown("### 🎯 面试聚焦")
+    section_title("🎯 面试聚焦", color="green")
 
     topics = interview.get("likely_topics", [])
     if topics:
-        st.markdown("**重点面试主题**")
+        topics_html = ""
         for t in topics:
             topic_name = t.get("topic", "")
             depth = t.get("depth", "")
             prep = t.get("preparation", "")
-            depth_icon = {"精通": "🔴", "掌握": "🟡", "了解": "🟢"}.get(depth, "⚪")
-            st.markdown(f"{depth_icon} **{topic_name}**（{depth}）")
-            if prep:
-                st.markdown(f"　→ 准备建议：{prep}")
+            depth_color = {"精通": "red", "掌握": "orange", "了解": "green"}.get(depth, "blue")
+            topics_html += f"""
+            <div style="margin:8px 0; padding:8px 12px; background:#F8FAFC; border-radius:8px; border:1px solid #E2E8F0;">
+                {tag(depth, depth_color)}
+                <b>{topic_name}</b><br/>
+                <span style="font-size:0.82rem; color:#64748B; margin-left:2px;">→ {prep}</span>
+            </div>
+            """
+        card(topics_html, title="重点面试主题")
 
     col1, col2 = st.columns(2)
     with col1:
         red_flags = interview.get("red_flags", [])
         if red_flags:
-            st.markdown("**⚠️ 潜在坑点**")
-            for flag in red_flags:
-                st.markdown(f"- {flag}")
+            card(
+                "".join(f'<div style="margin:3px 0;">⚠️ {flag}</div>' for flag in red_flags),
+                title="潜在坑点",
+                color="danger",
+            )
     with col2:
         angles = interview.get("standout_angles", [])
         if angles:
-            st.markdown("**💡 脱颖而出的切入点**")
-            for angle in angles:
-                st.markdown(f"- {angle}")
+            card(
+                "".join(f'<div style="margin:3px 0;">💡 {angle}</div>' for angle in angles),
+                title="脱颖而出切入点",
+                color="success",
+            )
 
 
 show()
