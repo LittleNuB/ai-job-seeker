@@ -47,4 +47,4 @@ def increment_usage():
 def show_usage_hint():
     """在侧边栏显示今日剩余调用次数"""
     _, remaining = check_rate_limit()
-    st.sidebar.markdown(f"📊 今日剩余分析次数：**{remaining}/{MAX_DAILY_CALLS}**")
+    st.sidebar.markdown(f"今日剩余分析次数：**{remaining}/{MAX_DAILY_CALLS}**")

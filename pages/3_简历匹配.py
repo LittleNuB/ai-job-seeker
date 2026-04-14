@@ -7,6 +7,7 @@ from utils.rate_limiter import check_rate_limit, increment_usage, show_usage_hin
 from utils.formatters import (
     inject_global_style, card, section_title, tag, tag_row,
     render_match_score, render_score_bar, gap_item, plan_card,
+    page_header, step_indicator,
 )
 
 position_svc = PositionService()
@@ -15,53 +16,66 @@ position_svc = PositionService()
 def show():
     inject_global_style()
 
-    st.title("🎯 简历匹配")
-    st.markdown("智能匹配简历与目标岗位，明确核心优势与能力缺口")
+    page_header("匹配分析中心", "智能匹配简历与目标岗位，明确核心优势与能力差距", "target")
 
     show_usage_hint()
 
-    # Step 1: 输入简历
-    section_title("Step 1：输入你的简历")
-    resume_placeholder = st.session_state.get("resume_text", "")
-    resume_text = st.text_area(
-        "粘贴简历内容",
-        height=300,
-        placeholder="请粘贴你的简历内容...\n\n建议包含：\n- 教育背景\n- 工作经历\n- 项目经验\n- 技术技能\n- 论文/专利（如有）",
-        value=resume_placeholder,
-        key="resume_input"
-    )
-    if resume_text:
-        st.session_state["resume_text"] = resume_text
+    # 步骤指示器
+    has_result = st.session_state.get("match_result") is not None
+    current_step = 2 if has_result else 0
+    step_indicator([
+        {"label": "输入简历", "desc": "粘贴简历内容"},
+        {"label": "选择岗位", "desc": "目标岗位"},
+        {"label": "查看结果", "desc": "匹配分析"},
+    ], current=current_step)
 
-    # Step 2: 选择目标岗位
-    section_title("Step 2：选择目标岗位")
+    # Step 1 + Step 2 合并为两列输入区
+    col_resume, col_position = st.columns([7, 5])
 
-    all_positions = position_svc.get_all_positions_flat()
-    position_options = {}
-    for pos in all_positions:
-        position_options[f"{pos['name']} - {pos['category_name']}"] = pos
-
-    jd_result = st.session_state.get("jd_analysis_result")
-    use_jd = False
-    if jd_result:
-        use_jd = st.checkbox("📋 使用上次JD解析结果作为目标岗位", value=False)
-
-    selected_pos = None
-    if not use_jd:
-        default_idx = 0
-        pre_selected = st.session_state.get("selected_position_id")
-        if pre_selected:
-            for i, (label, pos) in enumerate(position_options.items()):
-                if pos["id"] == pre_selected:
-                    default_idx = i
-                    break
-
-        selected_label = st.selectbox(
-            "选择目标岗位",
-            options=list(position_options.keys()),
-            index=default_idx
+    with col_resume:
+        st.markdown("**输入简历**")
+        resume_placeholder = st.session_state.get("resume_text", "")
+        resume_text = st.text_area(
+            "粘贴简历内容",
+            height=300,
+            placeholder="请粘贴你的简历内容...\n\n建议包含：教育背景、工作经历、项目经验、技术技能",
+            value=resume_placeholder,
+            key="resume_input",
+            label_visibility="collapsed",
         )
-        selected_pos = position_options[selected_label]
+        if resume_text:
+            st.session_state["resume_text"] = resume_text
+
+    with col_position:
+        st.markdown("**选择目标岗位**")
+
+        all_positions = position_svc.get_all_positions_flat()
+        position_options = {}
+        for pos in all_positions:
+            position_options[f"{pos['name']} - {pos['category_name']}"] = pos
+
+        jd_result = st.session_state.get("jd_analysis_result")
+        use_jd = False
+        if jd_result:
+            use_jd = st.checkbox("使用上次JD解析结果作为目标岗位", value=False)
+
+        selected_pos = None
+        if not use_jd:
+            default_idx = 0
+            pre_selected = st.session_state.get("selected_position_id")
+            if pre_selected:
+                for i, (label, pos) in enumerate(position_options.items()):
+                    if pos["id"] == pre_selected:
+                        default_idx = i
+                        break
+
+            selected_label = st.selectbox(
+                "选择目标岗位",
+                options=list(position_options.keys()),
+                index=default_idx,
+                label_visibility="collapsed",
+            )
+            selected_pos = position_options[selected_label]
 
     # 构建岗位描述文本
     position_details = ""
@@ -77,7 +91,7 @@ def show():
 学历要求：{surface.get('education', '')}"""
         if jd_result.get("hidden_needs", {}).get("real_priorities"):
             position_details += f"\n团队最看重：{', '.join(jd_result['hidden_needs']['real_priorities'])}"
-        st.info(f"📊 已使用JD解析结果：**{overview.get('inferred_role', '未知岗位')}**")
+        st.info(f"已使用JD解析结果：**{overview.get('inferred_role', '未知岗位')}**")
     elif selected_pos:
         cap = selected_pos["capability_requirements"]
         position_details = f"""岗位名称：{selected_pos['name']} ({selected_pos['name_en']})
@@ -90,7 +104,7 @@ def show():
 
     # 匹配分析按钮
     st.markdown("---")
-    if st.button("🎯 开始匹配分析", type="primary", use_container_width=True):
+    if st.button("开始匹配分析", type="primary", use_container_width=True):
         valid, msg = validate_resume_text(resume_text)
         if not valid:
             st.error(msg)
@@ -102,14 +116,14 @@ def show():
 
         allowed, remaining = check_rate_limit()
         if not allowed:
-            st.warning("今日分析次数已用完，请明天再试。每个会话每天最多使用20次。")
+            st.warning("今日分析次数已用完，请明天再试。")
             return
 
         try:
             glm_client = get_glm_client()
         except ValueError as e:
             st.error(str(e))
-            st.markdown("请按以下步骤配置API Key：\n1. 复制 `.env` 中的 `GLM_API_KEY` 填入你的密钥\n2. 或在 Streamlit Cloud Secrets 中配置")
+            st.markdown("请在 .env 或 Streamlit Cloud Secrets 中配置 GLM_API_KEY")
             return
 
         with st.spinner("正在进行匹配分析，请稍候..."):
@@ -117,6 +131,7 @@ def show():
                 result = match_resume(glm_client, resume_text, position_details)
                 increment_usage()
                 st.session_state["match_result"] = result
+                st.rerun()
             except RuntimeError as e:
                 st.error(str(e))
                 return
@@ -124,7 +139,7 @@ def show():
     # 展示结果
     result = st.session_state.get("match_result")
     if result:
-        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
         render_match_result(result)
 
 
@@ -137,7 +152,7 @@ def render_match_result(result: dict):
 
     # 四维得分
     breakdown = result.get("score_breakdown", {})
-    section_title("📊 维度得分")
+    section_title("维度得分")
     col1, col2 = st.columns(2)
     with col1:
         render_score_bar("硬技能匹配", breakdown.get("hard_skills_match", 0))
@@ -149,7 +164,7 @@ def render_match_result(result: dict):
     # 核心优势
     advantages = result.get("core_advantages", [])
     if advantages:
-        section_title("✅ 核心优势", color="green")
+        section_title("核心优势", color="green")
         for adv in advantages:
             detail_parts = []
             if adv.get("evidence"):
@@ -159,13 +174,13 @@ def render_match_result(result: dict):
             gap_item(
                 title=adv.get("advantage", ""),
                 detail=" | ".join(detail_parts) if detail_parts else "",
-                severity="低",  # 绿色
+                severity="低",
             )
 
     # 能力差距
     gaps = result.get("capability_gaps", [])
     if gaps:
-        section_title("⚠️ 能力差距", color="red")
+        section_title("能力差距", color="red")
         for gap_item_data in gaps:
             severity = gap_item_data.get("severity", "中")
             detail_parts = []
@@ -182,26 +197,26 @@ def render_match_result(result: dict):
     # 提升计划
     plan = result.get("improvement_plan", {})
     if plan:
-        section_title("📈 提升计划", color="orange")
+        section_title("提升计划", color="orange")
         col1, col2, col3 = st.columns(3)
         with col1:
-            plan_card("⚡ 即刻（1-2周）", plan.get("immediate", []), "immediate")
+            plan_card("即刻（1-2周）", plan.get("immediate", []), "immediate")
         with col2:
-            plan_card("📅 短期（1-3月）", plan.get("short_term", []), "short")
+            plan_card("短期（1-3月）", plan.get("short_term", []), "short")
         with col3:
-            plan_card("🎯 中期（3-6月）", plan.get("medium_term", []), "medium")
+            plan_card("中期（3-6月）", plan.get("medium_term", []), "medium")
 
     # 面试策略
     strategy = result.get("interview_strategy", {})
     if strategy:
-        section_title("🎤 面试策略", color="blue")
+        section_title("面试策略", color="blue")
 
         col1, col2 = st.columns(2)
         with col1:
             highlights = strategy.get("highlight_topics", [])
             if highlights:
                 card(
-                    "".join(f'<div style="margin:3px 0;">💡 {item}</div>' for item in highlights),
+                    "".join(f'<div style="margin:3px 0;">{tag("i", "info")} {item}</div>' for item in highlights),
                     title="主动引导话题",
                     color="blue",
                 )
@@ -209,7 +224,7 @@ def render_match_result(result: dict):
             prepare = strategy.get("prepare_for", [])
             if prepare:
                 card(
-                    "".join(f'<div style="margin:3px 0;">📌 {item}</div>' for item in prepare),
+                    "".join(f'<div style="margin:3px 0;">{tag("!", "orange")} {item}</div>' for item in prepare),
                     title="重点准备方向",
                     color="warning",
                 )

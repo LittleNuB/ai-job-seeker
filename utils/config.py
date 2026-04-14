@@ -19,7 +19,7 @@ def get_config() -> dict:
 
     return {
         "api_key": _get("GLM_API_KEY", ""),
-        "model": _get("GLM_MODEL", "glm-4-plus"),
+        "model": _get("GLM_MODEL", "glm-4.6V"),
         "base_url": _get("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/"),
         "temperature": float(_get("GLM_TEMPERATURE", "0.7")),
         "max_tokens": int(_get("GLM_MAX_TOKENS", "4096")),

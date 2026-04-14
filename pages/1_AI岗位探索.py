@@ -2,7 +2,7 @@ import streamlit as st
 from services.position_service import PositionService
 from utils.formatters import (
     inject_global_style, card, tag_row, section_title,
-    render_timeline, salary_card,
+    render_timeline, salary_card, page_header,
 )
 
 position_svc = PositionService()
@@ -11,15 +11,14 @@ position_svc = PositionService()
 def show():
     inject_global_style()
 
-    st.title("🧭 AI岗位探索")
-    st.markdown("快速了解主流AI岗位的定位、能力要求、职业路径和薪资水平")
+    page_header("岗位研究分析台", "了解AI行业主流岗位的定位、能力要求与发展路径", "compass")
 
     categories = position_svc.get_all_categories()
     if not categories:
         st.warning("岗位数据加载失败，请检查 data/ai_positions.json")
         return
 
-    # 顶部分类标签页
+    # 分类 Tabs
     tab_names = [f"{cat['icon']} {cat['name']}" for cat in categories]
     tabs = st.tabs(tab_names)
 
@@ -41,16 +40,16 @@ def show():
             )
             pos = pos_options[selected_label]
 
-            # 岗位概述卡片
-            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            # 岗位概要卡片
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
             card(
-                f"<span style='color:#64748B; font-size:0.85rem;'>{pos['name_en']} · {pos['level']}</span><br/>"
+                f"<span style='color:{_gray500()}; font-size:0.75rem;'>{pos['name_en']} · {pos['level']}</span><br/>"
                 f"{pos['summary']}",
                 title=pos["name"],
             )
 
-            # 详情标签页
-            detail_tabs = st.tabs(["🎯 岗位定位", "📋 能力要求", "📈 职业路径", "💰 薪资与趋势"])
+            # 详情 Tabs（去emoji）
+            detail_tabs = st.tabs(["岗位定位", "能力要求", "职业路径", "薪资与趋势"])
 
             with detail_tabs[0]:
                 section_title("岗位定位")
@@ -113,13 +112,17 @@ def show():
             st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("📋 用此岗位分析JD", key=f"jd_btn_{pos['id']}", use_container_width=True):
+                if st.button("用此岗位分析JD →", key=f"jd_btn_{pos['id']}", use_container_width=True):
                     st.session_state["selected_position_id"] = pos["id"]
                     st.switch_page("pages/2_JD解析器.py")
             with col2:
-                if st.button("🎯 用此岗位匹配简历", key=f"match_btn_{pos['id']}", use_container_width=True):
+                if st.button("用此岗位匹配简历 →", key=f"match_btn_{pos['id']}", use_container_width=True):
                     st.session_state["selected_position_id"] = pos["id"]
                     st.switch_page("pages/3_简历匹配.py")
+
+
+def _gray500():
+    return "#64748B"
 
 
 show()
