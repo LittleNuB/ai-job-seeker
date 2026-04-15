@@ -23,7 +23,7 @@ def show():
         st.markdown("**输入岗位JD**")
         jd_text = st.text_area(
             "粘贴JD文本",
-            height=320,
+            height=500,
             placeholder="请将AI岗位的JD全文粘贴到这里...",
             key="jd_input",
             label_visibility="collapsed",

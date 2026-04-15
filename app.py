@@ -16,32 +16,32 @@ def main():
     <div style="
         background: linear-gradient(135deg, {C['g950']} 0%, {C['brand_900']} 100%);
         color: white; padding: 56px 48px 44px 48px;
-        margin: -16px -16px 0 -16px; border-radius: 0 0 16px 16px;
-        font-family: {_icon.__module__ and '-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Microsoft YaHei,sans-serif'};
+        margin: 0 -16px; border-radius: 0 0 16px 16px;
+        font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
     ">
         <div style="max-width:640px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
                 {_icon('sparkles', 24, '#60A5FA')}
                 <span style="font-size:0.75rem; font-weight:600; color:#60A5FA; letter-spacing:0.05em; text-transform:uppercase;">AI Job Copilot</span>
             </div>
-            <h1 style="font-size:2rem; font-weight:700; margin:0 0 8px 0; letter-spacing:-0.03em; line-height:1.2;">
+            <h1 style="font-size:2rem; font-weight:700; margin:0 0 8px 0; letter-spacing:-0.03em; line-height:1.2; color:white;">
                 AI 驱动的求职决策工具
             </h1>
-            <p style="font-size:0.9375rem; color:#94A3B8; margin:0 0 24px 0; line-height:1.6;">
+            <p style="font-size:0.9375rem; color:#CBD5E1; margin:0 0 24px 0; line-height:1.6;">
                 从岗位探索到JD解析再到简历匹配，<br/>帮助你做出更聪明的求职决策。
             </p>
         </div>
     </div>
     """
-    st.markdown(hero_html, unsafe_allow_html=True)
+    _render(hero_html, 200)
 
     st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
 
-    # ---- Bento Grid ----
-    col_left, col_right = st.columns([3, 2])
+    # ---- Bento Grid (等宽两列) ----
+    col_left, col_right = st.columns([1, 1])
 
     with col_left:
-        # 大块：岗位探索
+        # 岗位探索
         _bento_card(
             icon="compass",
             title="岗位探索",
@@ -53,21 +53,18 @@ def main():
 
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-        # 小块：简历匹配
-        col_ll, col_lr = st.columns(2)
-        with col_ll:
-            _bento_card(
-                icon="target",
-                title="简历匹配",
-                desc="智能匹配简历与目标岗位，明确优势与差距",
-                tags=["四维评分", "提升计划", "面试策略"],
-                compact=True,
-            )
-            if st.button("开始匹配 →", key="btn_match", use_container_width=True):
-                st.switch_page("pages/3_简历匹配.py")
+        # 简历匹配
+        _bento_card(
+            icon="target",
+            title="简历匹配",
+            desc="智能匹配简历与目标岗位，明确优势与差距",
+            tags=["四维评分", "提升计划", "面试策略"],
+        )
+        if st.button("开始匹配 →", key="btn_match", use_container_width=True):
+            st.switch_page("pages/3_简历匹配.py")
 
     with col_right:
-        # 小块：JD解析器
+        # JD解析器
         _bento_card(
             icon="clipboard-list",
             title="JD 解析器",
@@ -85,15 +82,16 @@ def main():
     # ---- Footer ----
     st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
     footer_html = f"""
-    <div style="text-align:center; padding:16px; font-size:0.6875rem; color:{C['g400']};">
+    <div style="text-align:center; padding:16px; font-size:0.6875rem; color:{C['g400']};
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;">
         Powered by GLM · Built with Streamlit
     </div>
     """
-    st.markdown(footer_html, unsafe_allow_html=True)
+    _render(footer_html, 50)
 
 
 def _bento_card(icon: str, title: str, desc: str, tags: list[str], compact: bool = False):
-    """Bento Grid 单元卡片"""
+    """Bento Grid 单元卡片 — 使用 components.html 渲染"""
     icon_svg = _icon(icon, 20, C["brand_700"])
     tags_html = "".join(
         f'<span style="display:inline-block; padding:1px 6px; border-radius:3px; '
@@ -116,11 +114,11 @@ def _bento_card(icon: str, title: str, desc: str, tags: list[str], compact: bool
         <div>{tags_html}</div>
     </div>
     """
-    st.markdown(html, unsafe_allow_html=True)
+    _render(html, 120)
 
 
 def _process_card():
-    """流程说明卡片"""
+    """流程说明卡片 — 使用 components.html 渲染"""
     steps = [
         {"icon": "compass", "label": "探索岗位", "desc": "了解行业全貌"},
         {"icon": "clipboard-list", "label": "解析 JD", "desc": "看透真实需求"},
@@ -156,7 +154,7 @@ def _process_card():
         {items}
     </div>
     """
-    st.markdown(html, unsafe_allow_html=True)
+    _render(html, 200)
 
 
 main()

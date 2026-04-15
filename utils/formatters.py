@@ -99,11 +99,16 @@ def _icon(name: str, size: int = 20, color: str = "currentColor") -> str:
 
 # ---------- 通用渲染 ----------
 
-def _render(html: str, height: int):
-    """用 components.html 可靠渲染"""
+def _render(html: str, height: int, scrolling: bool = False):
+    """用 components.html 可靠渲染
+
+    scrolling=False（默认）：固定高度iframe，无滚动条，适合主页等已知高度的组件
+    scrolling=True：允许滚动，适合 card/plan_card 等内容长度不可预测的组件
+    """
     components.html(
         f'<div style="{_BASE}">{html}</div>',
         height=height,
+        scrolling=scrolling,
     )
 
 
@@ -127,7 +132,7 @@ def page_header(title: str, subtitle: str, icon: str = "sparkles"):
 # ---------- 卡片组件 ----------
 
 def card(content: str, title: str = None, color: str = None, height: int = None):
-    """卡片容器"""
+    """卡片容器 — 内容长度不可预测，开启滚动"""
     border_style = ""
     if color:
         bc = BORDER_MAP.get(color, C["brand_700"])
@@ -141,8 +146,8 @@ def card(content: str, title: str = None, color: str = None, height: int = None)
     )
     if height is None:
         lines = html.count('<br') + html.count('<div') + html.count('<p')
-        height = max(70, min(50 + (24 if title else 0) + lines * 20, 600))
-    _render(html, height)
+        height = max(80, min(60 + (28 if title else 0) + lines * 26, 800))
+    _render(html, height, scrolling=True)
 
 
 # ---------- 标签组件 ----------
@@ -175,7 +180,7 @@ def section_title(text: str, color: str = "blue"):
     """带左侧色条的标题"""
     bc = BORDER_MAP.get(color, C["brand_700"])
     html = (
-        f'<div style="{_BASE} font-size:0.8125rem; font-weight:600; color:{C["g900"]}; '
+        f'<div style="{_BASE} font-size:0.8125rem; font-weight:600; color:{C['g900']}; '
         f'padding-left:12px; margin:16px 0 8px 0; border-left:3px solid {bc}; line-height:1.5;">{text}</div>'
     )
     _render(html, 38)
@@ -303,7 +308,7 @@ def salary_card(level: str, salary: dict):
 # ---------- 差距/优势列表项 ----------
 
 def gap_item(title: str, detail: str, severity: str = "low"):
-    """差距/优势展示项"""
+    """差距/优势展示项 — 内容可能较长，开启滚动"""
     sev_colors = {"高": C["danger"], "中": C["warning"], "低": C["success"]}
     dot_color = sev_colors.get(severity, C["success"])
     detail_html = f'<div style="font-size:0.75rem; color:{C["g500"]}; margin-top:3px;">{detail}</div>' if detail else ""
@@ -317,14 +322,14 @@ def gap_item(title: str, detail: str, severity: str = "low"):
         </div>
     </div>
     """
-    h = 58 if detail else 40
-    _render(html, h)
+    h = 68 if detail else 48
+    _render(html, h, scrolling=True)
 
 
 # ---------- 提升计划卡片 ----------
 
 def plan_card(title: str, items: list[str], card_type: str = "immediate"):
-    """提升计划卡片"""
+    """提升计划卡片 — 内容可能较长，开启滚动"""
     top_colors = {"immediate": C["danger"], "short": C["warning"], "medium": C["success"]}
     top_color = top_colors.get(card_type, C["brand_700"])
     items_html = "".join(
@@ -340,8 +345,8 @@ def plan_card(title: str, items: list[str], card_type: str = "immediate"):
         {items_html}
     </div>
     """
-    height = 40 + max(len(items), 1) * 22
-    _render(html, height)
+    height = 50 + max(len(items), 1) * 30
+    _render(html, height, scrolling=True)
 
 
 # ---------- 步骤指示器 ----------

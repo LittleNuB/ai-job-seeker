@@ -37,7 +37,7 @@ def show():
         resume_placeholder = st.session_state.get("resume_text", "")
         resume_text = st.text_area(
             "粘贴简历内容",
-            height=300,
+            height=500,
             placeholder="请粘贴你的简历内容...\n\n建议包含：教育背景、工作经历、项目经验、技术技能",
             value=resume_placeholder,
             key="resume_input",
