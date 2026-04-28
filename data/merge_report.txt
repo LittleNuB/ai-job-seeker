@@ -1,0 +1,57 @@
+Version: 2.0
+Last updated: 2026-04-28
+Categories: 7
+
+[algorithm] 算法方向: 12 个岗位
+  - nlp_engineer: NLP算法工程师 (NLP Algorithm Engineer)
+  - cv_engineer: CV算法工程师 (Computer Vision Engineer)
+  - llm_engineer: 大模型算法工程师 (LLM Algorithm Engineer)
+  - recsys_engineer: 推荐算法工程师 (Recommendation Algorithm Engineer)
+  - rl_engineer: 强化学习工程师 (Reinforcement Learning Engineer)
+  - speech_engineer: 语音算法工程师 (Speech Algorithm Engineer)
+  - search_algorithm_engineer: 搜索算法工程师 (Search Algorithm Engineer)
+  - multimodal_engineer: 多模态算法工程师 (Multimodal Algorithm Engineer)
+  - audio_algorithm_engineer: 音频算法工程师 (Audio Algorithm Engineer)
+  - anomaly_detection_engineer: 异常检测算法工程师 (Anomaly Detection Algorithm Engineer)
+  - automl_engineer: AutoML工程师 (AutoML Engineer)
+  - federated_learning_engineer: 联邦学习工程师 (Federated Learning Engineer)
+[engineering] 工程方向: 7 个岗位
+  - mlops_engineer: MLOps/AI平台工程师 (MLOps / AI Platform Engineer)
+  - ai_infra_engineer: AI基础设施工程师 (AI Infrastructure Engineer)
+  - model_deployment_engineer: 模型部署/推理优化工程师 (Model Deployment & Inference Optimization Engineer)
+  - ai_safety_engineer: AI安全工程师 (AI Security Engineer)
+  - ai_architect: AI架构师 (AI Architect)
+  - inference_engineer: 推理优化工程师 (Inference Optimization Engineer)
+  - rag_engineer: RAG工程师 (RAG Engineer)
+[product] 产品方向: 6 个岗位
+  - ai_product_manager: AI产品经理 (AI Product Manager)
+  - data_product_manager: 数据产品经理 (Data Product Manager)
+  - ai_ops_specialist: AI运营/增长专家 (AI Operations & Growth Specialist)
+  - ai_commercial_pm: AI商业化产品经理 (AI Commercialization Product Manager)
+  - ai_solution_architect: AI解决方案架构师 (AI Solutions Architect)
+  - ai_ux_designer: AI交互设计师 (AI Interaction Designer)
+[data] 数据方向: 5 个岗位
+  - data_engineer: 数据工程师 (Data Engineer)
+  - data_analyst: 数据分析师 (Data Analyst)
+  - data_scientist: 数据科学家 (Data Scientist)
+  - annotation_manager: AI标注经理 (AI Labeling Manager)
+  - data_governance_engineer: 数据治理工程师 (Data Governance Engineer)
+[applied] 应用方向: 6 个岗位
+  - ai_application_dev: AI应用开发工程师 (AI Application Developer)
+  - prompt_engineer: Prompt工程师 (Prompt Engineer)
+  - ai_fullstack: AI全栈工程师 (AI Full-Stack Engineer)
+  - ai_compliance_specialist: AI合规专员 (AI Compliance Specialist)
+  - ai_trainer: AI训练师 (AI Trainer)
+  - digital_human_engineer: 数字人工程师 (Digital Human Engineer)
+[chip] 芯片/算力方向: 3 个岗位
+  - ai_chip_engineer: AI芯片工程师 (AI Chip Engineer)
+  - asic_design_engineer: ASIC设计工程师 (ASIC Design Engineer)
+  - cuda_engineer: CUDA工程师 (CUDA Engineer)
+[industry] AI+行业方向: 5 个岗位
+  - ai_autonomous_driving: 自动驾驶算法工程师 (Autonomous Driving Algorithm Engineer)
+  - ai_education_specialist: AI教育产品经理 (AI Education Product Manager)
+  - ai_fintech_engineer: AI金融算法工程师 (AI Financial Algorithm Engineer)
+  - ai_medical_engineer: AI医疗算法工程师 (AI Medical Algorithm Engineer)
+  - ai_robotics_engineer: 机器人算法工程师 (Robotics Algorithm Engineer)
+
+合计: 44 个岗位

@@ -1,0 +1,104 @@
+======================================================================
+岗位聚类列表 (按JD数量排序)
+======================================================================
+  llm_engineer                           大模型算法工程师                202JD  [算法方向]  字节跳动 / 美团 / 腾讯
+  recsys_engineer                        推荐算法工程师                  64JD  [算法方向]  字节跳动 / 美团 / 腾讯
+  nlp_engineer                           NLP算法工程师                 40JD  [算法方向]  字节跳动 / 美团 / 腾讯
+  speech_engineer                        语音算法工程师                  19JD  [算法方向]  字节跳动 / 腾讯
+  multimodal_engineer                    多模态算法工程师                 16JD  [算法方向]  字节跳动 / 腾讯
+  rl_engineer                            强化学习工程师                  13JD  [算法方向]  字节跳动 / 美团 / 腾讯
+  mlops_engineer                         MLOps/AI平台工程师            13JD  [工程方向]  字节跳动 / 美团 / 腾讯
+  ai_application_dev                     AI应用开发工程师                12JD  [应用方向]  字节跳动 / 美团 / 阿里巴巴
+  cv_engineer                            计算机视觉算法工程师               12JD  [算法方向]  字节跳动
+  search_algorithm_engineer              搜索算法工程师                   7JD  [算法方向]  字节跳动 / 腾讯
+  ai_infra_engineer                      AI基础设施工程师                 5JD  [工程方向]  字节跳动 / 腾讯 / 阿里巴巴
+  ai_safety_engineer                     AI安全工程师                   5JD  [工程方向]  字节跳动 / 美团
+  data_analyst                           数据分析师                     5JD  [数据方向]  字节跳动
+  ai_product_manager                     AI产品经理                    5JD  [产品方向]  美团
+  anomaly_detection_engineer             异常检测算法工程师                 5JD  [算法方向]  美团 / 腾讯
+  audio_algorithm_engineer               音频算法工程师                   4JD  [算法方向]  字节跳动 / 腾讯
+  ai_robotics_engineer                   机器人算法工程师                  4JD  [AI+行业方向]  美团
+  ai_chip_engineer                       AI芯片工程师                   3JD  [芯片/算力方向]  字节跳动
+  model_deployment_engineer              模型部署/推理优化工程师              3JD  [工程方向]  字节跳动 / 腾讯
+  data_engineer                          数据工程师                     2JD  [工程方向]  美团 / 阿里巴巴
+  ai_solution_architect                  AI解决方案架构师                 2JD  [产品方向]  字节跳动 / 美团
+  data_scientist                         数据科学家                     2JD  [数据方向]  字节跳动
+  asic_design_engineer                   ASIC设计工程师                 1JD  [芯片/算力方向]  阿里巴巴
+  prompt_engineer                        Prompt工程师                 1JD  [应用方向]  字节跳动
+  ai_content_ops                         AI内容运营                    1JD  [应用方向]  字节跳动
+  kg_engineer                            知识图谱工程师                   1JD  [算法方向]  字节跳动
+  ai_fullstack                           AI全栈工程师                   1JD  [应用方向]  字节跳动
+  ai_trainer                             AI训练师                     1JD  [应用方向]  美团
+  ai_autonomous_driving                  自动驾驶算法工程师                 1JD  [AI+行业方向]  美团
+  ai_architect                           AI架构师                     1JD  [工程方向]  美团
+  ai_ops_specialist                      AI运营/增长专家                 1JD  [产品方向]  美团
+
+合计: 31 个岗位, 452 条JD
+
+======================================================================
+分类汇总
+======================================================================
+
+[algorithm] 算法方向: 11 个岗位, 383 条JD
+  - 强化学习工程师
+  - 推荐算法工程师
+  - NLP算法工程师
+  - 大模型算法工程师
+  - 计算机视觉算法工程师
+  - 语音算法工程师
+  - 搜索算法工程师
+  - 多模态算法工程师
+  - 知识图谱工程师
+  - 音频算法工程师
+  - 异常检测算法工程师
+
+[engineering] 工程方向: 6 个岗位, 29 条JD
+  - AI基础设施工程师
+  - 数据工程师
+  - MLOps/AI平台工程师
+  - AI安全工程师
+  - 模型部署/推理优化工程师
+  - AI架构师
+
+[product] 产品方向: 3 个岗位, 8 条JD
+  - AI解决方案架构师
+  - AI产品经理
+  - AI运营/增长专家
+
+[data] 数据方向: 2 个岗位, 7 条JD
+  - 数据分析师
+  - 数据科学家
+
+[applied] 应用方向: 5 个岗位, 16 条JD
+  - AI应用开发工程师
+  - Prompt工程师
+  - AI内容运营
+  - AI全栈工程师
+  - AI训练师
+
+[chip] 芯片/算力方向: 2 个岗位, 4 条JD
+  - ASIC设计工程师
+  - AI芯片工程师
+
+[industry] AI+行业方向: 2 个岗位, 5 条JD
+  - 自动驾驶算法工程师
+  - 机器人算法工程师
+
+======================================================================
+未匹配到JD的岗位 (15 个)
+======================================================================
+  ai_commercial_pm                       AI商业化产品经理              [产品方向]
+  ai_compliance_specialist               AI合规专员                 [应用方向]
+  ai_education_specialist                AI教育产品经理               [AI+行业方向]
+  ai_fintech_engineer                    AI金融算法工程师              [AI+行业方向]
+  ai_medical_engineer                    AI医疗算法工程师              [AI+行业方向]
+  ai_ux_designer                         AI交互设计师                [产品方向]
+  annotation_manager                     AI标注经理                 [数据方向]
+  automl_engineer                        AutoML工程师              [算法方向]
+  cuda_engineer                          CUDA工程师                [芯片/算力方向]
+  data_governance_engineer               数据治理工程师                [数据方向]
+  data_product_manager                   数据产品经理                 [产品方向]
+  digital_human_engineer                 数字人工程师                 [应用方向]
+  federated_learning_engineer            联邦学习工程师                [算法方向]
+  inference_engineer                     推理优化工程师                [工程方向]
+  rag_engineer                           RAG工程师                 [工程方向]

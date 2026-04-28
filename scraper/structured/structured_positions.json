@@ -1,0 +1,2117 @@
+[
+  {
+    "must_have": [
+      "AI应用开发与工程落地",
+      "系统设计与架构能力",
+      "Agent技术理解与应用",
+      "业务理解与需求分析",
+      "编程与工程实现能力",
+      "模型应用与优化"
+    ],
+    "nice_to_have": [
+      "Prompt Engineering",
+      "RAG技术",
+      "AI-Native思维",
+      "数据飞轮/数据工程"
+    ],
+    "tools": [
+      "RAG (Retrieval-Augmented Generation)",
+      "Agent",
+      "LLM (Large Language Model)",
+      "Prompt Engineering",
+      "数据飞轮",
+      "MySQL",
+      "Redis",
+      "MQ (Message Queue)"
+    ],
+    "id": "ai_application_dev"
+  },
+  {
+    "name": "AI基础设施工程师",
+    "name_en": "AI Infrastructure Engineer",
+    "level": "中高级/高级/专家",
+    "summary": "构建和优化大规模AI计算基础设施，支撑高效的大模型训练与推理",
+    "positioning": "作为AI时代的算力底座，为算法模型提供高性能、可扩展的计算资源与平台支持",
+    "capability_requirements": {
+      "must_have": [
+        "精通C/C++和Python编程",
+        "熟悉至少一种主流机器学习框架（如PyTorch, TensorFlow）",
+        "深入理解分布式系统原理与大规模集群架构",
+        "具备系统性能优化（计算、通信、I/O）经验",
+        "了解GPU编程、编译器或高性能网络等底层技术"
+      ],
+      "nice_to_have": [
+        "有国产或新型硬件（如NPU, ASIC）的优化经验",
+        "熟悉FSDP, Megatron等特定分布式训练框架",
+        "具备大模型（LLM, VLM等）的训练与调优经验"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "C++",
+        "Python",
+        "Linux",
+        "NVIDIA GPU",
+        "FSDP",
+        "Megatron"
+      ]
+    },
+    "career_path": {
+      "junior": "初级工程师（1-3年）：负责基础设施组件的实现、调试与维护，参与性能优化工作。",
+      "mid": "中级工程师（3-5年）：负责特定模块或子系统的设计、开发与优化，能够独立解决复杂技术问题。",
+      "senior": "高级/专家工程师（5-8年+）：负责整体架构设计、技术选型与演进，主导解决跨领域技术难题，引领技术方向。",
+      "leadership": "技术经理/架构师（8年+）：领导团队，制定技术战略，负责大型项目的规划与落地，对业务结果负责。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "行业趋势向万卡级大规模训练、极致推理加速、软硬件协同优化以及异构计算（CPU/GPU/NPU）方向发展，AI基础设施的自动化、平台化和智能化水平持续提升。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "请描述一种你优化过分布式训练任务（如通信瓶颈）的经历，并解释你采取的方法和结果。",
+      "设计一个支持万卡规模训练的GPU集群调度系统，请阐述你的核心设计思路和关键组件。",
+      "给定一个PyTorch训练任务，如何从计算、通信、I/O等多个维度进行性能分析和调优？",
+      "解释CUDA编程模型或RDMA网络在分布式训练中的作用，并举例说明如何利用它们提升性能。",
+      "当一个大规模推理服务出现高延迟时，你会从哪些方面入手进行排查和优化？"
+    ],
+    "id": "ai_infra_engineer"
+  },
+  {
+    "name": "数据工程师",
+    "name_en": "Data Engineer",
+    "level": "初级到高级",
+    "summary": "负责构建和维护数据管道，为AI模型训练提供高质量数据。",
+    "positioning": "AI产品链路中的数据基石，连接原始数据与模型训练，确保数据质量和可用性。",
+    "capability_requirements": {
+      "must_have": [
+        "精通Python编程",
+        "构建和维护数据管道",
+        "大规模数据处理经验",
+        "数据清洗与标注",
+        "熟悉AI/ML基础概念"
+      ],
+      "nice_to_have": [
+        "数据增强与合成技术",
+        "数据资产体系建设",
+        "自动化工具开发（如Agent）"
+      ],
+      "tools": [
+        "Python",
+        "PySpark",
+        "Airflow",
+        "SQL",
+        "Git",
+        "Pandas",
+        "AWS/GCP/Azure",
+        "Docker"
+      ]
+    },
+    "career_path": {
+      "junior": "初级数据工程师 (0-2年)，负责执行数据清洗、标注等基础任务，学习使用数据处理工具和框架。",
+      "mid": "中级数据工程师 (3-5年)，独立设计并实现数据管道，解决数据处理中的技术难题，优化数据质量。",
+      "senior": "高级数据工程师 (5年以上)，主导复杂的数据架构设计，推动数据资产化，指导团队完成大型项目。",
+      "leadership": "数据工程经理/总监，负责团队管理、技术战略规划、跨部门协作，确保数据平台的高效稳定运行。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI数据工程成为核心，自动化（AI for Data）和数据资产化是关键趋势。多模态数据处理、数据增强和智能合成技术需求增长，数据质量与效率直接影响大模型性能。",
+    "related_positions": [
+      "data_scientist",
+      "machine_learning_engineer",
+      "data_analyst"
+    ],
+    "common_interview_topics": [
+      "请描述一个你构建过的复杂数据处理管道及其挑战",
+      "你如何保证数据质量和数据一致性？",
+      "解释一下你处理过的最棘手的数据清洗问题及解决方案",
+      "如何设计一个可扩展的数据处理系统来应对海量数据？",
+      "你对‘AI for Data’或数据增强技术有什么了解和实践？"
+    ],
+    "id": "data_engineer"
+  },
+  {
+    "name": "ASIC设计工程师",
+    "name_en": "ASIC Design Engineer",
+    "level": "主流职级",
+    "summary": "负责ASIC芯片的前端设计、验证及综合实现，确保芯片功能、性能和功耗满足设计要求。",
+    "positioning": "在AI产品链路中，ASIC设计工程师是AI算法落地到硬件的关键环节，负责将算法需求转化为高性能、低功耗的专用芯片，是AI算力基础设施的核心构建者。",
+    "capability_requirements": {
+      "must_have": [
+        "熟悉完整的ASIC设计流程，包括前端设计、后端实现、验证和DFT",
+        "精通Verilog/SystemVerilog硬件描述语言",
+        "具备芯片功能验证和性能验证能力，能编写测试平台和测试用例",
+        "熟悉逻辑综合、时序分析、功耗分析等EDA工具的使用",
+        "熟练使用Linux/Unix操作系统进行开发",
+        "了解后端布局布线（P&R）流程，能进行初步的时序和面积分析",
+        "具备脚本编写能力（如Tcl/Perl/Python），用于自动化设计流程"
+      ],
+      "nice_to_have": [
+        "熟悉DFT（可测试性设计）流程",
+        "熟悉UVM（Universal Verification Methodology）",
+        "有AI芯片、神经网络加速器等特定领域设计经验者优先"
+      ],
+      "tools": [
+        "Synopsys VCS",
+        "Synopsys Design Compiler",
+        "Cadence Genus",
+        "Synopsys PrimeTime",
+        "Python"
+      ]
+    },
+    "career_path": {
+      "junior": "初级ASIC设计工程师（1-3年经验），主要负责模块级RTL设计与验证，在指导下完成综合与后端协同工作。",
+      "mid": "中级ASIC设计工程师（3-5年经验），能独立负责功能模块的设计、验证与综合，参与完整芯片项目，解决常见设计问题。",
+      "senior": "高级ASIC设计工程师（5-8年经验），负责核心模块或子系统的架构设计与实现，指导初级工程师，解决复杂技术难题。",
+      "leadership": "技术专家/经理（8年以上经验），负责芯片架构定义、团队管理、项目规划及技术决策。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI芯片需求激增，推动高性能、低功耗定制化ASIC设计；先进制程节点（7nm及以下）的复杂度与成本挑战并存；EDA工具的AI集成与自动化流程成为提升效率的关键；RISC-V等开源指令集在AI芯片领域的应用日益广泛。",
+    "related_positions": [
+      "chip_verification_engineer",
+      "chip_backend_engineer",
+      "chip_dft_engineer",
+      "chip_architect"
+    ],
+    "common_interview_topics": [
+      "请描述一个你参与过的ASIC设计项目，并说明你在其中承担的角色和主要贡献。",
+      "请解释一下ASIC设计的基本流程，并重点说明前端设计、综合、后端实现这几个阶段的主要工作内容。",
+      "请设计一个简单的FIFO（先进先出队列），并说明你的设计思路和关键点。",
+      "在芯片设计中，如何进行时序优化？请列举几种常见的时序违规（setup/hold）及其解决方法。",
+      "请解释一下UVM（Universal Verification Methodology）的基本概念和优势。"
+    ],
+    "id": "asic_design_engineer"
+  },
+  {
+    "name": "强化学习工程师",
+    "name_en": "Reinforcement Learning Engineer",
+    "level": "中级/高级",
+    "summary": "负责设计、实现和部署强化学习算法，解决复杂决策问题。",
+    "positioning": "在AI产品链路中，负责核心决策引擎的算法研发与工程化落地，驱动业务指标优化。",
+    "capability_requirements": {
+      "must_have": [
+        "强化学习",
+        "Python编程能力",
+        "PyTorch框架",
+        "大语言模型(LLM)知识",
+        "算法工程化与系统落地能力",
+        "深度学习"
+      ],
+      "nice_to_have": [
+        "C/C++编程能力",
+        "机器学习基础",
+        "分布式系统经验",
+        "运筹优化知识",
+        "智能体(Agent)设计经验"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Megatron-LM",
+        "DeepSpeed",
+        "vLLM",
+        "TensorRT",
+        "TorchTuner",
+        "SG-Lang"
+      ]
+    },
+    "career_path": {
+      "junior": "初级强化学习工程师 (0-2年)：在指导下参与算法实现、模型调优和实验，熟悉训练框架与工具链。",
+      "mid": "中级强化学习工程师 (2-4年)：独立负责特定算法模块的研发与优化，设计实验并分析结果，参与系统设计。",
+      "senior": "高级强化学习工程师 (4-6年)：主导复杂算法的设计与开发，解决关键技术难题，指导团队成员，推动技术落地。",
+      "leadership": "算法专家/团队负责人 (6年以上)：定义技术战略，领导算法团队，攻克前沿技术难题，提升团队技术影响力。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "行业趋势是LLM与强化学习深度融合，发展智能体(Agent)技术；强化学习在广告、游戏、调度等领域的应用持续深化；大规模分布式训练与算法工程化能力成为核心竞争力。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "强化学习核心算法原理（如PPO、DQN）及其区别",
+      "描述一个你使用强化学习解决的实际问题，包括奖励函数设计和调优过程",
+      "如何设计一个支持大规模分布式训练的强化学习系统",
+      "如何设计一个基于LLM的智能体(Agent)工作流",
+      "强化学习模型的评估方法及生产环境部署的关键考量"
+    ],
+    "id": "rl_engineer"
+  },
+  {
+    "name": "推荐算法工程师",
+    "name_en": "Recommendation Algorithm Engineer",
+    "level": "高级",
+    "summary": "负责设计、开发和优化大规模推荐系统，提升用户体验与业务增长。",
+    "positioning": "处于AI产品链路的核心，通过算法模型将内容/商品精准匹配给用户，是产品增长的关键驱动力。",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的机器学习与深度学习理论基础",
+        "熟悉推荐系统/搜索算法原理与工程实践",
+        "精通Python/C++等编程语言，具备优秀的编码与算法实现能力",
+        "具备大规模数据处理与系统优化经验",
+        "良好的业务理解能力和跨团队沟通协作能力",
+        "熟悉多模态技术"
+      ],
+      "nice_to_have": [
+        "图神经网络 (GNN) 或 Learning to Rank (LTR) 经验",
+        "大模型(LLM)与生成式推荐经验",
+        "技术管理或团队领导经验"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Python",
+        "C++",
+        "Spark",
+        "Flink"
+      ]
+    },
+    "career_path": {
+      "junior": "初级推荐算法工程师 (0-2年)，负责基础模型实现与数据预处理。",
+      "mid": "中级推荐算法工程师 (2-4年)，独立负责推荐模块的算法研发与优化。",
+      "senior": "高级推荐算法工程师 (4-6年)，主导核心推荐算法设计，解决复杂业务问题，指导新人。",
+      "leadership": "推荐算法专家/技术负责人 (6年以上)，负责算法团队管理、技术方向规划与架构设计。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "推荐算法正从传统模型向大模型(LLM)驱动的生成式推荐演进，多模态融合、因果推断、强化学习等技术成为新热点，系统架构也向更高效、更智能的方向发展。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "经典推荐算法（如协同过滤、矩阵分解）的原理与实现",
+      "深度学习模型（如DNN, Wide & Deep, GNN）在推荐系统中的应用",
+      "Learning to Rank (LTR) 的常用方法与评估指标",
+      "大规模推荐系统的架构设计与性能优化",
+      "业务场景问题（如冷启动、多样性、探索与利用）的解决方案"
+    ],
+    "id": "recsys_engineer"
+  },
+  {
+    "name": "NLP算法工程师",
+    "name_en": "NLP Algorithm Engineer",
+    "level": "初中级/中级/中高级/高级/专家",
+    "summary": "负责自然语言处理算法研发，聚焦大模型应用与业务落地",
+    "positioning": "在AI产品链路中承担NLP技术方案设计、模型训练与优化，支撑内容理解、问答、生成等场景",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的Python/C++编程能力",
+        "熟练掌握PyTorch/TensorFlow等深度学习框架",
+        "具备文本分类、语义理解、问答系统等NLP核心任务经验",
+        "熟悉LLM微调（SFT）、RAG等大模型应用技术",
+        "有模型训练与优化（含分布式训练）实战经验"
+      ],
+      "nice_to_have": [
+        "多模态（CV+NLP）算法经验",
+        "搜索/推荐算法落地经验",
+        "NLP顶会论文发表或高水平竞赛获奖"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Ray/Slurm/Deepspeed（分布式训练框架）",
+        "Linux开发环境",
+        "C++/Python（编程语言）"
+      ]
+    },
+    "career_path": {
+      "junior": "1-3年经验，负责具体NLP任务（如文本分类、问答）的模型开发与调优",
+      "mid": "3-5年经验，主导单一业务场景（如智能客服、内容理解）的算法方案设计与落地",
+      "senior": "5-8年经验，负责复杂场景（如多模态、大模型全链路）的技术攻关与团队协作",
+      "leadership": "8年以上经验，带领NLP技术团队，规划技术架构与业务方向"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型驱动NLP技术向多模态、生成式、场景化落地发展，内容安全、国际化多语种成为重点方向",
+    "related_positions": [
+      "AI算法工程师",
+      "内容安全算法工程师",
+      "大模型算法工程师"
+    ],
+    "common_interview_topics": [
+      "大语言模型微调（SFT）的流程与关键优化点",
+      "文本分类/问答系统的模型设计思路与效果评估方法",
+      "分布式训练框架（如Ray/Deepspeed）的使用经验与问题解决",
+      "RAG技术在业务场景中的应用案例与挑战",
+      "NLP模型效果优化的具体策略（如数据增强、超参数调优）"
+    ],
+    "id": "nlp_engineer"
+  },
+  {
+    "name": "大模型算法工程师",
+    "name_en": "Large Model Algorithm Engineer",
+    "level": "中高级",
+    "summary": "负责大语言模型及相关AI技术的研发、优化与落地应用",
+    "positioning": "在AI产品链路中，负责大模型算法的研发、优化、部署及业务场景落地",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的机器学习与深度学习理论基础",
+        "熟悉大语言模型（LLM）的原理、训练与微调方法",
+        "熟练掌握至少一种编程语言（如Python）及常用框架",
+        "具备算法模型部署与工程化实践经验",
+        "熟悉模型评测方法与指标体系",
+        "良好的业务理解与问题抽象能力"
+      ],
+      "nice_to_have": [
+        "多模态大模型相关经验",
+        "Prompt工程与优化能力",
+        "模型安全与治理经验",
+        "产品化落地经验",
+        "图算法或迁移学习能力"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Hugging Face Transformers",
+        "CUDA",
+        "Docker"
+      ]
+    },
+    "career_path": {
+      "junior": "1-3年经验，负责基础模型训练、数据处理及简单算法实现",
+      "mid": "3-5年经验，主导模型优化、部署及业务场景适配",
+      "senior": "5-8年经验，负责前沿技术研究、复杂系统设计及团队技术指导",
+      "leadership": "8年以上经验，技术管理或产品策略制定，推动跨团队协作"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 30,
+        "max": 50,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 50,
+        "max": 80,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 80,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "多模态大模型、智能代理（Agents）、模型安全治理及低成本高效部署成为热点，垂直领域应用深化，Prompt工程与RAG技术持续优化",
+    "related_positions": [
+      "NLP工程师",
+      "机器学习工程师",
+      "AI产品经理"
+    ],
+    "common_interview_topics": [
+      "大语言模型的训练流程和优化方法（如SFT、RLHF）",
+      "Prompt工程的设计策略与效果评估",
+      "模型部署与工程化实践中的挑战及解决方案",
+      "业务场景中的算法选型与性能评估",
+      "多模态模型的应用案例及创新点"
+    ],
+    "id": "llm_engineer"
+  },
+  {
+    "name": "计算机视觉算法工程师",
+    "name_en": "Computer Vision Algorithm Engineer",
+    "level": "初中级/中级/中高级/高级/专家",
+    "summary": "负责计算机视觉算法研发与落地，推动AI技术在产品中的应用",
+    "positioning": "AI产品链路中的核心研发角色，连接算法研究与业务场景，实现技术商业化",
+    "capability_requirements": {
+      "must_have": [
+        "硕士及以上学历（计算机、数学、电子工程等相关专业）",
+        "扎实的机器学习/深度学习基础",
+        "熟练掌握Python/C++编程",
+        "熟悉计算机视觉核心技术（目标检测、图像分类、分割、动作识别等）",
+        "熟悉PyTorch/TensorFlow等深度学习框架",
+        "具备算法优化与部署经验（量化、蒸馏、剪枝、TensorRT等）"
+      ],
+      "nice_to_have": [
+        "AIGC/生成式AI项目经验",
+        "多模态技术经验",
+        "3D视觉研究经验",
+        "大规模训练经验",
+        "硬件加速/异构开发经验"
+      ],
+      "tools": [
+        "TensorFlow",
+        "PyTorch",
+        "MXNet",
+        "Caffe",
+        "TensorRT",
+        "C++",
+        "Python"
+      ]
+    },
+    "career_path": {
+      "junior": "1-3年，负责基础算法模块开发与部署，参与项目迭代",
+      "mid": "3-5年，独立负责算法模块设计，优化模型性能与效果",
+      "senior": "5-8年，主导算法项目，探索前沿技术并推动落地",
+      "leadership": "8年以上，技术专家/团队负责人，制定技术规划，指导团队解决复杂问题"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 30,
+        "max": 50,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 50,
+        "max": 80,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 80,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "计算机视觉与多模态、AIGC技术深度融合，算法优化与部署效率成为核心竞争点，行业需求向实时性、低功耗、大规模应用扩展",
+    "related_positions": [
+      "机器学习工程师",
+      "深度学习工程师",
+      "AIGC算法工程师"
+    ],
+    "common_interview_topics": [
+      "计算机视觉核心算法（如目标检测、图像分割）的原理与实现细节",
+      "深度学习框架（PyTorch/TensorFlow）的使用经验及优化案例",
+      "算法优化与部署（量化、蒸馏、剪枝）的实际项目经验",
+      "多模态/AIGC技术的理解与应用场景分析",
+      "学术成果（顶会论文/竞赛）的介绍及研究思路"
+    ],
+    "id": "cv_engineer"
+  },
+  {
+    "must_have": [
+      "扎实的C++/C编程能力",
+      "语音信号处理与算法知识",
+      "算法研发与设计能力",
+      "工程实现与系统开发能力",
+      "熟悉Python及深度学习框架 (PyTorch/TensorFlow)"
+    ],
+    "nice_to_have": [
+      "高性能计算优化经验 (CPU/GPU/NPU)",
+      "嵌入式系统开发经验 (Linux/RTOS)",
+      "自然语言处理 (NLP) 相关知识",
+      "分布式机器学习平台开发经验"
+    ],
+    "tools": [
+      "PyTorch",
+      "TensorFlow",
+      "TensorRT",
+      "Triton",
+      "OnnxRuntime"
+    ],
+    "id": "speech_engineer"
+  },
+  {
+    "name": "AI芯片工程师",
+    "name_en": "AI Chip Engineer",
+    "level": "高级",
+    "summary": "负责AI芯片SoC的顶层架构设计与集成优化，确保性能、功耗与可靠性。",
+    "positioning": "在AI芯片研发链路中，负责从需求到顶层架构的转化，是芯片性能与功能实现的核心角色。",
+    "capability_requirements": {
+      "must_have": [
+        "5年以上SoC架构设计经验",
+        "熟悉SoC顶层架构设计",
+        "熟悉CPU体系结构（如ARM, RISC-V等）",
+        "熟悉NoC（片上网络）架构设计",
+        "熟悉DDR/PCIe等高速接口协议",
+        "具备SoC性能、功耗分析与优化能力",
+        "熟悉RAS（可靠性、可用性、可维护性）架构设计"
+      ],
+      "nice_to_have": [
+        "对主流AI算法有一定理解",
+        "有将AI算法映射到硬件的经验",
+        "了解芯片设计的中后端流程"
+      ],
+      "tools": [
+        "SystemVerilog",
+        "Verilog",
+        "Python",
+        "Cadence EDA工具集",
+        "Synopsys EDA工具集",
+        "Siemens EDA工具集",
+        "UVM (Universal Verification Methodology)"
+      ]
+    },
+    "career_path": {
+      "junior": "芯片设计工程师 (0-3年)，负责具体模块的RTL设计与验证。",
+      "mid": "SoC架构师 (3-5年)，负责子系统或模块的架构设计。",
+      "senior": "资深SoC架构师 (5年以上)，负责顶层SoC架构设计与集成。",
+      "leadership": "架构总监/芯片架构师，负责整个产品线或平台的架构规划与决策。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI芯片向高算力、低功耗、异构计算方向发展，大模型训练与推理芯片需求激增，先进封装与Chiplet技术成为提升性能的关键。",
+    "related_positions": [
+      "soc_architect",
+      "chip_design_engineer",
+      "verification_engineer",
+      "backend_engineer"
+    ],
+    "common_interview_topics": [
+      "请描述一个你主导或深度参与的SoC架构设计项目，并说明关键决策点。",
+      "如何将一个典型的AI算法（如Transformer）映射到芯片的硬件架构上？",
+      "解释NoC（片上网络）的设计挑战与优化方法。",
+      "分享一个你解决过的性能瓶颈或功耗优化案例。",
+      "如何设计一个满足高可靠性（RAS）要求的SoC系统？"
+    ],
+    "id": "ai_chip_engineer"
+  },
+  {
+    "must_have": [
+      "精通Python和Golang编程",
+      "熟悉PyTorch/TensorFlow等主流深度学习框架",
+      "掌握Kubernetes及分布式系统原理",
+      "具备MLOps相关经验",
+      "有机器学习平台或系统设计开发经验"
+    ],
+    "nice_to_have": [
+      "熟悉推理服务性能优化",
+      "了解Flink/Spark等大数据处理框架",
+      "有云服务与架构经验"
+    ],
+    "tools": [
+      "PyTorch",
+      "TensorFlow",
+      "Kubernetes",
+      "Golang",
+      "Python",
+      "Flink",
+      "Spark",
+      "CUDA"
+    ],
+    "id": "mlops_engineer"
+  },
+  {
+    "name": "Prompt工程师",
+    "name_en": "Prompt Engineer",
+    "level": "初级/中级/高级",
+    "summary": "专注于设计、优化和迭代提示词，以最大化大语言模型在特定业务场景中的性能和效果。",
+    "positioning": "作为连接业务需求与AI模型能力的桥梁，通过设计精准的提示词策略，驱动AI产品性能提升和用户体验优化。",
+    "capability_requirements": {
+      "must_have": [
+        "精通提示词工程，能够设计、优化和迭代提示词以提升模型性能",
+        "具备产品思维，能深入理解用户/业务场景，将需求转化为有效的提示词策略",
+        "优秀的逻辑思维和问题解决能力，能够分析模型输出，定位问题并迭代优化",
+        "理解大语言模型（LLM）的基本原理和局限性",
+        "良好的沟通与协作能力，能与产品、研发、算法等团队高效合作",
+        "具备数据分析能力，能通过指标评估提示词效果并进行迭代"
+      ],
+      "nice_to_have": [
+        "具备一定的编程能力（如Python），能编写简单的脚本或工具辅助提示词工程",
+        "具备特定领域知识（如金融、法律、医疗等），能设计出更专业、精准的提示词",
+        "有A/B测试经验，熟悉如何通过实验验证提示词策略的有效性",
+        "了解自然语言处理（NLP）相关技术，如文本分类、摘要等"
+      ],
+      "tools": [
+        "OpenAI API / Claude / Gemini",
+        "LangChain / LlamaIndex",
+        "Python (Pandas, NumPy)",
+        "Jira / Confluence",
+        "Git"
+      ]
+    },
+    "career_path": {
+      "junior": "初级Prompt工程师（0-2年）：负责执行提示词设计、测试和基础优化，在指导下完成业务场景的提示词开发。",
+      "mid": "中级Prompt工程师（2-4年）：独立负责特定业务线的提示词策略设计、迭代和效果优化，能分析模型输出并定位问题。",
+      "senior": "高级Prompt工程师（4-6年）：主导复杂业务场景的提示词工程体系搭建，设计创新提示词策略，并指导初级工程师。",
+      "leadership": "提示词工程负责人/经理（6年以上）：负责团队管理、提示词工程方法论建设、跨团队协作，并制定技术方向。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 20,
+        "max": 35,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 35,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "随着大语言模型能力的增强，Prompt工程师正从简单的提示词编写者向“AI产品经理”或“AI策略师”演变。其工作重心从单一提示词优化转向构建可复用的提示词工程框架、设计复杂的提示词链路，并与业务深度结合，成为AI产品落地的关键角色。",
+    "related_positions": [
+      "AI产品经理",
+      "AI算法工程师",
+      "NLP工程师"
+    ],
+    "common_interview_topics": [
+      "请描述一个你设计过的复杂提示词，并解释你是如何优化它的。",
+      "当模型输出不符合预期时，你会如何分析和定位问题？",
+      "你如何理解“产品思维”在提示词工程中的应用？",
+      "你使用过哪些工具或框架来提升提示词工程效率？",
+      "请分享一个你通过提示词优化显著提升模型效果的案例。"
+    ],
+    "id": "prompt_engineer"
+  },
+  {
+    "name": "AI安全工程师",
+    "name_en": "AI Security Engineer",
+    "level": "专家",
+    "summary": "负责AI模型（尤其是大模型）的安全风险识别、攻防测试、策略制定与模型优化，保障AI产品安全合规。",
+    "positioning": "位于AI产品研发与运营流程中，负责从技术、策略、运营多维度保障AI模型及生成内容的安全性，是AI产品安全防线的关键环节。",
+    "capability_requirements": {
+      "must_have": [
+        "大模型安全攻防与评测",
+        "风险识别与分析能力",
+        "数据分析能力",
+        "跨团队协作与沟通能力",
+        "熟悉AI/ML基础理论与模型"
+      ],
+      "nice_to_have": [
+        "Prompt工程与越狱攻击经验",
+        "内容安全策略制定与运营经验",
+        "项目管理能力"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Scikit-learn",
+        "Pandas",
+        "Jupyter Notebook"
+      ]
+    },
+    "career_path": {
+      "junior": "初级AI安全工程师，通常1-3年经验，负责执行既定的安全测试流程，分析基础安全事件，协助资深工程师进行策略优化。",
+      "mid": "中级AI安全工程师，通常3-5年经验，能够独立设计并执行安全攻防测试，分析复杂安全风险，制定初步的安全策略和解决方案。",
+      "senior": "高级AI安全工程师/专家，通常5-8年经验，主导AI安全体系建设，研究前沿攻防技术，指导团队，解决关键业务安全难题。",
+      "leadership": "安全团队负责人/经理，通常8年以上经验，负责团队管理、战略规划、跨部门协调，构建企业级AI安全治理框架。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "随着大模型广泛应用，AI安全从传统网络安全延伸至模型本身，攻防对抗日益激烈，对AI安全工程师的需求激增，要求从被动防御转向主动攻防与策略运营，并深度融合算法与业务场景。",
+    "related_positions": [
+      "AI安全研究员",
+      "内容安全工程师"
+    ],
+    "common_interview_topics": [
+      "请描述一次你进行大模型安全攻防测试的经历，包括你使用的攻击方法、发现的安全漏洞以及最终的解决方案。",
+      "如何设计一个评估大模型“越狱”攻击风险的测试用例？请举例说明。",
+      "当AI模型的安全策略与用户体验发生冲突时，你会如何平衡？请结合一个具体场景说明你的决策过程。",
+      "你如何跟踪和评估AI安全领域的最新威胁和防护技术？请分享一个你最近关注的技术点及其应用。",
+      "请解释一下Prompt注入攻击的原理，并说明如何从模型架构或训练数据层面进行防御。"
+    ],
+    "id": "ai_safety_engineer"
+  },
+  {
+    "name": "AI解决方案架构师",
+    "name_en": "AI Solutions Architect",
+    "level": "高级",
+    "summary": "设计并实施AI解决方案，连接业务需求与技术实现。",
+    "positioning": "作为业务与技术之间的桥梁，将AI技术转化为可落地的商业价值。",
+    "capability_requirements": {
+      "must_have": [
+        "深入理解AI/ML模型原理与应用场景（如NLP、CV、推荐系统）",
+        "优秀的系统架构设计能力，能设计可扩展、高可用的AI解决方案",
+        "强大的业务需求分析与转化能力，能将复杂业务问题拆解为技术方案",
+        "具备项目全生命周期管理经验，确保方案顺利交付与落地",
+        "出色的沟通协调与跨团队协作能力，能有效对接业务、研发、客户等各方"
+      ],
+      "nice_to_have": [
+        "特定行业（如金融、零售、医疗）的AI应用经验",
+        "大模型（LLM）的微调、部署与工程化经验",
+        "数据工程与数据治理相关知识"
+      ],
+      "tools": [
+        "AWS",
+        "Azure",
+        "GCP",
+        "TensorFlow",
+        "PyTorch",
+        "MLflow",
+        "Spark",
+        "Docker"
+      ]
+    },
+    "career_path": {
+      "junior": "AI工程师/数据科学家 (1-3年)，负责模型开发与实验",
+      "mid": "高级AI工程师/算法专家 (3-5年)，主导核心算法模块设计与优化",
+      "senior": "AI解决方案架构师 (5年以上)，负责端到端AI解决方案的设计、交付与价值实现",
+      "leadership": "AI技术负责人/首席架构师 (8年以上)，负责AI技术战略规划、团队管理及关键技术决策"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型技术持续迭代，MLOps成为AI落地的关键，行业定制化解决方案需求旺盛，云原生AI架构成为主流，AI Agent技术推动自动化流程创新。",
+    "related_positions": [
+      "data_scientist",
+      "ml_engineer",
+      "ai_product_manager",
+      "ai_developer"
+    ],
+    "common_interview_topics": [
+      "请描述一个你曾负责的复杂AI项目，并说明你在其中扮演的角色和解决方案的设计思路。",
+      "如何为一个陌生的业务场景（如智能客服、精准营销）设计一套完整的AI解决方案？请阐述你的方法论。",
+      "当客户提出一个技术上难以实现或成本过高的需求时，你会如何沟通和处理？",
+      "请解释一下你理解的MLOps，并举例说明你在项目中是如何实践模型部署、监控和迭代的。",
+      "你如何保持对AI领域前沿技术的关注，并如何将这些技术应用到实际工作中？"
+    ],
+    "id": "ai_solution_architect"
+  },
+  {
+    "name": "搜索算法工程师",
+    "name_en": "Search Algorithm Engineer",
+    "level": "中级/高级/专家",
+    "summary": "负责搜索系统核心算法研发，利用机器学习技术提升搜索结果的相关性与用户体验。",
+    "positioning": "AI产品链路中负责搜索排序、相关性、召回等核心环节的算法专家，是搜索产品智能化的核心驱动力。",
+    "capability_requirements": {
+      "must_have": [
+        "NLP（自然语言处理）",
+        "机器学习/深度学习",
+        "搜索算法（召回、排序、相关性）",
+        "大规模数据处理",
+        "CTR/CVR预估",
+        "多模态（CV+NLP）",
+        "大模型（LLM）"
+      ],
+      "nice_to_have": [
+        "推理与规划",
+        "事实核查",
+        "RAG（检索增强生成）",
+        "向量召回"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "Spark",
+        "Flink",
+        "Elasticsearch",
+        "Hugging Face Transformers",
+        "Faiss",
+        "Milvus"
+      ]
+    },
+    "career_path": {
+      "junior": "0-2年，负责算法模块实现与调优，参与搜索系统优化。",
+      "mid": "2-5年，独立负责搜索子模块（如排序、召回）的算法设计与优化。",
+      "senior": "5-8年，主导核心搜索算法或系统架构设计，解决复杂技术难题。",
+      "leadership": "8年以上，带领算法团队，负责搜索产品线的技术规划与项目落地。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型（LLM）与RAG技术正深刻改变搜索架构，多模态搜索成为新趋势，对算法的实时性、准确性和可解释性提出更高要求。",
+    "related_positions": [
+      "推荐算法工程师",
+      "NLP算法工程师"
+    ],
+    "common_interview_topics": [
+      "请详细描述一个搜索系统的完整流程，包括召回、排序、重排等阶段及其核心目标。",
+      "请分享一个你优化CTR/CVR预估模型的经历，包括特征工程、模型选择和效果评估。",
+      "如何解决多模态搜索（如文本+图像）中的跨模态匹配挑战？请举例说明。",
+      "在大规模数据上部署和优化机器学习模型时，你遇到过哪些主要挑战？如何解决的？",
+      "请解释RAG（检索增强生成）在搜索场景中的应用及其优势。"
+    ],
+    "id": "search_algorithm_engineer"
+  },
+  {
+    "name": "模型部署/推理优化工程师",
+    "name_en": "Model Deployment/Inference Optimization Engineer",
+    "level": "初中级/中级/中高级/高级/专家",
+    "summary": "负责AI模型在生产环境的高效部署与推理性能优化，提升模型响应速度与资源利用率。",
+    "positioning": "连接算法研发与业务落地的关键环节，确保AI模型从实验室到生产环境的平滑、高效、低成本运行。",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的机器学习/深度学习理论基础",
+        "熟悉主流深度学习框架 (TensorFlow/PyTorch)",
+        "模型推理优化经验 (量化、剪枝、算子优化等)",
+        "熟悉模型推理加速技术及框架 (如TensorRT, VLLM)",
+        "良好的工程实践与问题解决能力"
+      ],
+      "nice_to_have": [
+        "大模型推理引擎优化经验",
+        "分布式训练与并行策略工程实现经验",
+        "显存、延迟、吞吐等核心性能指标优化经验"
+      ],
+      "tools": [
+        "TensorRT",
+        "PyTorch",
+        "TensorFlow",
+        "CUDA",
+        "VLLM",
+        "TensorRT-LLM"
+      ]
+    },
+    "career_path": {
+      "junior": "初级工程师 (0-2年)：在指导下完成模型部署、基础优化任务，熟悉工具链和优化流程。",
+      "mid": "中级工程师 (2-4年)：独立负责模型部署与推理优化项目，解决中等复杂度问题，进行性能调优。",
+      "senior": "高级工程师 (4-6年)：主导复杂项目的推理优化，设计优化策略，在特定领域（如大模型）成为专家，指导新人。",
+      "leadership": "技术专家/经理 (6年以上)：定义技术方向，领导团队，开发新优化框架或库，影响公司级战略。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型推理优化成为核心需求，对低延迟、高吞吐、低资源消耗的需求日益增长，专用硬件与异构计算重要性增加，框架和工具持续演进。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "模型量化与剪枝的原理、实现方式及优缺点",
+      "TensorRT工作原理及优化流程",
+      "大模型推理优化技术（如KV Cache、PagedAttention、并行策略）",
+      "性能瓶颈分析与调优方法（使用何种工具定位CPU/GPU/内存瓶颈）",
+      "描述一个你优化模型推理性能的具体项目经历"
+    ],
+    "id": "model_deployment_engineer"
+  },
+  {
+    "name": "多模态算法工程师",
+    "name_en": "Multimodal Algorithm Engineer",
+    "level": "中高级",
+    "summary": "负责多模态（文本、图像、视频等）理解与生成算法的研发与优化",
+    "positioning": "负责多模态大模型算法研发，支撑内容理解、生成、交互等核心AI能力，赋能产品智能化",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的编程能力，熟练掌握Python/C++",
+        "精通至少一种主流深度学习框架（如PyTorch/TensorFlow）",
+        "在计算机视觉（CV）、自然语言处理（NLP）或多模态融合领域有深入理解",
+        "具备算法研究和项目实践经验，能独立解决复杂技术问题",
+        "熟悉模型优化、部署与工程化落地",
+        "良好的沟通能力和团队协作精神"
+      ],
+      "nice_to_have": [
+        "在顶级学术会议（如CVPR, NeurIPS）发表过论文或有专利申请经验",
+        "熟悉大语言模型（LLM）或多模态大模型（VLM）的底层原理",
+        "了解强化学习、多智能体（Agent）等前沿技术"
+      ],
+      "tools": [
+        "PyTorch",
+        "TensorFlow",
+        "C++",
+        "Python",
+        "CUDA",
+        "TensorRT",
+        "Triton"
+      ]
+    },
+    "career_path": {
+      "junior": "初级工程师（0-2年）：在指导下参与算法模块开发，负责数据预处理、模型训练与基础功能实现。",
+      "mid": "中级工程师（2-5年）：独立负责算法模块的设计与开发，能解决常见技术问题，推动项目落地。",
+      "senior": "高级工程师/专家（5年以上）：主导复杂算法项目，攻克关键技术难题，探索前沿技术方向，指导初级工程师。",
+      "leadership": "技术负责人/经理（8年以上）：负责算法团队管理、技术规划与方向制定，驱动业务创新。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "多模态大模型（VLM）成为核心，向具身智能、世界模型、端侧高效推理等方向演进，AIGC应用场景持续拓展。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "请描述一个你参与的多模态项目，你负责的部分以及遇到的挑战和解决方案。",
+      "如何设计一个多模态（如图文）的融合模型？请解释你的思路和可能用到的技术。",
+      "你如何评估一个多模态生成模型（如文生图）的性能？请列举几个关键指标。",
+      "请解释一下多模态预训练的原理，以及常见的预训练任务有哪些？",
+      "在模型部署到生产环境时，你遇到过哪些性能问题？你是如何优化的？（例如，模型量化、推理加速等）"
+    ],
+    "id": "multimodal_engineer"
+  },
+  {
+    "name": "AI内容运营",
+    "name_en": "AI Content Operations",
+    "level": "初级到高级",
+    "summary": "负责AI相关内容的策划、生产、分发与优化，以提升用户 engagement 和业务目标。",
+    "positioning": "连接AI技术与用户需求的桥梁，通过高质量内容驱动产品增长与用户粘性。",
+    "capability_requirements": {
+      "must_have": [
+        "内容创作与策划能力",
+        "AI工具应用能力（如ChatGPT, Midjourney等）",
+        "数据分析能力（内容表现分析）",
+        "用户洞察与需求分析",
+        "内容平台运营经验"
+      ],
+      "nice_to_have": [
+        "AIGC领域知识",
+        "视频/音频内容制作能力",
+        "项目管理能力",
+        "社区运营经验"
+      ],
+      "tools": [
+        "ChatGPT",
+        "Midjourney/Stable Diffusion",
+        "文心一言/讯飞星火",
+        "Google Analytics/百度统计",
+        "新榜/西瓜数据",
+        "飞书/钉钉",
+        "Canva/Figma",
+        "Notion/语雀"
+      ]
+    },
+    "career_path": {
+      "junior": "初级岗位（0-2年经验）：负责执行具体内容任务，熟练使用AI工具进行内容创作与发布，学习平台规则与数据分析方法。",
+      "mid": "中级岗位（2-4年经验）：独立负责一个内容频道或项目，能够根据数据反馈优化内容策略，提升内容质量和用户互动。",
+      "senior": "高级岗位（4-6年经验）：制定整体内容运营策略，管理内容团队，与产品、技术团队协作，驱动业务核心指标增长。",
+      "leadership": "管理岗（6年以上经验）：领导内容运营团队，规划部门发展方向，管理预算与资源，对内容生态和商业结果负责。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 10,
+        "max": 20,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 20,
+        "max": 35,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 35,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI内容生成技术持续迭代，AIGC正从辅助创作向自主生成演进。内容运营需更关注AI伦理、内容真实性与个性化推荐，同时探索多模态内容（图文、音视频）的融合应用，以提升用户体验和商业价值。",
+    "related_positions": [
+      "内容策略师",
+      "数字营销专员",
+      "产品运营"
+    ],
+    "common_interview_topics": [
+      "请分享一个你使用AI工具（如ChatGPT）成功优化内容创作效率的案例。",
+      "如何分析一篇内容的表现数据（如阅读量、互动率），并据此制定优化策略？",
+      "面对AI生成内容可能存在的偏见或错误，你将如何确保内容的质量和准确性？",
+      "请描述你过往负责的一个内容项目，包括目标设定、执行过程和最终成果。",
+      "你认为AI内容运营的核心挑战是什么？你将如何应对？"
+    ],
+    "id": "ai_content_ops"
+  },
+  {
+    "name": "AI数据工程师",
+    "name_en": "AI Data Engineer",
+    "level": "中级/中高级",
+    "summary": "负责AI系统资源调度、异构硬件优化及研发效能提升的工程师",
+    "positioning": "支撑AI训练与推理的底层系统工程师，负责资源调度、硬件适配及研发效能优化",
+    "capability_requirements": {
+      "must_have": [
+        "Python编程能力",
+        "Linux环境开发经验",
+        "机器学习基础",
+        "分布式系统理解",
+        "云原生架构知识"
+      ],
+      "nice_to_have": [
+        "Go语言开发",
+        "C/C++底层优化",
+        "PyTorch框架应用",
+        "AI Agent技术",
+        "SRE运维经验"
+      ],
+      "tools": [
+        "Kubernetes",
+        "Docker",
+        "PyTorch",
+        "CUDA",
+        "Go",
+        "Python",
+        "C/C++",
+        "Shell",
+        "RDMA",
+        "异构硬件（如GPU）",
+        "AI Agent框架"
+      ]
+    },
+    "career_path": {
+      "junior": "1-3年经验，负责基础资源调度与硬件适配，参与系统开发",
+      "mid": "3-5年经验，独立负责系统设计与优化，推动项目落地",
+      "senior": "5-8年经验，主导复杂系统架构，解决关键技术问题",
+      "leadership": "5年以上经验，带领团队负责AI平台建设与战略规划"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 35,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 35,
+        "max": 55,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 55,
+        "max": 80,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI系统向云原生、异构硬件、AI Agent方向发展，研发效能与成本优化成为重点",
+    "related_positions": [
+      "数据工程师",
+      "AI工程师",
+      "机器学习工程师",
+      "SRE工程师",
+      "AI产品经理"
+    ],
+    "common_interview_topics": [
+      "机器学习系统资源调度设计",
+      "异构硬件（如GPU）的模型优化实践",
+      "云原生架构（Kubernetes）在AI场景的应用",
+      "AI Agent的感知-决策-执行闭环实现",
+      "SRE中的AIOps实践"
+    ],
+    "id": "data_analyst"
+  },
+  {
+    "name": "数据科学家",
+    "name_en": "Data Scientist",
+    "level": "专家",
+    "summary": "利用数据、算法和领域知识解决复杂问题，驱动业务决策和产品创新。",
+    "positioning": "连接业务与技术的核心角色，负责从数据中挖掘价值，构建预测/决策模型，并推动模型落地应用。",
+    "capability_requirements": {
+      "must_have": [
+        "扎实的机器学习与深度学习理论基础",
+        "熟练的Python编程及数据处理能力",
+        "良好的统计学与数学基础",
+        "强大的问题分析与解决能力",
+        "熟悉至少一种主流机器学习框架"
+      ],
+      "nice_to_have": [
+        "大规模数据处理经验",
+        "云平台（如AWS, GCP, Azure）使用经验",
+        "特定领域知识（如NLP, CV, 推荐系统）"
+      ],
+      "tools": [
+        "Python",
+        "SQL",
+        "Pandas",
+        "Scikit-learn",
+        "TensorFlow/PyTorch",
+        "Spark",
+        "Docker",
+        "Kubernetes"
+      ]
+    },
+    "career_path": {
+      "junior": "数据分析师/初级数据科学家 (0-2年)，负责数据清洗、基础分析、协助模型开发。",
+      "mid": "数据科学家 (2-5年)，独立负责项目，从问题定义到模型部署，解决中等复杂度问题。",
+      "senior": "高级数据科学家/专家 (5-8年)，主导复杂项目，攻克技术难题，指导团队，推动业务价值。",
+      "leadership": "数据科学经理/总监 (8年以上)，负责团队管理、战略规划、跨部门协作，提升团队整体效能。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 20,
+        "max": 35,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 35,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "MLOps成为主流，强调模型全生命周期管理；大语言模型（LLM）技术引领新一轮创新；数据隐私与伦理日益重要；AutoML工具降低模型开发门槛。",
+    "related_positions": [
+      "data_analyst",
+      "machine_learning_engineer",
+      "ai_researcher"
+    ],
+    "common_interview_topics": [
+      "请描述一个你从0到1构建并部署的机器学习项目，包括数据预处理、特征工程、模型选择、评估和上线过程。",
+      "解释过拟合和欠拟合，以及你如何处理它们？",
+      "你如何向非技术背景的同事解释一个复杂的机器学习概念（例如，AUC-ROC曲线）？",
+      "描述一个你遇到的数据质量问题以及你如何解决的。",
+      "你如何确保你的模型在部署后是公平和可解释的？"
+    ],
+    "id": "data_scientist"
+  },
+  {
+    "name": "知识图谱工程师",
+    "name_en": "Knowledge Graph Engineer",
+    "level": "P6-P8",
+    "summary": "负责构建、维护和利用知识图谱，以支持智能应用和决策。",
+    "positioning": "位于数据层与AI应用层之间，是连接非结构化数据与结构化知识、实现语义理解和智能推理的关键环节。",
+    "capability_requirements": {
+      "must_have": [
+        "知识图谱构建与设计能力，包括本体论、模式设计、数据建模",
+        "实体识别、关系抽取等自然语言处理（NLP）技术实践",
+        "熟练使用至少一种图数据库（如Neo4j, JanusGraph）及查询语言（如SPARQL, Cypher）",
+        "扎实的编程能力，精通Python或Java",
+        "熟悉图算法（如PageRank, 社区检测）及其应用"
+      ],
+      "nice_to_have": [
+        "大语言模型（LLM）与知识图谱的融合应用经验",
+        "知识推理、语义搜索等高级图谱应用开发能力",
+        "熟悉大数据处理框架（如Spark）进行图谱数据ETL",
+        "具备特定领域（如金融、医疗）知识背景"
+      ],
+      "tools": [
+        "Neo4j",
+        "JanusGraph",
+        "Apache Jena",
+        "Python (Spacy, NLTK, Hugging Face)",
+        "Apache Spark",
+        "SPARQL",
+        "Cypher"
+      ]
+    },
+    "career_path": {
+      "junior": "初级知识图谱工程师（0-2年）：在指导下参与知识图谱的构建、数据清洗和基础查询开发工作。",
+      "mid": "中级知识图谱工程师（3-5年）：独立负责知识图谱的架构设计、核心模块开发，并推动项目落地。",
+      "senior": "高级/专家知识图谱工程师（5年以上）：主导复杂知识图谱系统的设计与优化，定义技术方向，解决关键技术难题，并指导团队。",
+      "leadership": "知识图谱团队负责人/经理（5年以上）：负责知识图谱产品线的规划、团队管理、资源协调和业务目标达成。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "知识图谱正与LLM深度融合，从静态知识库向动态、可推理的“大脑”演进，在金融、医疗、电商等垂直领域应用加速，成为企业智能化升级的核心基础设施。",
+    "related_positions": [
+      "data_engineer",
+      "nlp_engineer",
+      "ai_researcher"
+    ],
+    "common_interview_topics": [
+      "请详细描述一下你构建一个知识图谱的完整流程，包括数据源、清洗、建模、存储和评估环节。",
+      "你如何处理知识图谱中的实体消歧、关系冲突和数据不一致性问题？",
+      "请解释一下PageRank算法，并举例说明它在知识图谱中的具体应用场景。",
+      "请分享一个你使用知识图谱解决复杂业务问题的案例，并说明最终取得了什么效果。",
+      "你认为知识图谱与当前的大语言模型（LLM）相比，各自的优势和局限性是什么？"
+    ],
+    "id": "kg_engineer"
+  },
+  {
+    "name": "音频算法工程师",
+    "name_en": "Audio Algorithm Engineer",
+    "level": "中高级",
+    "summary": "负责智能音频处理算法的研发与优化，提升产品音质体验。",
+    "positioning": "位于AI产品链路的前端，负责音频信号处理与特征提取，为语音识别、内容理解等下游任务提供高质量输入。",
+    "capability_requirements": {
+      "must_have": [
+        "丰富的数字信号处理经验",
+        "扎实的机器学习/深度学习理论基础",
+        "熟悉音频处理核心算法（如降噪、回声消除、声源分离等）",
+        "熟练掌握至少一种编程语言（如Python）",
+        "熟练使用深度学习框架（TensorFlow/PyTorch）",
+        "具备模型设计与调优能力",
+        "具备将算法落地到实际业务场景的能力"
+      ],
+      "nice_to_have": [
+        "有大规模数据处理与模型训练经验",
+        "熟悉C++等高性能编程语言",
+        "在相关国际会议或期刊上发表过论文",
+        "了解音频编解码（Codec）或扩散模型（Diffusion）等前沿技术"
+      ],
+      "tools": [
+        "TensorFlow",
+        "PyTorch",
+        "Kaldi",
+        "Python",
+        "C++"
+      ]
+    },
+    "career_path": {
+      "junior": "初级岗位描述（含年限）",
+      "mid": "中级岗位描述（含年限）",
+      "senior": "高级岗位描述（含年限）",
+      "leadership": "管理岗描述（含年限）"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 60,
+        "max": 100,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "行业趋势向端到端深度学习模型发展，实时处理与低延迟成为关键。个性化音频体验、多模态融合（音频+视频）以及生成式AI在音频领域的应用是未来重点方向。",
+    "related_positions": [
+      "语音识别工程师",
+      "声学信号处理工程师"
+    ],
+    "common_interview_topics": [
+      "请解释语音信号中的短时傅里叶变换（STFT）及其在音频处理中的应用。",
+      "请详细阐述一种你熟悉的音频降噪算法（如谱减法、维纳滤波）的原理和优缺点。",
+      "如何为一个语音增强任务设计一个深度学习模型？请描述你的模型架构选择和理由。",
+      "如果让你设计一个实时语音通话的回声消除系统，你会考虑哪些关键模块和技术点？",
+      "请分享一个你参与过的音频算法项目，描述你在其中遇到的技术挑战以及如何解决的。"
+    ],
+    "id": "audio_algorithm_engineer"
+  },
+  {
+    "name": "AI全栈工程师",
+    "name_en": "AI Full-Stack Engineer",
+    "level": "P5-P7",
+    "summary": "负责AI应用从模型训练到前端展示的全流程开发与系统维护。",
+    "positioning": "连接AI算法与业务场景的关键角色，负责AI能力的工程化落地与产品化。",
+    "capability_requirements": {
+      "must_have": [
+        "精通至少一种后端编程语言（如Python, Go, Java）及主流框架",
+        "具备机器学习/深度学习模型开发与调优经验",
+        "熟悉AI模型部署与推理，了解Docker, Kubernetes等容器化技术",
+        "掌握前端开发技术（如React, Vue.js）及API设计",
+        "具备良好的系统设计能力和软件工程实践"
+      ],
+      "nice_to_have": [
+        "熟悉大语言模型（LLM）应用开发，如RAG, AI Agent",
+        "有MLOps（如MLflow, Kubeflow）实践经验",
+        "了解数据工程，能处理和构建训练数据集"
+      ],
+      "tools": [
+        "Python (Django/Flask)",
+        "PyTorch/TensorFlow",
+        "Docker/Kubernetes",
+        "React/Vue.js",
+        "Git",
+        "MySQL/Redis",
+        "AWS/Azure/GCP"
+      ]
+    },
+    "career_path": {
+      "junior": "初级AI全栈工程师 (1-3年)，在指导下完成AI应用模块的开发与部署，熟悉全栈技术栈。",
+      "mid": "中级AI全栈工程师 (3-5年)，能独立负责AI子系统的设计、开发与上线，解决复杂技术问题。",
+      "senior": "高级AI全栈工程师 (5年以上)，主导复杂AI产品的架构设计与技术选型，指导团队完成项目。",
+      "leadership": "技术专家/技术经理，负责AI技术方向规划、团队管理及关键技术攻关。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型（LLM）与生成式AI技术持续火热，AI Agent和RAG成为主流应用方向。MLOps和AI工程化能力成为核心竞争力，推动AI模型更高效、可靠地服务于业务。",
+    "related_positions": [
+      "ai_engineer",
+      "backend_developer",
+      "frontend_developer",
+      "mlops_engineer"
+    ],
+    "common_interview_topics": [
+      "请设计一个基于大模型的智能问答系统，并说明其架构和关键技术点。",
+      "解释一个你熟悉的机器学习算法（如逻辑回归、决策树）的原理、优缺点及适用场景。",
+      "如何将一个训练好的深度学习模型部署到生产环境？请描述你的方案和考虑因素。",
+      "描述一个你参与过的复杂项目，你在其中扮演的角色以及如何解决遇到的技术挑战。",
+      "请用Python/Go实现一个RESTful API，并说明你的设计思路。"
+    ],
+    "id": "ai_fullstack"
+  },
+  {
+    "name": "AI产品经理",
+    "name_en": "AI Product Manager",
+    "level": "中级/中高级",
+    "summary": "负责AI产品从0到1的规划、设计、落地与迭代，驱动技术商业化。",
+    "positioning": "连接AI技术与用户需求的桥梁，定义AI产品形态与价值，推动技术商业化落地。",
+    "capability_requirements": {
+      "must_have": [
+        "用户需求洞察与场景挖掘",
+        "跨团队（算法、研发、设计、运营）协同",
+        "产品规划与迭代设计",
+        "AI技术产品化能力",
+        "数据驱动产品迭代"
+      ],
+      "nice_to_have": [
+        "Prompt Engineering与提示词优化",
+        "商业化能力与变现策略",
+        "用户增长策略与运营"
+      ],
+      "tools": [
+        "LLM (大语言模型)",
+        "AIGC (生成式AI)",
+        "图像生成",
+        "多模态理解",
+        "Prompt Engineering (提示工程)"
+      ]
+    },
+    "career_path": {
+      "junior": "1-3年经验，在指导下负责特定模块或功能的产品设计、需求文档撰写与项目跟进，学习AI产品方法论。",
+      "mid": "3-5年经验，独立负责一条产品线或核心模块，主导产品规划、需求优先级排序及跨团队协作，推动产品落地。",
+      "senior": "5-8年经验，定义产品方向与战略，管理复杂项目，负责核心指标，指导初级产品经理，在AI领域建立影响力。",
+      "leadership": "8年以上经验，管理产品团队，制定公司级AI产品战略，负责商业化路径与团队建设，对业务结果全面负责。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 35,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 35,
+        "max": 50,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 50,
+        "max": 80,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AIGC与LLM技术持续发展，AI产品从单一功能向多模态、自主智能进化，商业化场景不断拓展，对产品经理的技术理解与商业敏感度要求更高。",
+    "related_positions": [
+      "产品经理",
+      "算法工程师",
+      "数据分析师"
+    ],
+    "common_interview_topics": [
+      "请描述一个你将AI技术成功产品化的项目，你面临了什么挑战，以及你是如何解决的？",
+      "你如何进行用户研究以发现AI产品的“未被说出口的痛点”？请举例说明。",
+      "解释一下你如何与算法团队合作来定义一个AI功能（例如，图像生成）的边界和成功指标。",
+      "你如何使用数据来驱动AI产品的迭代和优化？请分享一个具体案例。",
+      "你如何设计一个Prompt Engineering策略来提升AI模型的性能或用户体验？"
+    ],
+    "id": "ai_product_manager"
+  },
+  {
+    "name": "AI训练师",
+    "name_en": "AI Trainer",
+    "level": "P4-P7",
+    "summary": "负责构建、优化和评估AI模型，特别是大语言模型，以提升其性能和应用效果。",
+    "positioning": "连接业务需求与AI模型的桥梁，通过数据、知识和策略优化，驱动模型能力的持续提升。",
+    "capability_requirements": {
+      "must_have": [
+        "数据标注与处理能力",
+        "模型评估与指标分析",
+        "业务知识提炼与结构化",
+        "Prompt工程与优化",
+        "数据分析与结果解读",
+        "跨团队协作与沟通"
+      ],
+      "nice_to_have": [
+        "自然语言处理（NLP）基础知识",
+        "机器学习基础理论",
+        "自动化脚本编写能力（如Python）",
+        "产品思维与用户需求洞察"
+      ],
+      "tools": [
+        "数据标注平台（如Labelbox, Prodigy）",
+        "Python (Pandas, NumPy)",
+        "SQL",
+        "大语言模型API（如OpenAI, Hugging Face）",
+        "Git",
+        "BI工具（如Tableau, Power BI）"
+      ]
+    },
+    "career_path": {
+      "junior": "初级AI训练师（1-2年）：负责数据标注、清洗和基础模型评测，执行既定策略。",
+      "mid": "中级AI训练师（2-4年）：独立负责特定模块或数据集的构建与优化，设计评估方案。",
+      "senior": "高级AI训练师（4-6年）：主导模型链路或知识库的整体优化，制定策略并推动落地。",
+      "leadership": "AI训练师负责人（6年以上）：管理团队，定义技术方向和产品策略，对业务结果负责。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 15,
+        "max": 25,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 40,
+        "max": 60,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI训练师角色正从传统数据标注向大模型时代演进，核心工作转向Prompt工程、知识库构建（RAG）和模型评测。对领域专业知识、自动化能力和产品化思维的要求日益提高。",
+    "related_positions": [
+      "data_annotator",
+      "ml_engineer",
+      "nlp_engineer",
+      "product_manager"
+    ],
+    "common_interview_topics": [
+      "请描述一个你处理过的复杂数据标注任务，以及你如何确保数据质量和一致性。",
+      "你如何评估一个模型的性能？请举例说明你使用过哪些关键指标，以及你如何根据结果提出改进建议。",
+      "假设你被要求为我们的产品构建一个知识库。你会采取哪些步骤来确保其质量和实用性？",
+      "请分享一个你通过优化提示词（Prompt）显著提升模型性能的例子。",
+      "你如何处理与工程师或产品经理在模型性能或数据需求方面的分歧？"
+    ],
+    "id": "ai_trainer"
+  },
+  {
+    "name": "自动驾驶算法工程师",
+    "name_en": "Autonomous Driving Algorithm Engineer",
+    "level": "初级/中级/高级",
+    "summary": "负责自动驾驶系统中感知、决策、规划等核心算法的研发与优化。",
+    "positioning": "是自动驾驶系统的核心研发者，负责将传感器数据转化为可执行的驾驶决策，是车辆实现自主行驶的关键环节。",
+    "capability_requirements": {
+      "must_have": [
+        "机器学习/深度学习理论基础与实战经验",
+        "扎实的计算机视觉知识，熟悉目标检测、分割、跟踪等算法",
+        "优秀的算法设计与实现能力，能将理论转化为高效代码",
+        "熟练掌握Python和C++编程语言",
+        "熟悉自动驾驶系统的基本模块（感知、预测、规划）"
+      ],
+      "nice_to_have": [
+        "SLAM（即时定位与地图构建）相关经验",
+        "强化学习在决策规划中的应用经验",
+        "点云处理与LiDAR数据解析能力",
+        "熟悉ROS（机器人操作系统）"
+      ],
+      "tools": [
+        "PyTorch / TensorFlow",
+        "OpenCV",
+        "ROS (Robot Operating System)",
+        "CUDA",
+        "C++ / Python",
+        "Git",
+        "PCL (Point Cloud Library)"
+      ]
+    },
+    "career_path": {
+      "junior": "初级算法工程师 (0-2年)：负责算法模块的代码实现、数据标注与处理，参与算法的测试与验证。",
+      "mid": "中级算法工程师 (2-4年)：独立负责感知/预测/规划等某一模块的算法研发与优化，解决实际问题。",
+      "senior": "高级算法工程师 (4-6年)：负责复杂算法模块的架构设计，指导初级工程师，攻克技术难点。",
+      "leadership": "算法团队负责人/技术专家 (6年以上)：负责算法团队管理，制定技术路线图，推动前沿技术落地。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "行业趋势：从模块化向端到端学习演进，多传感器融合与数据驱动成为主流。仿真测试平台加速算法迭代，同时，对长尾场景的鲁棒性和安全性要求日益提高。",
+    "related_positions": [
+      "感知算法工程师",
+      "决策规划工程师",
+      "SLAM工程师"
+    ],
+    "common_interview_topics": [
+      "请描述一个你解决过的最复杂的计算机视觉问题，并解释你的解决方案。",
+      "如何评估一个目标检测模型的性能？请解释mAP（平均精度均值）的计算过程。",
+      "解释卡尔曼滤波在目标跟踪中的应用。它的基本假设是什么？",
+      "你如何处理数据不平衡问题？请举例说明。",
+      "描述一个端到端自动驾驶系统的基本架构，并解释感知、预测和规划模块如何协同工作。"
+    ],
+    "id": "ai_autonomous_driving"
+  },
+  {
+    "name": "风控算法工程师",
+    "name_en": "Risk Control Algorithm Engineer",
+    "level": "高级",
+    "summary": "负责构建和优化风控模型，识别并处置业务中的异常风险，保障业务安全。",
+    "positioning": "AI产品链路中负责模型研发与策略优化的核心岗位，是业务安全的第一道防线。",
+    "capability_requirements": {
+      "must_have": [
+        "风控模型构建与优化",
+        "机器学习/深度学习",
+        "特征工程",
+        "数据分析与挖掘",
+        "策略迭代与优化",
+        "业务理解",
+        "模型评估指标"
+      ],
+      "nice_to_have": [
+        "大模型应用",
+        "NLP技术",
+        "强化学习",
+        "模型解释性"
+      ],
+      "tools": [
+        "Python (Pandas, NumPy, Scikit-learn)",
+        "TensorFlow / PyTorch",
+        "Spark / Flink",
+        "SQL",
+        "Hugging Face Transformers",
+        "MLOps平台 (如Kubeflow, MLflow)",
+        "Docker / Kubernetes"
+      ]
+    },
+    "career_path": {
+      "junior": "初级岗位描述（含年限）",
+      "mid": "中级岗位描述（含年限）",
+      "senior": "高级岗位描述（含年限）",
+      "leadership": "管理岗描述（含年限）"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型与AIGC安全成为风控新焦点，结合NLP、强化学习等前沿技术，实现更智能的对抗与策略优化，数据驱动和全生命周期管理成为主流。",
+    "related_positions": [],
+    "common_interview_topics": [
+      "模型评估：如何设计一个风控模型的评估指标体系（如准确率、召回率、F1值、KS值等），并解释在不同业务场景下的权衡。",
+      "特征工程：请举例说明你如何从业务数据中挖掘有效特征，并解释特征选择和重要性分析的方法。",
+      "策略迭代：描述一个你负责的模型或策略迭代优化的案例，包括遇到的问题、如何分析、以及最终的效果。",
+      "业务理解：如何快速理解一个新业务的风控需求，并将其转化为技术方案？",
+      "对抗策略：如何应对不断变化的欺诈手段？请分享你的思路或经验。"
+    ],
+    "id": "anomaly_detection_engineer"
+  },
+  {
+    "name": "AI架构师",
+    "name_en": "AI Architect",
+    "level": "高级",
+    "summary": "负责AI系统整体架构设计、技术选型与落地，驱动AI产品价值实现。",
+    "positioning": "连接业务需求与工程实现的桥梁，负责AI系统从设计到落地的全生命周期技术决策。",
+    "capability_requirements": {
+      "must_have": [
+        "大规模分布式系统设计与架构能力",
+        "扎实的机器学习/深度学习理论基础与模型选型能力",
+        "熟悉主流AI框架、工具链及云服务",
+        "具备将业务问题转化为技术方案的能力",
+        "AI工程化（MLOps）经验，包括模型训练、部署、监控与迭代",
+        "数据架构与数据治理经验"
+      ],
+      "nice_to_have": [
+        "特定行业（如金融、医疗、法律）知识背景",
+        "大模型（LLM）应用与微调经验",
+        "技术领导力与团队建设能力",
+        "在顶级会议/期刊发表过论文或拥有专利者优先"
+      ],
+      "tools": [
+        "TensorFlow / PyTorch",
+        "Hugging Face Transformers",
+        "LangChain / LlamaIndex",
+        "Kubernetes / Docker",
+        "Prometheus / Grafana",
+        "Elasticsearch / Milvus",
+        "AWS/GCP/Azure",
+        "Spark / Flink"
+      ]
+    },
+    "career_path": {
+      "junior": "AI算法工程师 (1-3年经验)",
+      "mid": "高级AI算法工程师 / AI工程师 (3-5年经验)",
+      "senior": "AI架构师 (5年以上经验)",
+      "leadership": "AI技术负责人 / AI团队负责人 (8年以上经验)"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "大模型驱动架构变革，RAG成为主流应用范式。AI与业务场景深度融合，对架构师的业务理解与工程化能力提出更高要求。云原生、MLOps成为标准实践，可解释性与AI安全日益重要。",
+    "related_positions": [
+      "AI算法工程师",
+      "机器学习工程师",
+      "技术负责人"
+    ],
+    "common_interview_topics": [
+      "请描述一个你设计过的复杂AI系统架构，并说明技术选型的考量。",
+      "如何设计一个可扩展的RAG系统来处理海量文档？",
+      "在模型上线后，你如何建立监控和反馈机制来保证模型性能？",
+      "请举例说明你如何将一个模糊的业务需求转化为清晰的AI技术方案。",
+      "当业务方提出一个不切实际的需求时，你如何沟通和引导？"
+    ],
+    "id": "ai_architect"
+  },
+  {
+    "name": "AI运营/增长专家",
+    "name_en": "AI Operations & Growth Specialist",
+    "level": "专家/高级",
+    "summary": "负责AI产品/服务的运营策略制定、流程优化与增长驱动",
+    "positioning": "连接AI技术与业务场景，通过运营策略和流程优化，最大化AI产品的商业价值和用户价值",
+    "capability_requirements": {
+      "must_have": [
+        "AI产品或服务的运营经验",
+        "数据分析与指标体系搭建能力",
+        "流程优化与效率提升方法论",
+        "跨部门协作与项目管理能力",
+        "对大模型等AI技术原理的理解"
+      ],
+      "nice_to_have": [
+        "A/B测试设计与执行经验",
+        "用户研究或用户体验设计知识",
+        "编程能力（如Python）",
+        "特定行业（如电商、金融）知识"
+      ],
+      "tools": [
+        "SQL",
+        "Excel/Google Sheets",
+        "Tableau/Power BI",
+        "Jira/Asana",
+        "LangChain",
+        "OpenAI API"
+      ]
+    },
+    "career_path": {
+      "junior": "AI运营专员 (0-2年经验)，负责执行AI运营策略，收集基础数据",
+      "mid": "AI运营专家 (2-4年经验)，独立负责AI产品线的运营与增长，设计并落地优化方案",
+      "senior": "高级AI运营专家/增长经理 (4-6年经验)，主导复杂AI项目的运营策略，建立团队方法论",
+      "leadership": "AI运营/增长负责人 (6年以上经验)，制定部门级AI运营战略，管理团队并驱动业务增长"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "AI运营正从通用模型应用向垂直领域深耕，更注重AI工具的可解释性与业务价值闭环。数据驱动的精细化运营和自动化流程构建成为核心，同时需要与产品、技术团队更紧密地协同，以快速验证和迭代AI解决方案。",
+    "related_positions": [
+      "AI产品经理",
+      "数据分析师",
+      "增长黑客"
+    ],
+    "common_interview_topics": [
+      "请分享一个你通过数据分析优化运营策略并取得显著成果的案例。",
+      "你如何理解AI运营与传统互联网运营的区别？请举例说明。",
+      "描述一次你推动跨部门协作（如与产品、技术）完成复杂项目的经历。",
+      "你如何设计一个A/B测试来验证一个AI新功能的增长效果？",
+      "你如何跟进和评估一个AI工具落地后的业务价值？请说明你的指标体系。"
+    ],
+    "id": "ai_ops_specialist"
+  },
+  {
+    "name": "机器人算法工程师",
+    "name_en": "Robot Algorithm Engineer",
+    "level": "专家",
+    "summary": "负责机器人系统的感知、决策等核心算法研发，提升机器人智能化水平。",
+    "positioning": "AI技术落地的核心环节，将算法模型转化为机器人可执行的动作与决策。",
+    "capability_requirements": {
+      "must_have": [
+        "算法研发能力：具备扎实的机器学习、深度学习理论基础，能独立研发和优化机器人核心算法",
+        "问题解决能力：针对非结构化环境下的感知、决策等难题，提出创新性解决方案",
+        "数据分析能力：能够分析业务数据，驱动算法模型迭代和产品体验优化",
+        "业务理解能力：深入理解机器人应用场景和用户需求，确保技术方案与业务目标对齐",
+        "技术落地能力：将算法模型部署到实际机器人系统中，并解决部署过程中的工程问题"
+      ],
+      "nice_to_have": [
+        "学术研究能力：具备将前沿学术成果转化为工程应用的能力，有高水平论文产出",
+        "产品管理能力：参与产品全生命周期管理，理解产品规划与市场需求",
+        "项目管理能力：能够协调跨团队资源，推动复杂项目的落地"
+      ],
+      "tools": [
+        "ROS (Robot Operating System)",
+        "PyTorch / TensorFlow",
+        "SLAM (如GTSAM, ORB-SLAM)",
+        "OpenCV",
+        "Gazebo / Isaac Sim (仿真环境)",
+        "强化学习框架"
+      ]
+    },
+    "career_path": {
+      "junior": "初级算法工程师（1-3年）：在指导下参与算法模块的实现与调试，负责数据预处理和模型训练。",
+      "mid": "中级算法工程师（3-5年）：独立负责特定功能模块的算法设计与开发，能够解决常见的工程问题。",
+      "senior": "高级/专家算法工程师（5-8年）：负责核心算法的架构设计、技术选型和性能优化，引领技术方向。",
+      "leadership": "算法团队负责人（8年以上）：带领算法团队，制定技术战略，管理项目进度，培养团队成员。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "具身智能、大模型与机器人深度融合，推动机器人从感知决策到自主行动的智能化升级。多模态感知、强化学习、仿真训练成为关键技术方向，机器人应用场景正从工业领域向生活服务、医疗、物流等更广泛的领域拓展。",
+    "related_positions": [
+      "AI算法工程师",
+      "机器学习工程师",
+      "机器人产品经理"
+    ],
+    "common_interview_topics": [
+      "请描述一个你解决过的复杂机器人算法问题及解决方案。",
+      "如何设计一个机器人的SLAM（同步定位与地图构建）系统？",
+      "解释一下强化学习在机器人控制中的应用。",
+      "如何评估一个机器人算法的性能？",
+      "请谈谈你对‘具身智能’的理解及其未来发展方向。"
+    ],
+    "id": "ai_robotics_engineer"
+  },
+  {
+    "name": "RAG工程师",
+    "name_en": "RAG Engineer",
+    "level": "中高级/高级",
+    "summary": "负责设计、开发与优化基于检索增强生成（RAG）的大语言模型应用系统。",
+    "positioning": "连接数据存储与生成式AI模型的关键角色，确保模型能高效、准确地利用外部知识库进行回答。",
+    "capability_requirements": {
+      "must_have": [
+        "深度学习/大语言模型（LLM）知识",
+        "高性能存储系统知识",
+        "软件工程与系统设计能力",
+        "GPU编程与优化经验",
+        "系统性能优化能力"
+      ],
+      "nice_to_have": [
+        "分布式系统设计与开发经验",
+        "云平台（AWS/Azure/GCP）相关技术栈经验",
+        "产品管理或解决方案架构经验"
+      ],
+      "tools": [
+        "CUDA",
+        "cuFile",
+        "GPUDirect Storage",
+        "Python",
+        "C/C++",
+        "PyTorch/TensorFlow",
+        "向量数据库 (如 Milvus, FAISS)"
+      ]
+    },
+    "career_path": {
+      "junior": "初级RAG工程师 (0-2年)，负责RAG系统中特定模块的开发与实现，参与系统测试与优化。",
+      "mid": "中级RAG工程师 (2-5年)，负责RAG子系统的设计，进行性能调优，并指导初级工程师。",
+      "senior": "高级RAG工程师 (5-8年)，负责整体RAG系统架构设计与技术选型，解决复杂技术难题。",
+      "leadership": "RAG技术负责人/经理 (8年以上)，领导RAG团队，制定技术路线图，管理项目与产品规划。"
+    },
+    "salary_range": {
+      "junior": {
+        "min": 25,
+        "max": 40,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "mid": {
+        "min": 40,
+        "max": 70,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      },
+      "senior": {
+        "min": 70,
+        "max": 120,
+        "unit": "万/年",
+        "city_tier": "一线城市"
+      }
+    },
+    "industry_trends": "随着大语言模型的普及，RAG技术成为提升模型知识边界和回答准确性的关键。行业趋势是向更高效、更智能、更易用的RAG系统发展，特别是在结合GPU加速和分布式存储方面。",
+    "related_positions": [
+      "AI工程师",
+      "机器学习工程师",
+      "数据科学家",
+      "软件架构师"
+    ],
+    "common_interview_topics": [
+      "请设计一个端到端的RAG系统架构",
+      "如何优化RAG的检索和生成阶段性能",
+      "比较不同向量数据库的优缺点及适用场景",
+      "解释CUDA编程模型并说明如何利用GPU加速RAG工作负载",
+      "如何设计一个可扩展的RAG系统以处理海量文档"
+    ],
+    "id": "rag_engineer"
+  }
+]
