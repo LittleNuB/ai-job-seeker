@@ -43,7 +43,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.get("/me")
 async def get_me(user_id: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")

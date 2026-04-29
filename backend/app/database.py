@@ -1,3 +1,4 @@
+from pathlib import Path
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -10,7 +11,15 @@ class Base(DeclarativeBase):
 
 def _get_engine():
     settings = get_settings()
-    return create_async_engine(settings.database_url, echo=settings.debug)
+    url = settings.database_url
+    # SQLite: use aiosqlite driver
+    if url.startswith("sqlite"):
+        # Ensure parent directory exists
+        if ":///" in url:
+            db_path = Path(url.split(":///")[1])
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+        return create_async_engine(url, echo=settings.debug, connect_args={"check_same_thread": False})
+    return create_async_engine(url, echo=settings.debug)
 
 
 engine = _get_engine()

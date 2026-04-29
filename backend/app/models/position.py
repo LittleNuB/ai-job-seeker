@@ -1,4 +1,6 @@
-from sqlalchemy import String, Text, Integer, JSON, ForeignKey
+import json
+
+from sqlalchemy import String, Text, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -26,12 +28,24 @@ class Position(Base):
     level: Mapped[str | None] = mapped_column(String(20))
     summary: Mapped[str | None] = mapped_column(Text)
     positioning: Mapped[str | None] = mapped_column(Text)
-    capability_requirements: Mapped[dict | None] = mapped_column(JSON)
-    career_path: Mapped[dict | None] = mapped_column(JSON)
-    salary_range: Mapped[dict | None] = mapped_column(JSON)
-    common_interview_topics: Mapped[dict | None] = mapped_column(JSON)
-    related_positions: Mapped[dict | None] = mapped_column(JSON)
+    capability_requirements: Mapped[str | None] = mapped_column(Text)  # JSON string
+    career_path: Mapped[str | None] = mapped_column(Text)
+    salary_range: Mapped[str | None] = mapped_column(Text)
+    common_interview_topics: Mapped[str | None] = mapped_column(Text)
+    related_positions: Mapped[str | None] = mapped_column(Text)
     industry_trends: Mapped[str | None] = mapped_column(Text)
     embedding_id: Mapped[int | None] = mapped_column(Integer)
 
     category: Mapped["Category"] = relationship(back_populates="positions")
+
+    def get_json_field(self, field_name: str):
+        """Helper to deserialize JSON fields"""
+        raw = getattr(self, field_name)
+        if raw is None:
+            return None
+        if isinstance(raw, dict | list):
+            return raw
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return raw

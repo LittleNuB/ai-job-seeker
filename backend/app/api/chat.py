@@ -1,4 +1,3 @@
-import uuid
 import json
 
 from fastapi import APIRouter, Depends
@@ -16,18 +15,15 @@ router = APIRouter()
 
 @router.post("/message")
 async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
-    """发送追问消息（非流式）"""
-    # Get or create conversation
     conversation = None
     if req.conversation_id:
         result = await db.execute(
-            select(ChatConversation).where(ChatConversation.id == uuid.UUID(req.conversation_id))
+            select(ChatConversation).where(ChatConversation.id == req.conversation_id)
         )
         conversation = result.scalar_one_or_none()
 
     if not conversation:
         conversation = ChatConversation(
-            id=uuid.uuid4(),
             context_type=req.context_type,
             context_id=req.context_data.get("position_id") if req.context_data else None,
         )
@@ -35,7 +31,6 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
         await db.commit()
         await db.refresh(conversation)
 
-    # Load history
     history_result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.conversation_id == conversation.id)
@@ -44,7 +39,6 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
     db_messages = history_result.scalars().all()
     history = [{"role": m.role, "content": m.content} for m in db_messages]
 
-    # Save user message
     user_msg = ChatMessage(
         conversation_id=conversation.id,
         role="user",
@@ -53,7 +47,6 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
     db.add(user_msg)
     await db.commit()
 
-    # Run agent
     response = await run_agent_loop(
         user_message=req.message,
         history=history,
@@ -62,12 +55,11 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
         db=db,
     )
 
-    # Save assistant message
     assistant_msg = ChatMessage(
         conversation_id=conversation.id,
         role="assistant",
         content=response.get("content"),
-        tool_calls=response.get("tool_calls"),
+        tool_calls=json.dumps(response.get("tool_calls"), ensure_ascii=False) if response.get("tool_calls") else None,
     )
     db.add(assistant_msg)
     await db.commit()
@@ -80,17 +72,15 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/message/stream")
 async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
-    """流式追问（SSE）"""
     conversation = None
     if req.conversation_id:
         result = await db.execute(
-            select(ChatConversation).where(ChatConversation.id == uuid.UUID(req.conversation_id))
+            select(ChatConversation).where(ChatConversation.id == req.conversation_id)
         )
         conversation = result.scalar_one_or_none()
 
     if not conversation:
         conversation = ChatConversation(
-            id=uuid.uuid4(),
             context_type=req.context_type,
             context_id=req.context_data.get("position_id") if req.context_data else None,
         )
@@ -125,10 +115,9 @@ async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
             if event.get("type") == "content":
                 full_content = event.get("content", "")
 
-        # Save final response
         async with db.begin():
             assistant_msg = ChatMessage(
-                conversation_id=uuid.UUID(conversation_id),
+                conversation_id=conversation_id,
                 role="assistant",
                 content=full_content,
             )
@@ -141,10 +130,9 @@ async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 @router.get("/conversations/{conversation_id}/messages")
 async def get_conversation_messages(conversation_id: str, db: AsyncSession = Depends(get_db)):
-    """获取对话历史"""
     result = await db.execute(
         select(ChatMessage)
-        .where(ChatMessage.conversation_id == uuid.UUID(conversation_id))
+        .where(ChatMessage.conversation_id == conversation_id)
         .order_by(ChatMessage.created_at)
     )
     messages = result.scalars().all()

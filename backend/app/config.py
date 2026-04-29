@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     glm_temperature: float = 0.7
     glm_max_tokens: int = 4096
 
-    # PostgreSQL
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_job_copilot"
+    # Database (SQLite for dev, PostgreSQL for production)
+    database_url: str = "sqlite+aiosqlite:///./data/ai_job_copilot.db"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

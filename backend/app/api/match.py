@@ -1,4 +1,3 @@
-import uuid
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,13 +16,11 @@ router = APIRouter()
 
 @router.post("/analyze", response_model=MatchAnalyzeResponse)
 async def match_resume_endpoint(req: MatchAnalyzeRequest, db: AsyncSession = Depends(get_db)):
-    # Get position details
     result = await db.execute(select(Position).where(Position.id == req.position_id))
     pos = result.scalar_one_or_none()
     if not pos:
         raise HTTPException(status_code=404, detail="岗位未找到")
 
-    # Build position details text for prompt
     position_details = json.dumps({
         "name": pos.name,
         "name_en": pos.name_en,
@@ -40,10 +37,9 @@ async def match_resume_endpoint(req: MatchAnalyzeRequest, db: AsyncSession = Dep
 
     score = match_result.get("match_score", 0)
     record = AnalysisRecord(
-        id=uuid.uuid4(),
         type="match",
         input_text=req.resume_text,
-        result=match_result,
+        result=json.dumps(match_result, ensure_ascii=False),
         match_score=score,
     )
     db.add(record)

@@ -12,3 +12,5 @@ venv/
 Thumbs.db
 .mypy_cache/
 .pytest_cache/
+data/ai_job_copilot.db
+data/ai_positions_backup_*.json
