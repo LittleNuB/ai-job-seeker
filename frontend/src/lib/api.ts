@@ -42,6 +42,10 @@ export const positions = {
   },
   getPosition: (id: string) =>
     request<any>(`/api/positions/positions/${id}`),
+  semanticSearch: (query: string, topK?: number) =>
+    request<{ id: string; name: string; name_en: string; summary: string; score: number }[]>(
+      `/api/positions/search?query=${encodeURIComponent(query)}&top_k=${topK || 10}`
+    ),
 };
 
 // JD

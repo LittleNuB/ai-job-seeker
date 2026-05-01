@@ -9,6 +9,16 @@ from .config import get_settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    # Build embedding index on startup (lazy, won't block if no API key)
+    if settings.glm_api_key:
+        from .database import async_session
+        from .services.embedding_service import get_embedding_service
+        try:
+            async with async_session() as db:
+                await get_embedding_service().build_index(db)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Embedding index build skipped: {e}")
     yield
 
 

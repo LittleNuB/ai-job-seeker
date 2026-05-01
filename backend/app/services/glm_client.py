@@ -95,6 +95,15 @@ class GLMClient:
             if chunk.choices and chunk.choices[0].delta:
                 yield chunk.choices[0]
 
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        """调用智谱 embedding-3 获取文本向量"""
+        settings = get_settings()
+        response = await self.client.embeddings.create(
+            model="embedding-3",
+            input=texts,
+        )
+        return [item.embedding for item in response.data]
+
 
 def parse_json_response(text: str) -> dict:
     """三级fallback解析JSON响应"""

@@ -70,8 +70,8 @@ export default function ExplorePage() {
     if (!searchQuery.trim()) return;
     setLoading(true);
     try {
-      const list = await positions.getPositions({ query: searchQuery });
-      setPositionList(list);
+      const results = await positions.semanticSearch(searchQuery);
+      setPositionList(results);
       setActiveCategory("");
       setSelectedPosition(null);
     } catch (err) {
@@ -131,7 +131,19 @@ export default function ExplorePage() {
             {positionList.map((pos) => (
               <button
                 key={pos.id}
-                onClick={() => setSelectedPosition(pos)}
+                onClick={async () => {
+                  // If position lacks detail fields, fetch full data
+                  if (!pos.capability_requirements && !pos.salary_range) {
+                    try {
+                      const full = await positions.getPosition(pos.id);
+                      setSelectedPosition(full);
+                    } catch {
+                      setSelectedPosition(pos);
+                    }
+                  } else {
+                    setSelectedPosition(pos);
+                  }
+                }}
                 className={`text-left p-4 rounded-lg border transition-all ${
                   selectedPosition?.id === pos.id
                     ? "border-blue-500 bg-blue-50"

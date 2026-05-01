@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models.position import Position, Category
+from ..services.embedding_service import get_embedding_service
 
 router = APIRouter()
 
@@ -45,13 +46,18 @@ async def get_position(position_id: str, db: AsyncSession = Depends(get_db)):
     pos = result.scalar_one_or_none()
     if not pos:
         return {"error": "岗位未找到"}
-    # Also get category info
     cat_result = await db.execute(select(Category).where(Category.id == pos.category_id))
     cat = cat_result.scalar_one_or_none()
     data = _position_to_dict(pos)
     data["category_name"] = cat.name if cat else None
     data["category_id"] = pos.category_id
     return data
+
+
+@router.get("/search")
+async def semantic_search(query: str, top_k: int = Query(default=10, le=50), db: AsyncSession = Depends(get_db)):
+    service = get_embedding_service()
+    return await service.search(query, db, top_k=top_k)
 
 
 def _position_to_dict(p: Position) -> dict:
