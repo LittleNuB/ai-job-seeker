@@ -1,5 +1,8 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -11,7 +14,8 @@ class Settings(BaseSettings):
     glm_max_tokens: int = 4096
 
     # Database (SQLite for dev, PostgreSQL for production)
-    database_url: str = "sqlite+aiosqlite:///./data/ai_job_copilot.db"
+    _db_path = PROJECT_ROOT / "data" / "ai_job_copilot.db"
+    database_url: str = f"sqlite+aiosqlite:///{_db_path}"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

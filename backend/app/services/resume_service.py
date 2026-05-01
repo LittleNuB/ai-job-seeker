@@ -61,4 +61,4 @@ def build_resume_prompt(resume_text: str, position_details: str) -> tuple[str, s
 
 async def match_resume(glm_client, resume_text: str, position_details: str) -> dict:
     system_prompt, user_prompt = build_resume_prompt(resume_text, position_details)
-    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.6)
+    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)

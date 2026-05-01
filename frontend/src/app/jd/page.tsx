@@ -1,15 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Loader2, AlertCircle, Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FileText, Loader2, AlertCircle, Tag, ArrowRight } from "lucide-react";
 import { jd as jdApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 
 export default function JDPage() {
+  const router = useRouter();
   const [jdText, setJdText] = useState("");
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function handleGoMatch() {
+    localStorage.setItem("match_prefill", JSON.stringify({
+      positionName: analysis?.position_overview?.inferred_role || "",
+      jdText,
+      source: "jd",
+    }));
+    router.push("/match?from=jd");
+  }
 
   async function handleAnalyze() {
     if (!jdText.trim()) return;
@@ -164,6 +175,14 @@ export default function JDPage() {
                   )}
                 </div>
               )}
+
+              {/* Go to Match */}
+              <button
+                onClick={handleGoMatch}
+                className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                用此JD匹配简历 <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           )}
 

@@ -55,4 +55,4 @@ def build_jd_prompt(jd_text: str) -> tuple[str, str]:
 
 async def analyze_jd(glm_client, jd_text: str) -> dict:
     system_prompt, user_prompt = build_jd_prompt(jd_text)
-    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.7)
+    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)

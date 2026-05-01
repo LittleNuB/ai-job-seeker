@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Target, Loader2, AlertCircle } from "lucide-react";
 import { matchApi, positions as positionsApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 
-export default function MatchPage() {
+function MatchPageContent() {
+  const searchParams = useSearchParams();
   const [resumeText, setResumeText] = useState("");
   const [positionId, setPositionId] = useState("");
+  const [jdText, setJdText] = useState("");
+  const [showJd, setShowJd] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,10 +24,46 @@ export default function MatchPage() {
       const list = await positionsApi.getPositions();
       setPositionList(list);
       setPositionsLoaded(true);
+      return list;
     } catch (err) {
       console.error("Failed to load positions:", err);
+      return [];
     }
   }
+
+  // Read prefill data from localStorage on mount
+  useEffect(() => {
+    const from = searchParams.get("from");
+    if (!from) return;
+
+    const raw = localStorage.getItem("match_prefill");
+    if (!raw) return;
+
+    try {
+      const data = JSON.parse(raw);
+      localStorage.removeItem("match_prefill");
+
+      if (data.jdText) {
+        setJdText(data.jdText);
+        setShowJd(true);
+      }
+      if (data.positionId) {
+        setPositionId(data.positionId);
+        // Ensure positions are loaded so the dropdown shows the selected item
+        loadPositions();
+      } else if (data.positionName) {
+        // Fuzzy match by name — load positions first, then find
+        loadPositions().then((list) => {
+          const match = list?.find((p: any) =>
+            p.name.includes(data.positionName) || data.positionName.includes(p.name)
+          );
+          if (match) setPositionId(match.id);
+        });
+      }
+    } catch {
+      localStorage.removeItem("match_prefill");
+    }
+  }, [searchParams]);
 
   async function handleMatch() {
     if (!resumeText.trim() || !positionId) return;
@@ -31,7 +71,11 @@ export default function MatchPage() {
     setError("");
     setResult(null);
     try {
-      const res = await matchApi.analyze({ resume_text: resumeText, position_id: positionId });
+      const res = await matchApi.analyze({
+        resume_text: resumeText,
+        position_id: positionId,
+        ...(jdText.trim() ? { jd_text: jdText } : {}),
+      });
       setResult(res);
     } catch (err: any) {
       setError(err.message);
@@ -82,6 +126,25 @@ export default function MatchPage() {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+
+          {/* JD Text (optional, shown when toggled or pre-filled) */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setShowJd(!showJd)}
+              className="text-xs text-blue-600 hover:text-blue-700"
+            >
+              {showJd ? "隐藏JD文本" : "附加JD文本（可选）"}
+            </button>
+            {showJd && (
+              <textarea
+                value={jdText}
+                onChange={(e) => setJdText(e.target.value)}
+                placeholder="粘贴JD内容，可增强匹配分析精度..."
+                className="mt-2 w-full h-32 p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -207,5 +270,13 @@ export default function MatchPage() {
         contextData={result ? { result: result.result } : undefined}
       />
     </div>
+  );
+}
+
+export default function MatchPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8 text-center text-gray-400">加载中...</div>}>
+      <MatchPageContent />
+    </Suspense>
   );
 }

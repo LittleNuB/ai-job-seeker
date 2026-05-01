@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, DollarSign, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ChevronRight, DollarSign, Clock, ArrowRight } from "lucide-react";
 import { positions } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 
@@ -27,6 +28,7 @@ interface Category {
 }
 
 export default function ExplorePage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [positionList, setPositionList] = useState<Position[]>([]);
@@ -267,6 +269,21 @@ export default function ExplorePage() {
                 </div>
               </div>
             )}
+
+            {/* Go to Match */}
+            <button
+              onClick={() => {
+                localStorage.setItem("match_prefill", JSON.stringify({
+                  positionId: selectedPosition.id,
+                  positionName: selectedPosition.name,
+                  source: "explore",
+                }));
+                router.push("/match?from=explore");
+              }}
+              className="mt-6 w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+            >
+              用此岗位匹配简历 <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         )}
       </div>
