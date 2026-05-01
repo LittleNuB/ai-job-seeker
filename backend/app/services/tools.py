@@ -73,10 +73,11 @@ TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "file_url": {"type": "string", "description": "已上传文件的URL"},
+                    "file_content": {"type": "string", "description": "文件的base64编码内容"},
+                    "filename": {"type": "string", "description": "文件名，用于判断文件类型"},
                     "purpose": {"type": "string", "enum": ["jd", "resume"], "description": "文件用途"}
                 },
-                "required": ["file_url", "purpose"]
+                "required": ["file_content", "filename", "purpose"]
             }
         }
     },
@@ -100,7 +101,18 @@ async def execute_tool(name: str, arguments: dict, db: AsyncSession) -> str:
         result = await match_resume(get_glm_client(), arguments["resume_text"], arguments["position_details"])
         return json.dumps(result, ensure_ascii=False)
     elif name == "extract_file_content":
-        return json.dumps({"error": "文件提取功能待实现"}, ensure_ascii=False)
+        import base64
+        from .file_parser import extract_text
+        try:
+            content = base64.b64decode(arguments["file_content"])
+            text, file_type = await extract_text(content, arguments["filename"])
+            return json.dumps({
+                "text": text,
+                "file_type": file_type,
+                "purpose": arguments["purpose"],
+            }, ensure_ascii=False)
+        except Exception as e:
+            return json.dumps({"error": f"文件提取失败：{str(e)}"}, ensure_ascii=False)
     else:
         return json.dumps({"error": f"未知工具: {name}"}, ensure_ascii=False)
 

@@ -26,13 +26,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .api import auth, positions, jd, match, chat
+from .api import auth, positions, jd, match, chat, files
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(positions.router, prefix="/api/positions", tags=["positions"])
 app.include_router(jd.router, prefix="/api/jd", tags=["jd"])
 app.include_router(match.router, prefix="/api/match", tags=["match"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(files.router, prefix="/api/files", tags=["files"])
 
 
 @app.get("/api/health")

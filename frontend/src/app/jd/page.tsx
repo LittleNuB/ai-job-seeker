@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileText, Loader2, AlertCircle, Tag, ArrowRight } from "lucide-react";
 import { jd as jdApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
+import FileUploader from "@/components/FileUploader";
 
 export default function JDPage() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function JDPage() {
         {/* Input */}
         <div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <FileUploader onTextExtracted={setJdText} label="上传JD文件" />
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-700">粘贴JD内容</span>

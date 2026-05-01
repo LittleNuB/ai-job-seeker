@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Target, Loader2, AlertCircle } from "lucide-react";
 import { matchApi, positions as positionsApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
+import FileUploader from "@/components/FileUploader";
 
 function MatchPageContent() {
   const searchParams = useSearchParams();
@@ -104,6 +105,7 @@ function MatchPageContent() {
       {/* Input Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <FileUploader onTextExtracted={setResumeText} label="上传简历文件" />
           <div className="text-sm font-medium text-gray-700 mb-3">简历内容</div>
           <textarea
             value={resumeText}
