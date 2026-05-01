@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation";
 import { Search, ChevronRight, DollarSign, Clock, ArrowRight } from "lucide-react";
 import { positions } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
+import Timeline from "@/components/Timeline";
 
 interface Position {
   id: string;
   name: string;
-  name_en: string | null;
-  summary: string;
-  capability_requirements: any;
-  salary_range: any;
-  career_path: any;
-  common_interview_topics: any;
-  industry_trends: string | null;
+  name_en?: string | null;
+  summary?: string;
+  capability_requirements?: any;
+  salary_range?: any;
+  career_path?: any;
+  common_interview_topics?: any;
+  industry_trends?: string | null;
   category_name?: string;
   category_id?: string;
+  score?: number;
 }
 
 interface Category {
@@ -252,18 +254,14 @@ export default function ExplorePage() {
                 <h3 className="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> 职业路径
                 </h3>
-                <div className="flex items-center gap-2 text-sm">
-                  {["junior", "mid", "senior", "leadership"].map((level, i, arr) => {
-                    const path = selectedPosition.career_path[level];
-                    if (!path) return null;
-                    return (
-                      <span key={level} className="flex items-center gap-2">
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{path}</span>
-                        {i < arr.length - 1 && <ChevronRight className="w-3 h-3 text-gray-300" />}
-                      </span>
-                    );
-                  })}
-                </div>
+                <Timeline
+                  items={["junior", "mid", "senior", "leadership"]
+                    .filter((l) => selectedPosition.career_path[l])
+                    .map((l) => ({
+                      label: l === "junior" ? "初级" : l === "mid" ? "中级" : l === "senior" ? "高级" : "管理",
+                      title: selectedPosition.career_path[l],
+                    }))}
+                />
               </div>
             )}
 

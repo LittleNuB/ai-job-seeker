@@ -6,6 +6,8 @@ import { Target, Loader2, AlertCircle } from "lucide-react";
 import { matchApi, positions as positionsApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
+import ScoreRing from "@/components/ScoreRing";
+import ScoreBar from "@/components/ScoreBar";
 
 function MatchPageContent() {
   const searchParams = useSearchParams();
@@ -178,23 +180,17 @@ function MatchPageContent() {
       {result && (
         <div className="space-y-4">
           {/* Score */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center gap-8">
-            <div className="text-center">
-              <div className={`text-5xl font-bold ${scoreColor(result.match_score)}`}>
-                {result.match_score}
-              </div>
-              <div className="text-sm text-gray-500 mt-1">匹配得分</div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center gap-10">
+            <ScoreRing score={result.match_score} />
+            <div className="w-64 space-y-3">
               {result.result?.score_breakdown && Object.entries(result.result.score_breakdown).map(([key, val]) => (
-                <div key={key} className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">{val as number}</div>
-                  <div className="text-xs text-gray-500">
-                    {key === "hard_skills_match" ? "硬技能" :
-                     key === "experience_match" ? "经验" :
-                     key === "culture_fit" ? "文化匹配" : "成长潜力"}
-                  </div>
-                </div>
+                <ScoreBar
+                  key={key}
+                  label={key === "hard_skills_match" ? "硬技能" :
+                         key === "experience_match" ? "经验" :
+                         key === "culture_fit" ? "文化匹配" : "成长潜力"}
+                  value={val as number}
+                />
               ))}
             </div>
           </div>
