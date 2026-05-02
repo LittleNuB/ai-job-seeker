@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Loader2, AlertCircle, Tag, ArrowRight } from "lucide-react";
-import { jd as jdApi } from "@/lib/api";
+import { FileText, Loader2, AlertCircle, Tag, ArrowRight, Download } from "lucide-react";
+import { jd as jdApi, exportApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 
@@ -11,6 +11,7 @@ export default function JDPage() {
   const router = useRouter();
   const [jdText, setJdText] = useState("");
   const [analysis, setAnalysis] = useState<any>(null);
+  const [recordId, setRecordId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -30,6 +31,7 @@ export default function JDPage() {
     setAnalysis(null);
     try {
       const res = await jdApi.analyze({ jd_text: jdText });
+      setRecordId(res.record_id);
       setAnalysis(res.result);
     } catch (err: any) {
       setError(err.message);
@@ -178,13 +180,24 @@ export default function JDPage() {
                 </div>
               )}
 
-              {/* Go to Match */}
-              <button
+              {/* Export + Go to Match */}
+              <div className="flex gap-3">
+                {recordId && (
+                  <a
+                    href={exportApi.getReportUrl(recordId)}
+                    download
+                    className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> 导出报告
+                  </a>
+                )}
+                <button
                 onClick={handleGoMatch}
                 className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
               >
                 用此JD匹配简历 <ArrowRight className="w-4 h-4" />
-              </button>
+                </button>
+              </div>
             </div>
           )}
 

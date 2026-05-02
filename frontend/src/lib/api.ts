@@ -66,6 +66,11 @@ export const matchApi = {
     }),
 };
 
+// Export
+export const exportApi = {
+  getReportUrl: (recordId: string) => `${API_BASE}/api/export/${recordId}`,
+};
+
 // Chat
 export const chat = {
   sendMessage: (data: {

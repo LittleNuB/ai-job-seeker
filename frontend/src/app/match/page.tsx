@@ -2,8 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Target, Loader2, AlertCircle } from "lucide-react";
-import { matchApi, positions as positionsApi } from "@/lib/api";
+import { Target, Loader2, AlertCircle, Download } from "lucide-react";
+import { matchApi, positions as positionsApi, exportApi } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 import ScoreRing from "@/components/ScoreRing";
@@ -16,6 +16,7 @@ function MatchPageContent() {
   const [jdText, setJdText] = useState("");
   const [showJd, setShowJd] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [recordId, setRecordId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [positionList, setPositionList] = useState<any[]>([]);
@@ -79,6 +80,7 @@ function MatchPageContent() {
         position_id: positionId,
         ...(jdText.trim() ? { jd_text: jdText } : {}),
       });
+      setRecordId(res.record_id);
       setResult(res);
     } catch (err: any) {
       setError(err.message);
@@ -257,6 +259,19 @@ function MatchPageContent() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Export */}
+          {recordId && (
+            <div className="flex justify-end">
+              <a
+                href={exportApi.getReportUrl(recordId)}
+                download
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> 导出匹配报告
+              </a>
             </div>
           )}
         </div>
