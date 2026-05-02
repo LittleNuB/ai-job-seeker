@@ -18,6 +18,14 @@ from .tools import TOOL_DEFINITIONS, execute_tool
 
 MAX_LOOPS = 5
 
+_TOOL_LABELS = {
+    "search_positions": "正在搜索岗位...",
+    "get_position_details": "正在获取岗位详情...",
+    "analyze_jd": "正在解析JD...",
+    "match_resume": "正在匹配简历...",
+    "extract_file_content": "正在提取文件内容...",
+}
+
 CHAT_SYSTEM_PROMPT = """你是 AI Job Copilot 的智能助手，专门帮助用户理解AI行业岗位信息、分析JD、评估简历匹配度。
 
 你可以使用工具来搜索岗位、获取岗位详情、分析JD或匹配简历。回答时要：
@@ -88,33 +96,46 @@ async def run_agent_loop(
     return {"role": "assistant", "content": "抱歉，处理过程过于复杂，请尝试更具体的问题。"}
 
 
+async def _execute_tool_with_session(tc, db, session_factory):
+    """Execute a tool, preferring session_factory for streaming context."""
+    args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
+    if session_factory:
+        async with session_factory() as tool_db:
+            return await execute_tool(tc.function.name, args, tool_db)
+    elif db:
+        return await execute_tool(tc.function.name, args, db)
+    return json.dumps({"error": "数据库未连接"})
+
+
 async def stream_agent_loop(
     user_message: str,
     history: list[dict],
     context_type: str | None = None,
     context_data: dict | None = None,
     db: AsyncSession | None = None,
+    session_factory=None,
 ) -> AsyncGenerator[dict, None]:
-    """流式执行 Agent Loop，逐块 yield 事件"""
+    """流式执行 Agent Loop，逐 token yield 事件"""
     glm = get_glm_client()
     system_prompt = CHAT_SYSTEM_PROMPT.format(context=_build_context_message(context_type, context_data))
 
     messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_message}]
 
     for loop_count in range(MAX_LOOPS):
-        # First, do a non-streaming call to check for tool calls
         choice = await glm.chat_with_tools(messages, tools=TOOL_DEFINITIONS)
         msg = choice.message
 
         if not msg.tool_calls:
-            # Final response — re-do with streaming for the user
-            # Yield the complete content as one chunk (simplified; full streaming in production)
-            yield {"type": "content", "content": msg.content}
+            # Final response — stream token-by-token
+            async for chunk in glm.stream_chat(messages, tools=TOOL_DEFINITIONS):
+                if chunk.delta and chunk.delta.content:
+                    yield {"type": "token", "content": chunk.delta.content}
             return
 
         # Tool calls — execute and report progress
         tool_names = [tc.function.name for tc in msg.tool_calls]
-        yield {"type": "tool_calls", "tools": tool_names}
+        tool_labels = {name: _TOOL_LABELS.get(name, f"正在调用 {name}...") for name in tool_names}
+        yield {"type": "tool_calls", "tools": tool_names, "labels": tool_labels}
 
         messages.append({"role": "assistant", "content": msg.content, "tool_calls": [
             {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
@@ -122,8 +143,8 @@ async def stream_agent_loop(
         ]})
 
         for tc in msg.tool_calls:
-            args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-            result_str = await execute_tool(tc.function.name, args, db) if db else json.dumps({"error": "数据库未连接"})
+            result_str = await _execute_tool_with_session(tc, db, session_factory)
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result_str})
+            yield {"type": "tool_result", "tool": tc.function.name, "status": "complete"}
 
-    yield {"type": "content", "content": "抱歉，处理过程过于复杂，请尝试更具体的问题。"}
+    yield {"type": "token", "content": "抱歉，处理过程过于复杂，请尝试更具体的问题。"}

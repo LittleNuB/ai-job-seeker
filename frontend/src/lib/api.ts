@@ -88,3 +88,91 @@ export const chat = {
       `/api/chat/conversations/${conversationId}/messages`
     ),
 };
+
+// Streaming Chat
+export interface StreamCallbacks {
+  onToken: (token: string) => void;
+  onToolCalls: (tools: string[], labels: Record<string, string>) => void;
+  onDone: (conversationId: string) => void;
+  onError: (message: string) => void;
+}
+
+export async function streamChatMessage(
+  data: {
+    message: string;
+    conversation_id?: string;
+    context_type?: string;
+    context_data?: any;
+  },
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/chat/message/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({ detail: res.statusText }));
+    callbacks.onError(errorBody.detail || "请求失败");
+    return;
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) {
+    callbacks.onError("无法建立流式连接");
+    return;
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        let eventType = "message";
+        let eventData = "";
+
+        for (const line of part.split("\n")) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            eventData = line.slice(6);
+          }
+        }
+
+        if (!eventData) continue;
+
+        try {
+          const parsed = JSON.parse(eventData);
+          switch (eventType) {
+            case "token":
+              callbacks.onToken(parsed.content || "");
+              break;
+            case "tool_calls":
+              callbacks.onToolCalls(parsed.tools || [], parsed.labels || {});
+              break;
+            case "done":
+              callbacks.onDone(parsed.conversation_id);
+              break;
+            case "error":
+              callbacks.onError(parsed.message || "未知错误");
+              break;
+          }
+        } catch {
+          // Skip malformed JSON
+        }
+      }
+    }
+  } catch (err: any) {
+    callbacks.onError(err.message || "连接中断");
+  }
+}

@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_db
+from ..database import get_db, async_session
 from ..models.chat import ChatConversation, ChatMessage
 from ..schemas.chat import ChatRequest
 from ..services.agent_engine import run_agent_loop, stream_agent_loop
@@ -102,30 +102,51 @@ async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
 
     conversation_id = str(conversation.id)
 
+    # Release the DI session before streaming starts
+    await db.close()
+
     async def event_generator():
         full_content = ""
-        async for event in stream_agent_loop(
-            user_message=req.message,
-            history=history,
-            context_type=req.context_type,
-            context_data=req.context_data,
-            db=db,
-        ):
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-            if event.get("type") == "content":
-                full_content = event.get("content", "")
+        try:
+            async for event in stream_agent_loop(
+                user_message=req.message,
+                history=history,
+                context_type=req.context_type,
+                context_data=req.context_data,
+                db=None,
+                session_factory=async_session,
+            ):
+                event_type = event.get("type", "message")
+                yield f"event: {event_type}\ndata: {json.dumps(event, ensure_ascii=False)}\n\n"
+                if event.get("type") == "token":
+                    full_content += event.get("content", "")
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
 
-        async with db.begin():
-            assistant_msg = ChatMessage(
-                conversation_id=conversation_id,
-                role="assistant",
-                content=full_content,
-            )
-            db.add(assistant_msg)
+        # Save assistant message with a fresh DB session
+        try:
+            async with async_session() as save_session:
+                assistant_msg = ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=full_content,
+                )
+                save_session.add(assistant_msg)
+                await save_session.commit()
+        except Exception:
+            pass  # Best-effort save; user already saw the response
 
-        yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
+        yield f"event: done\ndata: {json.dumps({'type': 'done', 'conversation_id': conversation_id}, ensure_ascii=False)}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/conversations/{conversation_id}/messages")
