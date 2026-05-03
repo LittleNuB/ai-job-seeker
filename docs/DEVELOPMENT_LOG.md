@@ -192,3 +192,18 @@ Stabilize the development foundation before feature work:
 - Passed: `cd frontend; npx tsc --noEmit`.
 - Passed: `cd frontend; npm run lint` with pre-existing warnings in `match` only.
 - Verified through the running Next proxy: 7 categories and 12 `algorithm` positions returned.
+
+## 2026-05-03 - Frontend Core Copy Cleanup
+
+### Changes
+
+- Replaced mojibake copy across the home, JD analysis, resume match, file uploader, and score ring UI.
+- Stabilized the match page position loader and removed its lint warnings.
+- Kept the existing functional layout while making form labels, placeholders, empty states, and buttons readable.
+
+### Verification
+
+- Passed: `cd frontend; npx tsc --noEmit`.
+- Passed: `cd frontend; npm run lint` with no warnings.
+- Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
+- Verified running frontend pages return 200 for `/`, `/jd`, and `/match`.
