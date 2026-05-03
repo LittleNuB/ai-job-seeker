@@ -10,12 +10,13 @@ from ..models.position import Position
 from ..schemas.match import MatchAnalyzeRequest, MatchAnalyzeResponse
 from ..services.glm_client import get_glm_client
 from ..services.resume_service import match_resume
+from ..middleware.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/analyze", response_model=MatchAnalyzeResponse)
-async def match_resume_endpoint(req: MatchAnalyzeRequest, db: AsyncSession = Depends(get_db)):
+async def match_resume_endpoint(req: MatchAnalyzeRequest, db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
     result = await db.execute(select(Position).where(Position.id == req.position_id))
     pos = result.scalar_one_or_none()
     if not pos:
@@ -38,6 +39,7 @@ async def match_resume_endpoint(req: MatchAnalyzeRequest, db: AsyncSession = Dep
     score = match_result.get("match_score", 0)
     record = AnalysisRecord(
         type="match",
+        user_id=user_id,
         input_text=req.resume_text,
         result=json.dumps(match_result, ensure_ascii=False),
         match_score=score,

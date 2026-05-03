@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, Loader2, X } from "lucide-react";
+import { getAuthHeaders } from "@/lib/api";
 
 interface FileUploaderProps {
   onTextExtracted: (text: string) => void;
@@ -35,8 +36,9 @@ export default function FileUploader({ onTextExtracted, label = "上传文件" }
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8000/api/files/upload", {
+      const res = await fetch("/api/files/upload", {
         method: "POST",
+        headers: getAuthHeaders(),
         body: formData,
       });
       if (!res.ok) {

@@ -8,14 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models.analysis import AnalysisRecord
 from ..services.export_service import export_jd_markdown, export_match_markdown
+from ..middleware.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/{record_id}", response_class=PlainTextResponse)
-async def export_report(record_id: str, db: AsyncSession = Depends(get_db)):
+async def export_report(record_id: str, db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
     result = await db.execute(
-        select(AnalysisRecord).where(AnalysisRecord.id == record_id)
+        select(AnalysisRecord).where(AnalysisRecord.id == record_id, AnalysisRecord.user_id == user_id)
     )
     record = result.scalar_one_or_none()
     if not record:

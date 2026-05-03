@@ -183,13 +183,13 @@ export default function JDPage() {
               {/* Export + Go to Match */}
               <div className="flex gap-3">
                 {recordId && (
-                  <a
-                    href={exportApi.getReportUrl(recordId)}
-                    download
+                  <button
+                    type="button"
+                    onClick={() => exportApi.downloadReport(recordId).catch((err) => setError(err.message))}
                     className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" /> 导出报告
-                  </a>
+                  </button>
                 )}
                 <button
                 onClick={handleGoMatch}

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Brain, FileText, Target, Compass } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Brain, FileText, Target, Compass, LogIn, LogOut } from "lucide-react";
 
 const links = [
   { href: "/", label: "首页", icon: Brain },
@@ -13,6 +14,19 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEmail(localStorage.getItem("auth_email"));
+  }, [pathname]);
+
+  function handleLogout() {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_email");
+    setEmail(null);
+    router.push("/auth");
+  }
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -39,6 +53,29 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {email ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              title={email}
+            >
+              <LogOut className="w-4 h-4" />
+              退出
+            </button>
+          ) : (
+            <Link
+              href="/auth"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname.startsWith("/auth")
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              登录
+            </Link>
+          )}
         </div>
       </div>
     </nav>

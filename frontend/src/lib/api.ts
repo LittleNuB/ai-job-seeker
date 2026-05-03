@@ -1,9 +1,19 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
       ...options?.headers,
     },
     ...options,
@@ -69,6 +79,27 @@ export const matchApi = {
 // Export
 export const exportApi = {
   getReportUrl: (recordId: string) => `${API_BASE}/api/export/${recordId}`,
+  async downloadReport(recordId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/export/${recordId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(error.detail || "导出失败");
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get("content-disposition") || "";
+    const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = filenameMatch?.[1] || `analysis-${recordId}.md`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
 };
 
 // Chat
@@ -108,7 +139,7 @@ export async function streamChatMessage(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/chat/message/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(data),
   });
 

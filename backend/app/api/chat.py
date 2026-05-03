@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,21 +9,26 @@ from ..database import get_db, async_session
 from ..models.chat import ChatConversation, ChatMessage
 from ..schemas.chat import ChatRequest
 from ..services.agent_engine import run_agent_loop, stream_agent_loop
+from ..middleware.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/message")
-async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
     conversation = None
     if req.conversation_id:
         result = await db.execute(
-            select(ChatConversation).where(ChatConversation.id == req.conversation_id)
+            select(ChatConversation).where(ChatConversation.id == req.conversation_id, ChatConversation.user_id == user_id)
         )
         conversation = result.scalar_one_or_none()
 
+    if req.conversation_id and not conversation:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
     if not conversation:
         conversation = ChatConversation(
+            user_id=user_id,
             context_type=req.context_type,
             context_id=req.context_data.get("position_id") if req.context_data else None,
         )
@@ -71,16 +76,20 @@ async def send_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/message/stream")
-async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
     conversation = None
     if req.conversation_id:
         result = await db.execute(
-            select(ChatConversation).where(ChatConversation.id == req.conversation_id)
+            select(ChatConversation).where(ChatConversation.id == req.conversation_id, ChatConversation.user_id == user_id)
         )
         conversation = result.scalar_one_or_none()
 
+    if req.conversation_id and not conversation:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
     if not conversation:
         conversation = ChatConversation(
+            user_id=user_id,
             context_type=req.context_type,
             context_id=req.context_data.get("position_id") if req.context_data else None,
         )
@@ -150,10 +159,17 @@ async def stream_message(req: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/conversations/{conversation_id}/messages")
-async def get_conversation_messages(conversation_id: str, db: AsyncSession = Depends(get_db)):
+async def get_conversation_messages(conversation_id: str, db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
+    conversation_result = await db.execute(
+        select(ChatConversation).where(ChatConversation.id == conversation_id, ChatConversation.user_id == user_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
     result = await db.execute(
         select(ChatMessage)
-        .where(ChatMessage.conversation_id == conversation_id)
+        .where(ChatMessage.conversation_id == conversation.id)
         .order_by(ChatMessage.created_at)
     )
     messages = result.scalars().all()
