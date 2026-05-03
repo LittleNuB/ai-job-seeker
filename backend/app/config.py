@@ -1,8 +1,12 @@
 from pathlib import Path
+import secrets
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+WEAK_JWT_SECRETS = {"", "change-me-in-production", "your-secret-here", "dev-secret"}
 
 
 class Settings(BaseSettings):
@@ -21,18 +25,44 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # JWT
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     jwt_expire_hours: int = 72
 
     # App
     app_name: str = "AI Job Copilot"
-    debug: bool = True
+    app_env: str = "development"
+    debug: bool = False
 
     model_config = {
         "env_file": [str(PROJECT_ROOT / ".env"), str(Path(__file__).resolve().parent.parent / ".env"), ".env"],
         "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env.strip().lower() in {"prod", "production"}
+
+    @model_validator(mode="after")
+    def validate_security_settings(self) -> "Settings":
+        env = self.app_env.strip().lower()
+        secret = self.jwt_secret.strip()
+
+        if self.is_production:
+            if self.debug:
+                raise ValueError("DEBUG must be false when APP_ENV=production.")
+            if secret in WEAK_JWT_SECRETS or len(secret) < 32:
+                raise ValueError("JWT_SECRET must be set to a strong value of at least 32 characters in production.")
+            return self
+
+        if secret in WEAK_JWT_SECRETS:
+            object.__setattr__(self, "jwt_secret", secrets.token_urlsafe(32))
+
+        if env not in {"development", "dev", "test", "testing", "staging", "stage"}:
+            raise ValueError("APP_ENV must be one of development, test, staging, or production.")
+
+        return self
 
 
 @lru_cache

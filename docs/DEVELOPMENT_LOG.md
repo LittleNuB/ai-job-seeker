@@ -129,3 +129,19 @@ Stabilize the development foundation before feature work:
 - Passed: position seed against `.codex-temp\migration_test.db` with 7 categories and 44 positions.
 - Passed: existing SQLite baseline stamp against `.codex-temp\existing_copy.db`.
 - Passed: `backend\.venv\Scripts\alembic.exe -c alembic.ini check` against the migrated temp database.
+
+## 2026-05-03 - Production Config Guardrails
+
+### Changes
+
+- Removed the public JWT default secret from backend settings.
+- Added `APP_ENV` and production validation for `DEBUG=false` plus a strong `JWT_SECRET`.
+- Generates a temporary runtime JWT secret for local development when no secret is provided.
+- Refreshed `.env.example` with backend, JWT, GLM, and frontend configuration.
+
+### Verification
+
+- Passed: `backend\.venv\Scripts\python.exe -m compileall backend\app`.
+- Passed: `backend\.venv\Scripts\python.exe -m py_compile scripts\migrate_db.py data\seed_positions.py`.
+- Passed: direct `Settings` validation checks for development fallback, production weak secret rejection, production `DEBUG=true` rejection, and production strong secret acceptance.
+- Passed: live smoke run on `http://127.0.0.1:8124` against `.codex-temp\config_smoke.db`.

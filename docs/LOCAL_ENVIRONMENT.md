@@ -39,6 +39,20 @@ python scripts\migrate_db.py
 
 See `docs\DATABASE_MIGRATIONS.md` for the migration workflow.
 
+## Environment Variables
+
+Copy `.env.example` to `.env` and set local secrets there. Leave `DATABASE_URL` commented out to use the default local SQLite database. For local development, `JWT_SECRET` may be empty; the backend generates a temporary runtime secret so the public default key is never used.
+
+For production-like runs, set:
+
+```powershell
+APP_ENV=production
+DEBUG=false
+JWT_SECRET=<stable-random-secret-at-least-32-characters>
+```
+
+The backend will refuse to start in production if `JWT_SECRET` is missing, too short, or set to a known placeholder.
+
 ## Smoke Test
 
 In a second terminal after the backend starts:
