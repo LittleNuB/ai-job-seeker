@@ -177,3 +177,18 @@ Stabilize the development foundation before feature work:
 - Passed: `cd frontend; npx tsc --noEmit`.
 - Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
 - Passed: `cd frontend; npm run lint` with pre-existing warnings in `explore` and `match` pages only.
+
+## 2026-05-03 - Explore Loading State Fix
+
+### Changes
+
+- Fixed the explore page loading flow so category loading waits for the first position list before showing an empty state.
+- Added a visible error message when category, position, or search requests fail.
+- Replaced remaining mojibake copy on the explore page with readable Chinese.
+- Removed the explore page lint warning by stabilizing load callbacks.
+
+### Verification
+
+- Passed: `cd frontend; npx tsc --noEmit`.
+- Passed: `cd frontend; npm run lint` with pre-existing warnings in `match` only.
+- Verified through the running Next proxy: 7 categories and 12 `algorithm` positions returned.
