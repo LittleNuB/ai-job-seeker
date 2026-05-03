@@ -10,6 +10,8 @@ Start the backend first:
 .\start-backend.bat
 ```
 
+The startup script installs backend dependencies and applies Alembic migrations before FastAPI starts.
+
 In another terminal, run:
 
 ```powershell

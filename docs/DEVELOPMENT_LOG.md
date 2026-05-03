@@ -110,3 +110,22 @@ Stabilize the development foundation before feature work:
 - Codex still cannot create new branch/tag refs in this session: `.git/refs/...lock Permission denied`.
 - Global `python` and `py` are still not visible in this Codex shell.
 - Both `backend\.venv` and `backend\venv` still point to the removed Python path and are unusable from this shell.
+
+## 2026-05-03 - Alembic Schema Baseline
+
+### Changes
+
+- Added Alembic configuration, async migration environment, and an initial schema migration for the current SQLAlchemy models.
+- Added `scripts/migrate_db.py` to apply migrations and stamp existing local SQLite databases that already match the baseline.
+- Changed `start-backend.bat` to run migrations before launching FastAPI.
+- Updated `data/seed_positions.py` so seed data no longer creates schema implicitly.
+- Documented the migration workflow in `docs/DATABASE_MIGRATIONS.md`.
+
+### Verification
+
+- Passed: `backend\.venv\Scripts\python.exe -m py_compile scripts\migrate_db.py data\seed_positions.py`.
+- Passed: `backend\.venv\Scripts\python.exe -m compileall backend\app`.
+- Passed: Alembic upgrade against `.codex-temp\migration_test.db`.
+- Passed: position seed against `.codex-temp\migration_test.db` with 7 categories and 44 positions.
+- Passed: existing SQLite baseline stamp against `.codex-temp\existing_copy.db`.
+- Passed: `backend\.venv\Scripts\alembic.exe -c alembic.ini check` against the migrated temp database.

@@ -35,4 +35,9 @@ if not exist "%VENV_PY%" (
 )
 
 "%VENV_PY%" -m pip install -r requirements.txt
+"%VENV_PY%" ..\scripts\migrate_db.py
+if errorlevel 1 (
+  echo Database migration failed.
+  exit /b 1
+)
 "%VENV_PY%" -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

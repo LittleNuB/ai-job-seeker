@@ -26,7 +26,18 @@ Expected behavior:
 
 1. Create `backend\.venv` if needed.
 2. Install `backend\requirements.txt`.
-3. Start FastAPI on `http://localhost:8000`.
+3. Apply Alembic database migrations.
+4. Start FastAPI on `http://localhost:8000`.
+
+## Database Migrations
+
+Use Alembic for schema changes:
+
+```powershell
+python scripts\migrate_db.py
+```
+
+See `docs\DATABASE_MIGRATIONS.md` for the migration workflow.
 
 ## Smoke Test
 

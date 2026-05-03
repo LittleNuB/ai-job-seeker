@@ -1,53 +1,59 @@
-"""将 data/ai_positions.json 导入数据库"""
+"""Seed position taxonomy data into an already migrated database."""
 
-import json
 import asyncio
+import json
+import logging
+import os
 import sys
 from pathlib import Path
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
-
 from sqlalchemy import select
-from app.database import engine, async_session, Base
-from app.models.position import Position, Category
+from sqlalchemy.exc import OperationalError
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+os.environ.setdefault("DEBUG", "false")
+logging.getLogger("sqlalchemy.engine").disabled = True
+logging.getLogger("sqlalchemy.engine.Engine").disabled = True
+
+from app.database import async_session  # noqa: E402
+from app.models.position import Category, Position  # noqa: E402
 
 
-async def seed():
+async def seed() -> None:
     data_path = Path(__file__).parent / "ai_positions.json"
     with open(data_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     async with async_session() as session:
-        # Check if data already exists
-        result = await session.execute(select(Category).limit(1))
+        try:
+            result = await session.execute(select(Category).limit(1))
+        except OperationalError as exc:
+            raise SystemExit(
+                "Database schema is missing. Run `python scripts/migrate_db.py` before seeding positions."
+            ) from exc
+
         if result.scalar_one_or_none():
-            print("岗位数据已存在，跳过导入")
+            print("Position data already exists; skipping seed.")
             return
 
-        # Import categories
         category_map = {}
-        for cat_data in data["categories"]:
-            cat = Category(
+        for sort_order, cat_data in enumerate(data["categories"]):
+            category = Category(
                 id=cat_data["id"],
                 name=cat_data["name"],
                 description=cat_data.get("description"),
                 icon=cat_data.get("icon"),
-                sort_order=data["categories"].index(cat_data),
+                sort_order=sort_order,
             )
-            session.add(cat)
-            category_map[cat.id] = cat
+            session.add(category)
+            category_map[category.id] = category
+
         await session.flush()
 
-        # Import positions
         position_count = 0
         for cat_data in data["categories"]:
             for pos_data in cat_data.get("positions", []):
-                pos = Position(
+                position = Position(
                     id=pos_data["id"],
                     category_id=cat_data["id"],
                     name=pos_data["name"],
@@ -55,18 +61,28 @@ async def seed():
                     level=pos_data.get("level"),
                     summary=pos_data.get("summary"),
                     positioning=pos_data.get("positioning"),
-                    capability_requirements=json.dumps(pos_data.get("capability_requirements"), ensure_ascii=False) if pos_data.get("capability_requirements") else None,
-                    career_path=json.dumps(pos_data.get("career_path"), ensure_ascii=False) if pos_data.get("career_path") else None,
-                    salary_range=json.dumps(pos_data.get("salary_range"), ensure_ascii=False) if pos_data.get("salary_range") else None,
-                    common_interview_topics=json.dumps(pos_data.get("common_interview_topics"), ensure_ascii=False) if pos_data.get("common_interview_topics") else None,
-                    related_positions=json.dumps(pos_data.get("related_positions"), ensure_ascii=False) if pos_data.get("related_positions") else None,
+                    capability_requirements=json.dumps(pos_data.get("capability_requirements"), ensure_ascii=False)
+                    if pos_data.get("capability_requirements")
+                    else None,
+                    career_path=json.dumps(pos_data.get("career_path"), ensure_ascii=False)
+                    if pos_data.get("career_path")
+                    else None,
+                    salary_range=json.dumps(pos_data.get("salary_range"), ensure_ascii=False)
+                    if pos_data.get("salary_range")
+                    else None,
+                    common_interview_topics=json.dumps(pos_data.get("common_interview_topics"), ensure_ascii=False)
+                    if pos_data.get("common_interview_topics")
+                    else None,
+                    related_positions=json.dumps(pos_data.get("related_positions"), ensure_ascii=False)
+                    if pos_data.get("related_positions")
+                    else None,
                     industry_trends=pos_data.get("industry_trends"),
                 )
-                session.add(pos)
+                session.add(position)
                 position_count += 1
 
         await session.commit()
-        print(f"导入完成：{len(category_map)} 个分类，{position_count} 个岗位")
+        print(f"Seed completed: {len(category_map)} categories, {position_count} positions.")
 
 
 if __name__ == "__main__":
