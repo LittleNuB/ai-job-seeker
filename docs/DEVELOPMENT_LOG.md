@@ -251,3 +251,18 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Passed: `.\scripts\check_all.ps1`.
+
+## 2026-05-03 - Frontend Session And History E2E
+
+### Changes
+
+- Added E2E helpers for unique test users and local chat-history fixtures.
+- Added browser tests for login session persistence across reloads and page navigation.
+- Added a logout test that asserts local auth storage is cleared before protected actions redirect to login.
+- Added a chat-history E2E test that verifies seeded conversation messages are readable by the owner but not by another user or anonymous requests.
+- Documented the history fixture environment variables in `docs/TESTING.md`.
+
+### Verification
+
+- Passed: `cd frontend; npm run test:e2e` with 10 tests against `http://localhost:3001`.
+- Passed: `.\scripts\check_all.ps1 -E2E -E2EBaseUrl http://localhost:3001`.

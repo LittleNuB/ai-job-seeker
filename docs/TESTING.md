@@ -37,6 +37,18 @@ If the frontend is not on `http://localhost:3000`, pass the target URL:
 .\scripts\check_all.ps1 -E2E -E2EBaseUrl http://localhost:3001
 ```
 
+The chat-history E2E spec seeds one local SQLite conversation so it can verify history access without spending LLM quota. By default it uses:
+
+- Python: `backend\.venv\Scripts\python.exe`
+- Database: `data\ai_job_copilot.db`
+
+Override these when needed:
+
+```powershell
+$env:E2E_PYTHON="C:\path\to\python.exe"
+$env:E2E_SQLITE_DB="C:\path\to\ai_job_copilot.db"
+```
+
 The tests set their own environment:
 
 - `APP_ENV=test`
@@ -82,4 +94,7 @@ Current E2E coverage:
 - Explore loads seeded position data through the running API proxy.
 - Login links preserve the current page as `next`.
 - Registering from `?next=/jd` returns to JD and updates the navbar.
+- Login sessions persist across reloads and navigation.
+- Logout clears local session storage and protected actions return to login.
+- Chat history messages are readable by the owner only.
 - Protected JD analysis, resume matching, and AI follow-up redirect unauthenticated users to login.
