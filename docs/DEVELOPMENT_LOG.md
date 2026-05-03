@@ -207,3 +207,21 @@ Stabilize the development foundation before feature work:
 - Passed: `cd frontend; npm run lint` with no warnings.
 - Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
 - Verified running frontend pages return 200 for `/`, `/jd`, and `/match`.
+
+## 2026-05-03 - Auth Required Flow
+
+### Changes
+
+- Added frontend auth helpers for auth-change events, safe login return paths, and protected-operation checks.
+- API client now turns HTTP 401 responses into a dedicated auth-required error and clears stale local sessions.
+- Login/register supports `?next=/path` and returns users to their original page after authentication.
+- Navbar listens for auth session changes so login/logout state updates immediately.
+- JD analysis, resume matching, report export, file upload, and AI follow-up now require login before starting protected work.
+
+### Verification
+
+- Passed: `cd frontend; npm run build`.
+- Passed: `cd frontend; npx tsc --noEmit`.
+- Passed: `cd frontend; npm run lint`.
+- Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
+- Verified running frontend pages return 200 for `/auth?next=%2Fjd`, `/jd`, and `/match`, and the Next proxy health check returns 200.

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { FileText, Loader2, Upload, X } from "lucide-react";
 import { getAuthHeaders } from "@/lib/api";
+import { clearAuthSession, redirectToLogin, requireAuth } from "@/lib/auth";
 
 interface FileUploaderProps {
   onTextExtracted: (text: string) => void;
@@ -19,6 +20,11 @@ export default function FileUploader({ onTextExtracted, label = "上传文件" }
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
+    if (!requireAuth()) {
+      setError("请先登录后再上传文件");
+      return;
+    }
+
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
     if (!allowedExtensions.includes(ext)) {
       setError(`不支持的文件类型：${ext || "未知"}，请上传 PDF/DOCX/JPG/PNG`);
@@ -44,6 +50,11 @@ export default function FileUploader({ onTextExtracted, label = "上传文件" }
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ detail: "上传失败" }));
+        if (res.status === 401) {
+          clearAuthSession();
+          redirectToLogin();
+          throw new Error(data.detail || "请先登录后再上传文件");
+        }
         throw new Error(data.detail || "上传失败");
       }
       const data = await res.json();
@@ -72,10 +83,18 @@ export default function FileUploader({ onTextExtracted, label = "上传文件" }
     setError("");
   }
 
+  function handlePickFile() {
+    if (!requireAuth()) {
+      setError("请先登录后再上传文件");
+      return;
+    }
+    inputRef.current?.click();
+  }
+
   return (
     <div className="mb-3">
       <div
-        onClick={() => inputRef.current?.click()}
+        onClick={handlePickFile}
         onDragOver={(event) => {
           event.preventDefault();
           setDragOver(true);

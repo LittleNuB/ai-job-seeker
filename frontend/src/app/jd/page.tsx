@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, Download, FileText, Loader2, Tag } from "lucide-react";
 import { exportApi, jd as jdApi } from "@/lib/api";
+import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 
@@ -29,6 +30,10 @@ export default function JDPage() {
 
   async function handleAnalyze() {
     if (!jdText.trim()) return;
+    if (!requireAuth()) {
+      setError("请先登录后再解析 JD");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -39,10 +44,31 @@ export default function JDPage() {
       setRecordId(response.record_id);
       setAnalysis(response.result);
     } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) {
+        setError(err.message);
+        redirectToLogin();
+        return;
+      }
       setError(err instanceof Error ? err.message : "JD 解析失败，请稍后重试");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleExport() {
+    if (!recordId) return;
+    if (!requireAuth()) {
+      setError("请先登录后再导出报告");
+      return;
+    }
+    exportApi.downloadReport(recordId).catch((err) => {
+      if (err instanceof AuthRequiredError) {
+        setError(err.message);
+        redirectToLogin();
+        return;
+      }
+      setError(err instanceof Error ? err.message : "导出失败，请稍后重试");
+    });
   }
 
   return (
@@ -166,7 +192,7 @@ export default function JDPage() {
                 {recordId && (
                   <button
                     type="button"
-                    onClick={() => exportApi.downloadReport(recordId).catch((err) => setError(err.message))}
+                    onClick={handleExport}
                     className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50"
                   >
                     <Download className="h-4 w-4" /> 导出报告

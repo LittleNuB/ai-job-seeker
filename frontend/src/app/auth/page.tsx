@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { auth } from "@/lib/api";
 import { setAuthSession } from "@/lib/auth";
@@ -12,8 +12,9 @@ function byteLength(value: string): number {
   return new TextEncoder().encode(value).length;
 }
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +26,7 @@ export default function AuthPage() {
   const trimmedName = name.trim();
   const passwordTooLong = byteLength(password) > MAX_BCRYPT_BYTES;
   const canSubmit = Boolean(trimmedEmail && password && !passwordTooLong && !loading);
+  const nextPath = getSafeNextPath(searchParams.get("next"));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +46,7 @@ export default function AuthPage() {
             });
 
       setAuthSession(res.access_token, res.email);
-      router.push("/");
+      router.push(nextPath);
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "认证失败，请稍后重试");
@@ -140,5 +142,20 @@ export default function AuthPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+function getSafeNextPath(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return "/";
+  }
+  return next;
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-center text-sm text-gray-400">加载中...</div>}>
+      <AuthPageContent />
+    </Suspense>
   );
 }

@@ -1,4 +1,4 @@
-import { getAuthHeaders } from "./auth";
+import { AuthRequiredError, clearAuthSession, getAuthHeaders } from "./auth";
 
 export { getAuthHeaders, getAuthToken } from "./auth";
 
@@ -31,6 +31,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
+    if (res.status === 401) {
+      clearAuthSession();
+      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再继续操作"));
+    }
     throw new Error(normalizeError(error.detail, "请求失败，请稍后重试"));
   }
   return res.json();
@@ -95,6 +99,10 @@ export const exportApi = {
     });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: res.statusText }));
+      if (res.status === 401) {
+        clearAuthSession();
+        throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再导出报告"));
+      }
       throw new Error(normalizeError(error.detail, "导出失败，请稍后重试"));
     }
     const blob = await res.blob();
@@ -136,6 +144,7 @@ export interface StreamCallbacks {
   onToolCalls: (tools: string[], labels: Record<string, string>) => void;
   onDone: (conversationId: string) => void;
   onError: (message: string) => void;
+  onAuthRequired?: (message: string) => void;
 }
 
 export async function streamChatMessage(
@@ -161,7 +170,14 @@ export async function streamChatMessage(
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({ detail: res.statusText }));
-    callbacks.onError(normalizeError(errorBody.detail, "请求失败，请稍后重试"));
+    const message = normalizeError(errorBody.detail, "请求失败，请稍后重试");
+    if (res.status === 401) {
+      clearAuthSession();
+      callbacks.onAuthRequired?.(message);
+      if (!callbacks.onAuthRequired) callbacks.onError(message);
+      return;
+    }
+    callbacks.onError(message);
     return;
   }
 

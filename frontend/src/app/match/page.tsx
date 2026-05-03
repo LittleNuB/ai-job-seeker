@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Download, Loader2, Target } from "lucide-react";
 import { exportApi, matchApi, positions as positionsApi } from "@/lib/api";
+import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 import ScoreBar from "@/components/ScoreBar";
@@ -81,6 +82,10 @@ function MatchPageContent() {
 
   async function handleMatch() {
     if (!resumeText.trim() || !positionId) return;
+    if (!requireAuth()) {
+      setError("请先登录后再进行简历匹配");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -95,10 +100,31 @@ function MatchPageContent() {
       setRecordId(response.record_id);
       setResult(response);
     } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) {
+        setError(err.message);
+        redirectToLogin();
+        return;
+      }
       setError(err instanceof Error ? err.message : "匹配分析失败，请稍后重试");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleExport() {
+    if (!recordId) return;
+    if (!requireAuth()) {
+      setError("请先登录后再导出报告");
+      return;
+    }
+    exportApi.downloadReport(recordId).catch((err) => {
+      if (err instanceof AuthRequiredError) {
+        setError(err.message);
+        redirectToLogin();
+        return;
+      }
+      setError(err instanceof Error ? err.message : "导出失败，请稍后重试");
+    });
   }
 
   function severityColor(severity: string) {
@@ -277,7 +303,7 @@ function MatchPageContent() {
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => exportApi.downloadReport(recordId).catch((err) => setError(err.message))}
+                onClick={handleExport}
                 className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <Download className="h-4 w-4" /> 导出匹配报告

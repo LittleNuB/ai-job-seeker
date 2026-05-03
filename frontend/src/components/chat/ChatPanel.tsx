@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, MessageSquare, Send, X } from "lucide-react";
 import { chat, streamChatMessage } from "@/lib/api";
+import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 
 interface Message {
   role: "user" | "assistant";
@@ -29,15 +30,20 @@ export default function ChatPanel({ contextType, contextData }: ChatPanelProps) 
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  function handleToggle() {
+    if (!open && !requireAuth()) return;
+    setOpen((current) => !current);
+  }
+
   async function handleSend() {
     const text = input.trim();
     if (!text || loading) return;
+    if (!requireAuth()) return;
 
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
 
-    // Add placeholder assistant message for streaming
     const assistantIdx = messages.length + 1;
     setMessages((prev) => [
       ...prev,
@@ -46,6 +52,7 @@ export default function ChatPanel({ contextType, contextData }: ChatPanelProps) 
 
     let receivedAnyToken = false;
     let streamError = false;
+    let authRequired = false;
 
     try {
       await streamChatMessage(
@@ -91,13 +98,22 @@ export default function ChatPanel({ contextType, contextData }: ChatPanelProps) 
           onError: () => {
             streamError = true;
           },
+          onAuthRequired: () => {
+            authRequired = true;
+          },
         },
       );
     } catch {
       streamError = true;
     }
 
-    // Fallback to non-streaming if no tokens received
+    if (authRequired) {
+      setMessages((prev) => prev.slice(0, -1));
+      setLoading(false);
+      redirectToLogin();
+      return;
+    }
+
     if (streamError && !receivedAnyToken) {
       setMessages((prev) => prev.slice(0, -1));
       try {
@@ -112,17 +128,21 @@ export default function ChatPanel({ contextType, contextData }: ChatPanelProps) 
           ...prev,
           {
             role: "assistant",
-            content: res.message?.content || "抱歉，我无法回答这个问题。",
+            content: res.message?.content || "抱歉，我暂时无法回答这个问题。",
           },
         ]);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        if (err instanceof AuthRequiredError) {
+          redirectToLogin();
+          setLoading(false);
+          return;
+        }
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `出错了：${err.message}` },
+          { role: "assistant", content: `出错了：${err instanceof Error ? err.message : "请求失败"}` },
         ]);
       }
     } else if (streamError && receivedAnyToken) {
-      // Partial response received — just mark as done
       setMessages((prev) => {
         const updated = [...prev];
         const msg = { ...updated[assistantIdx] };
@@ -138,95 +158,84 @@ export default function ChatPanel({ contextType, contextData }: ChatPanelProps) 
 
   return (
     <>
-      {/* Toggle Button */}
       <button
-        onClick={() => setOpen(!open)}
-        className="fixed right-6 bottom-6 z-50 flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+        type="button"
+        onClick={handleToggle}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-white shadow-lg transition-colors hover:bg-blue-700"
       >
-        <MessageSquare className="w-5 h-5" />
-        <span className="text-sm font-medium">AI追问</span>
+        <MessageSquare className="h-5 w-5" />
+        <span className="text-sm font-medium">AI 追问</span>
       </button>
 
-      {/* Panel */}
       {open && (
-        <div className="fixed right-6 bottom-20 z-50 w-96 h-[520px] bg-white rounded-xl border border-gray-200 shadow-2xl flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="fixed bottom-20 right-6 z-50 flex h-[520px] w-96 flex-col rounded-xl border border-gray-200 bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-blue-600" />
-              <span className="font-medium text-sm">AI 追问</span>
+              <MessageSquare className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">AI 追问</span>
             </div>
-            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
+            <button type="button" onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
             {messages.length === 0 && (
-              <div className="text-center text-sm text-gray-400 mt-8">
-                对当前页面内容有疑问？直接提问吧
+              <div className="mt-8 text-center text-sm text-gray-400">
+                对当前页面内容有疑问？可以直接提问。
               </div>
             )}
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
+
+            {messages.map((msg, index) => (
+              <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-lg text-sm leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
+                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                    msg.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {/* Tool call indicators */}
                   {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-xs text-blue-600 mb-1">
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                    <div className="mb-1 flex items-center gap-1.5 text-xs text-blue-600">
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       {msg.toolCalls.map((tool) => (
-                        <span key={tool}>
-                          {msg.toolLabels?.[tool] || `正在调用 ${tool}...`}
-                        </span>
+                        <span key={tool}>{msg.toolLabels?.[tool] || `正在调用 ${tool}...`}</span>
                       ))}
                     </div>
                   )}
-                  {/* Content */}
                   {msg.content}
-                  {/* Streaming cursor */}
                   {msg.streaming && !msg.toolCalls?.length && (
-                    <span className="inline-block w-1.5 h-4 bg-gray-400 animate-pulse ml-0.5 align-text-bottom" />
+                    <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-gray-400 align-text-bottom" />
                   )}
                 </div>
               </div>
             ))}
+
             {loading && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 px-3 py-2 rounded-lg">
-                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                <div className="rounded-lg bg-gray-100 px-3 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="border-t border-gray-200 px-4 py-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleSend()}
                 placeholder="输入你的问题..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
+                type="button"
                 onClick={handleSend}
                 disabled={loading || !input.trim()}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
               </button>
             </div>
           </div>

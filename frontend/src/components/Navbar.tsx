@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Brain, Compass, FileText, LogIn, LogOut, Target } from "lucide-react";
-import { clearAuthSession, getAuthEmail } from "@/lib/auth";
+import { AUTH_CHANGED_EVENT, clearAuthSession, getAuthEmail, getLoginPath } from "@/lib/auth";
 
 const links = [
   { href: "/", label: "首页", icon: Brain },
@@ -26,7 +26,13 @@ export default function Navbar() {
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    setEmail(getAuthEmail());
+    function syncEmail() {
+      setEmail(getAuthEmail());
+    }
+
+    syncEmail();
+    window.addEventListener(AUTH_CHANGED_EVENT, syncEmail);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, syncEmail);
   }, [pathname]);
 
   function handleLogout() {
@@ -75,7 +81,7 @@ export default function Navbar() {
             </button>
           ) : (
             <Link
-              href="/auth"
+              href={getLoginPath(pathname)}
               className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith("/auth")
                   ? "bg-blue-50 text-blue-600"
