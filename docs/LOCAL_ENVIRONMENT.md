@@ -61,6 +61,17 @@ In a second terminal after the backend starts:
 backend\.venv\Scripts\python.exe scripts\smoke_api.py --base-url http://localhost:8000
 ```
 
+## Automated Tests
+
+Run backend regression tests without starting a server:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest
+```
+
+See `docs\TESTING.md` for coverage and environment details.
+
 ## Git Write Check
 
 Codex needs to be able to create lock files inside `.git\refs` to branch, tag, stage, and commit.

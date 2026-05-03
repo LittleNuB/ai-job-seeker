@@ -145,3 +145,20 @@ Stabilize the development foundation before feature work:
 - Passed: `backend\.venv\Scripts\python.exe -m py_compile scripts\migrate_db.py data\seed_positions.py`.
 - Passed: direct `Settings` validation checks for development fallback, production weak secret rejection, production `DEBUG=true` rejection, and production strong secret acceptance.
 - Passed: live smoke run on `http://127.0.0.1:8124` against `.codex-temp\config_smoke.db`.
+
+## 2026-05-03 - Backend Automated Tests
+
+### Changes
+
+- Added pytest, pytest-asyncio, and httpx as explicit backend test dependencies.
+- Added pytest configuration and async FastAPI client fixtures.
+- Test database is created from Alembic migrations under `.pytest-temp`.
+- Added regression tests for auth flow, protected routes, export scoping, chat scoping, keyword search fallback, and production config guardrails.
+- Documented the test workflow in `docs/TESTING.md`.
+
+### Verification
+
+- Passed: `backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt`.
+- Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
+- Passed: `backend\.venv\Scripts\python.exe -m compileall backend\app`.
+- Passed: `backend\.venv\Scripts\python.exe -m py_compile scripts\migrate_db.py data\seed_positions.py`.
