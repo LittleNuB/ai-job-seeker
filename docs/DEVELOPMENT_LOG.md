@@ -225,3 +225,17 @@ Stabilize the development foundation before feature work:
 - Passed: `cd frontend; npm run lint`.
 - Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
 - Verified running frontend pages return 200 for `/auth?next=%2Fjd`, `/jd`, and `/match`, and the Next proxy health check returns 200.
+
+## 2026-05-03 - Frontend E2E Baseline
+
+### Changes
+
+- Added Playwright as the frontend E2E test runner.
+- Added Playwright config targeting already running local services at `http://localhost:3000` by default with the locally installed Edge browser.
+- Added E2E tests for public pages, seeded explore data, login return paths, registration flow, logout, and protected-action redirects.
+- Added `127.0.0.1` development CORS origins and associated auth form labels so browser tests can exercise local flows reliably.
+- Documented the frontend E2E workflow in `docs/TESTING.md`.
+
+### Verification
+
+- Passed: `cd frontend; npm run test:e2e` with 7 tests against `http://localhost:3001`.

@@ -73,10 +73,11 @@ function AuthPageContent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "register" && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label htmlFor="auth-name" className="mb-1 block text-sm font-medium text-gray-700">
                 昵称 <span className="font-normal text-gray-400">可选</span>
               </label>
               <input
+                id="auth-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -87,8 +88,9 @@ function AuthPageContent() {
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
+            <label htmlFor="auth-email" className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
             <input
+              id="auth-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -99,8 +101,9 @@ function AuthPageContent() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">密码</label>
+            <label htmlFor="auth-password" className="mb-1 block text-sm font-medium text-gray-700">密码</label>
             <input
+              id="auth-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -31,3 +31,33 @@ The tests set their own environment:
 - Chat history is scoped to the current user.
 - Position search falls back to keyword search when `GLM_API_KEY` is missing.
 - Production config rejects weak JWT secrets and `DEBUG=true`.
+
+## Frontend E2E Tests
+
+The first E2E layer uses Playwright against already running local services.
+The Playwright project targets the locally installed Microsoft Edge browser, so it does not require downloading Chromium during normal Windows development.
+
+Start the app:
+
+```powershell
+.\start-backend.bat
+cd frontend
+npm run dev -- -H 0.0.0.0 -p 3000
+```
+
+Then run:
+
+```powershell
+cd frontend
+npm run test:e2e
+```
+
+Set `E2E_BASE_URL` if the frontend is running somewhere other than `http://localhost:3000`.
+
+Current E2E coverage:
+
+- Home, auth, and explore pages render core content.
+- Explore loads seeded position data through the running API proxy.
+- Login links preserve the current page as `next`.
+- Registering from `?next=/jd` returns to JD and updates the navbar.
+- Protected JD analysis, resume matching, and AI follow-up redirect unauthenticated users to login.
