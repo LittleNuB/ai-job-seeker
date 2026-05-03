@@ -3,14 +3,22 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Brain, FileText, Target, Compass, LogIn, LogOut } from "lucide-react";
+import { Brain, Compass, FileText, LogIn, LogOut, Target } from "lucide-react";
+import { clearAuthSession, getAuthEmail } from "@/lib/auth";
 
 const links = [
   { href: "/", label: "首页", icon: Brain },
   { href: "/explore", label: "岗位探索", icon: Compass },
-  { href: "/jd", label: "JD解析", icon: FileText },
+  { href: "/jd", label: "JD 解析", icon: FileText },
   { href: "/match", label: "简历匹配", icon: Target },
 ];
+
+function compactEmail(email: string): string {
+  if (email.length <= 22) return email;
+  const [name, domain] = email.split("@");
+  if (!domain) return `${email.slice(0, 18)}...`;
+  return `${name.slice(0, 8)}...@${domain}`;
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -18,23 +26,23 @@ export default function Navbar() {
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    setEmail(localStorage.getItem("auth_email"));
+    setEmail(getAuthEmail());
   }, [pathname]);
 
   function handleLogout() {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_email");
+    clearAuthSession();
     setEmail(null);
     router.push("/auth");
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-blue-600">
-          <Brain className="w-6 h-6" />
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-blue-600">
+          <Brain className="h-6 w-6" />
           AI Job Copilot
         </Link>
+
         <div className="flex items-center gap-1">
           {links.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -42,37 +50,39 @@ export default function Navbar() {
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-blue-50 text-blue-600"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="h-4 w-4" />
                 {label}
               </Link>
             );
           })}
+
           {email ? (
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              title={email}
+              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              title={`当前账号：${email}`}
             >
-              <LogOut className="w-4 h-4" />
+              <span className="hidden max-w-[180px] truncate lg:inline">{compactEmail(email)}</span>
+              <LogOut className="h-4 w-4" />
               退出
             </button>
           ) : (
             <Link
               href="/auth"
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith("/auth")
                   ? "bg-blue-50 text-blue-600"
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="h-4 w-4" />
               登录
             </Link>
           )}

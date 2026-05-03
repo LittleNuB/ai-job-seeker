@@ -1,26 +1,37 @@
+import { getAuthHeaders } from "./auth";
+
+export { getAuthHeaders, getAuthToken } from "./auth";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
-export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("auth_token");
+function normalizeError(detail: unknown, fallback: string): string {
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+  if (Array.isArray(detail) && detail.length > 0) {
+    return "提交内容格式不正确，请检查后再试";
+  }
+  return fallback;
 }
 
-export function getAuthHeaders(): Record<string, string> {
-  const token = getAuthToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-      ...options?.headers,
-    },
-    ...options,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+        ...options?.headers,
+      },
+      ...options,
+    });
+  } catch {
+    throw new Error("无法连接服务器，请确认后端已启动");
+  }
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(error.detail || "请求失败");
+    throw new Error(normalizeError(error.detail, "请求失败，请稍后重试"));
   }
   return res.json();
 }
@@ -28,12 +39,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 // Auth
 export const auth = {
   register: (data: { email: string; password: string; name?: string }) =>
-    request<{ access_token: string; user_id: string; email: string }>("/api/auth/register", {
+    request<{ access_token: string; user_id: string; email: string; name?: string }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     }),
   login: (data: { email: string; password: string }) =>
-    request<{ access_token: string; user_id: string; email: string }>("/api/auth/login", {
+    request<{ access_token: string; user_id: string; email: string; name?: string }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -50,11 +61,10 @@ export const positions = {
     const qs = searchParams.toString();
     return request<any[]>(`/api/positions/positions${qs ? `?${qs}` : ""}`);
   },
-  getPosition: (id: string) =>
-    request<any>(`/api/positions/positions/${id}`),
+  getPosition: (id: string) => request<any>(`/api/positions/positions/${id}`),
   semanticSearch: (query: string, topK?: number) =>
     request<{ id: string; name: string; name_en: string; summary: string; score: number }[]>(
-      `/api/positions/search?query=${encodeURIComponent(query)}&top_k=${topK || 10}`
+      `/api/positions/search?query=${encodeURIComponent(query)}&top_k=${topK || 10}`,
     ),
 };
 
@@ -85,7 +95,7 @@ export const exportApi = {
     });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(error.detail || "导出失败");
+      throw new Error(normalizeError(error.detail, "导出失败，请稍后重试"));
     }
     const blob = await res.blob();
     const disposition = res.headers.get("content-disposition") || "";
@@ -116,7 +126,7 @@ export const chat = {
     }),
   getMessages: (conversationId: string) =>
     request<{ role: string; content: string; tool_calls: any; created_at: string }[]>(
-      `/api/chat/conversations/${conversationId}/messages`
+      `/api/chat/conversations/${conversationId}/messages`,
     ),
 };
 
@@ -137,15 +147,21 @@ export async function streamChatMessage(
   },
   callbacks: StreamCallbacks,
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/chat/message/stream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify(data),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/chat/message/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    callbacks.onError("无法连接服务器，请确认后端已启动");
+    return;
+  }
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({ detail: res.statusText }));
-    callbacks.onError(errorBody.detail || "请求失败");
+    callbacks.onError(normalizeError(errorBody.detail, "请求失败，请稍后重试"));
     return;
   }
 

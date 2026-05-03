@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { auth } from "@/lib/api";
+import { setAuthSession } from "@/lib/auth";
+
+const MAX_BCRYPT_BYTES = 72;
+
+function byteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
 
 export default function AuthPage() {
   const router = useRouter();
@@ -14,83 +21,120 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const trimmedEmail = email.trim();
+  const trimmedName = name.trim();
+  const passwordTooLong = byteLength(password) > MAX_BCRYPT_BYTES;
+  const canSubmit = Boolean(trimmedEmail && password && !passwordTooLong && !loading);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    if (!canSubmit) return;
+
     setLoading(true);
     setError("");
+
     try {
-      const res = mode === "login"
-        ? await auth.login({ email, password })
-        : await auth.register({ email, password, name: name || undefined });
-      localStorage.setItem("auth_token", res.access_token);
-      localStorage.setItem("auth_email", res.email);
+      const res =
+        mode === "login"
+          ? await auth.login({ email: trimmedEmail, password })
+          : await auth.register({
+              email: trimmedEmail,
+              password,
+              name: trimmedName || undefined,
+            });
+
+      setAuthSession(res.access_token, res.email);
       router.push("/");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "认证失败");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "认证失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   }
 
+  function switchMode() {
+    setMode((current) => (current === "login" ? "register" : "login"));
+    setError("");
+  }
+
   return (
-    <div className="max-w-md mx-auto px-4 py-12">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">
+    <div className="mx-auto max-w-md px-4 py-12">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h1 className="mb-1 text-xl font-semibold text-gray-900">
           {mode === "login" ? "登录" : "注册"}
         </h1>
-        <p className="text-sm text-gray-500 mb-6">登录后可保存并导出你的分析记录。</p>
+        <p className="mb-6 text-sm text-gray-500">
+          登录后可以保存、查看并导出你的分析记录。
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "register" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">昵称</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                昵称 <span className="font-normal text-gray-400">可选</span>
+              </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="可选"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="怎么称呼你"
+                autoComplete="name"
               />
             </div>
           )}
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="you@example.com"
+              autoComplete="email"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="至少 6 位"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="请输入密码"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
+            {passwordTooLong && (
+              <p className="mt-1 text-xs text-red-600">
+                密码过长，请控制在 72 字节以内。
+              </p>
+            )}
           </div>
 
-          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</div>}
+          <div className="min-h-[44px]">
+            {error && (
+              <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+          </div>
 
           <button
             type="submit"
-            disabled={loading || !email.trim() || !password.trim()}
-            className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            disabled={!canSubmit}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "login" ? "登录" : "注册并登录"}
           </button>
         </form>
 
         <button
           type="button"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
-          className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700"
+          onClick={switchMode}
+          className="mt-4 w-full text-sm text-blue-600 hover:text-blue-700"
         >
           {mode === "login" ? "还没有账号？创建一个" : "已有账号？去登录"}
         </button>

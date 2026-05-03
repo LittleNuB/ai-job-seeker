@@ -162,3 +162,18 @@ Stabilize the development foundation before feature work:
 - Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
 - Passed: `backend\.venv\Scripts\python.exe -m compileall backend\app`.
 - Passed: `backend\.venv\Scripts\python.exe -m py_compile scripts\migrate_db.py data\seed_positions.py`.
+
+## 2026-05-03 - Frontend Auth Polish
+
+### Changes
+
+- Fixed mojibake text on the auth page and navbar.
+- Added a small frontend auth session helper for token/email localStorage access.
+- Improved login/register form copy, loading state, password length validation, and error messages.
+- Normalized API/network error messages in the frontend client.
+
+### Verification
+
+- Passed: `cd frontend; npx tsc --noEmit`.
+- Passed: `cd backend; .\.venv\Scripts\python.exe -m pytest` with 11 tests.
+- Passed: `cd frontend; npm run lint` with pre-existing warnings in `explore` and `match` pages only.
