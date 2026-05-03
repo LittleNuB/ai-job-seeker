@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.position import Position
+from ..config import get_settings
 from .glm_client import get_glm_client
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,12 @@ class EmbeddingService:
             self._texts[pos.id] = " ".join(filter(None, [
                 pos.name, pos.name_en, pos.summary, pos.positioning,
             ]))
+
+        settings = get_settings()
+        if not settings.glm_api_key:
+            logger.info("GLM_API_KEY is not configured; semantic vector index disabled")
+            self._loaded = True
+            return
 
         # Batch embed (max 16 per request for 智谱 API)
         client = get_glm_client()

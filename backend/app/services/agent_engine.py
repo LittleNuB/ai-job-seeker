@@ -126,10 +126,10 @@ async def stream_agent_loop(
         msg = choice.message
 
         if not msg.tool_calls:
-            # Final response — stream token-by-token
-            async for chunk in glm.stream_chat(messages, tools=TOOL_DEFINITIONS):
-                if chunk.delta and chunk.delta.content:
-                    yield {"type": "token", "content": chunk.delta.content}
+            # Reuse the first model response. Calling the model again here can double cost
+            # and produce a different answer from the one that decided no tools were needed.
+            if msg.content:
+                yield {"type": "token", "content": msg.content}
             return
 
         # Tool calls — execute and report progress
