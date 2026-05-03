@@ -15,6 +15,28 @@ cd backend
 .\.venv\Scripts\python.exe -m pytest
 ```
 
+## Run The Standard Check Suite
+
+Use the project-level check script before commits:
+
+```powershell
+.\scripts\check_all.ps1
+```
+
+By default it runs backend pytest, frontend typecheck, and frontend lint.
+
+Run E2E as well after starting backend and frontend services:
+
+```powershell
+.\scripts\check_all.ps1 -E2E
+```
+
+If the frontend is not on `http://localhost:3000`, pass the target URL:
+
+```powershell
+.\scripts\check_all.ps1 -E2E -E2EBaseUrl http://localhost:3001
+```
+
 The tests set their own environment:
 
 - `APP_ENV=test`

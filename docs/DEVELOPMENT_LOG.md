@@ -239,3 +239,15 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Passed: `cd frontend; npm run test:e2e` with 7 tests against `http://localhost:3001`.
+
+## 2026-05-03 - Project Check Script
+
+### Changes
+
+- Added `scripts/check_all.ps1` as the standard project verification entrypoint.
+- The script runs backend pytest, frontend typecheck, frontend lint, and optional frontend E2E with `-E2E`.
+- Documented the check workflow and configurable `E2EBaseUrl` in `docs/TESTING.md`.
+
+### Verification
+
+- Passed: `.\scripts\check_all.ps1`.
