@@ -266,3 +266,56 @@ Stabilize the development foundation before feature work:
 
 - Passed: `cd frontend; npm run test:e2e` with 10 tests against `http://localhost:3001`.
 - Passed: `.\scripts\check_all.ps1 -E2E -E2EBaseUrl http://localhost:3001`.
+
+## 2026-05-04 - History Records Page
+
+### Changes
+
+- Added `backend/app/schemas/records.py` with RecordListItem, RecordListResponse, RecordDetailResponse, DeleteResponse Pydantic schemas.
+- Added `backend/app/api/records.py` with three endpoints: `GET /api/records` (paginated list, optional `type` filter), `GET /api/records/{id}` (detail), `DELETE /api/records/{id}` (delete). All scoped by `user_id`.
+- Added `backend/tests/test_records.py` with 7 tests: anonymous rejection, list/detail/delete owner scoping, pagination, type filter, summary extraction.
+- Registered records router in `backend/app/main.py`.
+- Added `records` API methods to `frontend/src/lib/api.ts`.
+- Created `frontend/src/app/history/page.tsx` — full history page with type filter tabs, card list, inline detail expansion, export, delete, pagination.
+- Added History nav link to `frontend/src/components/Navbar.tsx`.
+- Added `_extract_summary()` helper in records API: JD → inferred_role, match → "匹配得分：{score}/100".
+
+### Verification
+
+- Passed: `.\scripts\check_all.ps1` — 18 backend tests, frontend typecheck, lint clean.
+
+## 2026-05-04 - JD Analysis Bug Fix
+
+### Changes
+
+- Fixed prompt type mismatch in `backend/app/services/jd_service.py`: `experience` and `education` changed from string to array format to match frontend `TagList` component.
+- Made `frontend/src/app/jd/page.tsx` `TagList` component accept both `string | string[]`, normalizing strings to single-item arrays for backward compatibility with old records.
+- Added rendering for 5 previously hidden fields:
+  - `surface_requirements.education`
+  - `hidden_needs.culture_signals` / `why_this_role`
+  - `interview_focus.red_flags` / `standout_angles`
+  - `interview_focus.likely_topics[].preparation`
+
+### Verification
+
+- Passed: `.\scripts\check_all.ps1` — 18 backend tests, frontend typecheck, lint clean.
+
+## 2026-05-04 - History Detail Structured View
+
+### Changes
+
+- Replaced raw JSON dump in history detail with `ResultView` component in `frontend/src/app/history/page.tsx`.
+- JD type: structured display of position overview, skills tags, hidden needs, interview focus, red flags, standout angles.
+- Match type: score, sub-score breakdown, core advantages, capability gaps, improvement plan columns.
+- Added helper components: `TagRow` (labeled tags), `TextLine` (label + text), `arr()` (string/array normalizer), `labelSB()` / `labelIMP()` (field label mappers).
+
+### Verification
+
+- Passed: frontend typecheck, lint clean.
+
+## 2026-05-04 - Compliance Gaps Assessment
+
+### Changes
+
+- Added `docs/COMPLIANCE_GAPS.md` documenting PIPL compliance gaps across 5 areas: user rights (account deletion, data portability, chat deletion, password reset), informed consent (privacy policy, terms, third-party AI disclosure, cookie consent), data security (plaintext PII, no encryption, localStorage JWT, no login rate limit, no audit log), minor protection (no age verification), data lifecycle (no retention policy, no minimization).
+- Each gap annotated with relevant legal article and priority P0-P3.
