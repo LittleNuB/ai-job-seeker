@@ -24,8 +24,8 @@ JD_USER_PROMPT_TEMPLATE = """请分析以下AI岗位的JD，从三个维度进�
   "surface_requirements": {{
     "hard_skills": ["明确的硬技能要求1", "..."],
     "soft_skills": ["明确的软技能要求1", "..."],
-    "experience": "经验年限要求",
-    "education": "学历要求"
+    "experience": ["经验年限要求"],
+    "education": ["学历要求"]
   }},
   "hidden_needs": {{
     "team_context": "团队真正面临的挑战和需要解决的问题",

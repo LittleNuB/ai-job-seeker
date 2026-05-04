@@ -141,6 +141,9 @@ export default function JDPage() {
                     {analysis.surface_requirements.experience?.length > 0 && (
                       <TagList label="经验要求" items={analysis.surface_requirements.experience} colorClass="bg-amber-50 text-amber-700" />
                     )}
+                    {analysis.surface_requirements.education?.length > 0 && (
+                      <TagList label="学历要求" items={analysis.surface_requirements.education} colorClass="bg-purple-50 text-purple-700" />
+                    )}
                   </div>
                 </div>
               )}
@@ -166,6 +169,22 @@ export default function JDPage() {
                       </div>
                     </div>
                   )}
+                  {analysis.hidden_needs.culture_signals?.length > 0 && (
+                    <div>
+                      <div className="mb-1 text-xs font-medium text-gray-400">团队文化信号</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {analysis.hidden_needs.culture_signals.map((signal: string, index: number) => (
+                          <span key={index} className="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{signal}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {analysis.hidden_needs.why_this_role && (
+                    <div>
+                      <div className="mb-1 text-xs font-medium text-gray-400">招聘原因推断</div>
+                      <p className="text-sm text-gray-700">{analysis.hidden_needs.why_this_role}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -180,9 +199,35 @@ export default function JDPage() {
                           <div>
                             <span className="text-gray-700">{topic.topic}</span>
                             <span className="ml-2 text-xs text-gray-400">{topic.depth}</span>
+                            {topic.preparation && (
+                              <p className="mt-0.5 text-xs text-gray-400">{topic.preparation}</p>
+                            )}
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {analysis.interview_focus.red_flags?.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-1 text-xs font-medium text-gray-400">潜在风险点</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {analysis.interview_focus.red_flags.map((flag: string, index: number) => (
+                          <span key={index} className="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700">{flag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {analysis.interview_focus.standout_angles?.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-1 text-xs font-medium text-gray-400">脱颖而出的切入点</div>
+                      <div className="space-y-1">
+                        {analysis.interview_focus.standout_angles.map((angle: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                            {angle}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -231,12 +276,13 @@ function OverviewItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TagList({ label, items, colorClass }: { label: string; items: string[]; colorClass: string }) {
+function TagList({ label, items, colorClass }: { label: string; items: string | string[]; colorClass: string }) {
+  const list = Array.isArray(items) ? items : [items];
   return (
     <div>
       <div className="mb-1 text-xs font-medium text-gray-400">{label}</div>
       <div className="flex flex-wrap gap-1.5">
-        {items.map((item, index) => (
+        {list.map((item, index) => (
           <span key={index} className={`rounded px-2 py-0.5 text-xs ${colorClass}`}>
             {item}
           </span>
