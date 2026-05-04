@@ -138,6 +138,22 @@ export const chat = {
     ),
 };
 
+// Records
+export const records = {
+  getList: (params?: { page?: number; page_size?: number; type?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.page_size) qs.set("page_size", String(params.page_size));
+    if (params?.type) qs.set("type", params.type);
+    const s = qs.toString();
+    return request<{ items: any[]; total: number; page: number; page_size: number }>(
+      `/api/records${s ? `?${s}` : ""}`,
+    );
+  },
+  getDetail: (id: string) => request<any>(`/api/records/${id}`),
+  deleteRecord: (id: string) => request<any>(`/api/records/${id}`, { method: "DELETE" }),
+};
+
 // Streaming Chat
 export interface StreamCallbacks {
   onToken: (token: string) => void;
