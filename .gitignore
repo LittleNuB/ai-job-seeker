@@ -13,5 +13,7 @@ Thumbs.db
 .mypy_cache/
 .pytest_cache/
 .pytest-temp/
+frontend/test-results/
 data/ai_job_copilot.db
 data/ai_positions_backup_*.json
+test_*.json

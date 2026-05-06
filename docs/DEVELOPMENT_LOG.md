@@ -319,3 +319,42 @@ Stabilize the development foundation before feature work:
 
 - Added `docs/COMPLIANCE_GAPS.md` documenting PIPL compliance gaps across 5 areas: user rights (account deletion, data portability, chat deletion, password reset), informed consent (privacy policy, terms, third-party AI disclosure, cookie consent), data security (plaintext PII, no encryption, localStorage JWT, no login rate limit, no audit log), minor protection (no age verification), data lifecycle (no retention policy, no minimization).
 - Each gap annotated with relevant legal article and priority P0-P3.
+
+## 2026-05-06 - Function Dev UX And Verification Pass
+
+### Branch
+
+- Active branch: `deepseek/function-dev`
+- Model/rubric evaluation work remains separate on `deepseek/eval-framework` / `codex/model-eval-comparison`.
+
+### Changes
+
+- Improved resume-match waiting UX with a stage panel, elapsed time, long-wait hint, and cancel action.
+- Added match failure and timeout recovery UI with clear guidance and a one-click retry path.
+- Added frontend-side match request timeout handling and stale-response protection after cancel/retry.
+- Added Playwright coverage for match waiting, cancel, timeout, and retry flows.
+- Stabilized E2E concurrency by supporting `E2E_WORKERS` in Playwright config and defaulting `scripts/check_all.ps1` to 4 workers.
+- Extended `scripts/check_all.ps1` with `-StartServices` so local E2E can start missing frontend/backend services and clean up services it started.
+- Updated `.gitignore` for local Playwright artifacts and ad hoc root-level `test_*.json` files.
+
+### Verification
+
+- Passed: `.\scripts\check_all.ps1`.
+- Passed: `.\scripts\check_all.ps1 -E2E -StartServices`.
+- Latest full result:
+  - Backend pytest: 18 passed.
+  - Frontend typecheck: passed.
+  - Frontend lint: passed.
+  - Frontend E2E: 12 passed using 4 workers.
+
+### Notes
+
+- The standard full local verification command is now:
+
+```powershell
+.\scripts\check_all.ps1 -E2E -StartServices
+```
+
+- The script reuses already-running services when they are reachable.
+- The script only stops processes/ports it started itself.
+- Existing local-only data remains intentionally uncommitted: `data/ai_job_copilot.db` and root-level `test_*.json` files.
