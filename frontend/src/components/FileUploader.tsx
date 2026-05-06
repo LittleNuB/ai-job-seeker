@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { FileText, Loader2, Upload, X } from "lucide-react";
-import { getAuthHeaders } from "@/lib/api";
-import { clearAuthSession, redirectToLogin, requireAuth } from "@/lib/auth";
+import { uploadFile } from "@/lib/api";
+import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 
 interface FileUploaderProps {
   onTextExtracted: (text: string) => void;
@@ -39,31 +39,18 @@ export default function FileUploader({ onTextExtracted, label = "上传文件" }
     setUploading(true);
     setFileName(file.name);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      const res = await fetch("/api/files/upload", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: formData,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ detail: "上传失败" }));
-        if (res.status === 401) {
-          clearAuthSession();
-          redirectToLogin();
-          throw new Error(data.detail || "请先登录后再上传文件");
-        }
-        throw new Error(data.detail || "上传失败");
-      }
-      const data = await res.json();
+      const data = await uploadFile(file);
       if (data.text) {
         onTextExtracted(data.text);
       } else {
         setError("文件中未提取到文本内容");
       }
     } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) {
+        redirectToLogin();
+        return;
+      }
       setError(err instanceof Error ? err.message : "文件解析失败");
     } finally {
       setUploading(false);

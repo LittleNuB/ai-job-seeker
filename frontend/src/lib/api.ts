@@ -73,6 +73,33 @@ async function downloadFile(path: string, fallbackFilename: string, fallbackErro
   URL.revokeObjectURL(url);
 }
 
+export async function uploadFile(file: File): Promise<{ text?: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/files/upload`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: formData,
+    });
+  } catch {
+    throw new Error("无法连接服务器，请确认后端已启动");
+  }
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    if (res.status === 401) {
+      clearAuthSession();
+      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再上传文件"));
+    }
+    throw new Error(normalizeError(error.detail, "上传失败"));
+  }
+
+  return res.json();
+}
+
 // Auth
 export const auth = {
   register: (data: { email: string; password: string; name?: string; accepted_terms: boolean }) =>
