@@ -16,6 +16,8 @@ test("registration returns to requested page and updates navbar", async ({ page 
   await page.getByLabel(/昵称/).fill("E2E User");
   await page.getByLabel("邮箱").fill(email);
   await page.getByLabel("密码").fill("E2ePass123!");
+  await expect(page.getByRole("button", { name: "注册并登录" })).toBeDisabled();
+  await page.getByLabel(/我已阅读并同意/).check();
   await page.getByRole("button", { name: "注册并登录" }).click();
 
   await expect(page).toHaveURL(/\/jd$/);

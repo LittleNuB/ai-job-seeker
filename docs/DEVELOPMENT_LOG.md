@@ -418,3 +418,20 @@ Stabilize the development foundation before feature work:
 - Passed: frontend typecheck and lint.
 - Passed: `chat-history.spec.ts` against a fresh temporary backend on port 8125 and frontend on port 3001.
 - Passed: `.\scripts\check_all.ps1`.
+
+## 2026-05-06 - Privacy And Terms Disclosure
+
+### Changes
+
+- Added `/privacy` and `/terms` pages for the MVP trial disclosure flow.
+- Added footer links to privacy policy and user agreement across the app.
+- Added registration consent checkbox linking to both pages and disclosing that resume, JD, and conversation content may be sent to third-party AI providers for analysis.
+- Added backend enforcement for `accepted_terms` on registration so API callers cannot bypass consent.
+- Allowed non-production local frontend ports through CORS so E2E can use fresh temporary dev servers instead of a stale `localhost:8000` setup.
+- Added regression coverage for registration consent and public legal pages.
+
+### Verification
+
+- Passed: backend pytest with 23 tests.
+- Passed: frontend typecheck and lint.
+- E2E coverage added for registration consent and legal page visibility.

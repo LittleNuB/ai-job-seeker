@@ -52,6 +52,9 @@ def verify_password(password: str, hashed: str) -> bool:
 
 @router.post("/register", response_model=AuthResponse)
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    if not req.accepted_terms:
+        raise HTTPException(status_code=400, detail="请先阅读并同意用户协议和隐私政策")
+
     result = await db.execute(select(User).where(User.email == req.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="该邮箱已注册")

@@ -31,6 +31,8 @@ app = FastAPI(
 
 app.add_middleware(RateLimitMiddleware, daily_limit=20)
 
+settings = get_settings()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -39,6 +41,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
     ],
+    allow_origin_regex=None if settings.is_production else r"^http://(localhost|127\.0\.0\.1):\d+$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

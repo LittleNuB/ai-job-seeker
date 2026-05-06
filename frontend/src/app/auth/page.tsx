@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { auth } from "@/lib/api";
@@ -19,13 +20,14 @@ function AuthPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const trimmedEmail = email.trim();
   const trimmedName = name.trim();
   const passwordTooLong = byteLength(password) > MAX_BCRYPT_BYTES;
-  const canSubmit = Boolean(trimmedEmail && password && !passwordTooLong && !loading);
+  const canSubmit = Boolean(trimmedEmail && password && !passwordTooLong && !loading && (mode === "login" || acceptedTerms));
   const nextPath = getSafeNextPath(searchParams.get("next"));
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,6 +45,7 @@ function AuthPageContent() {
               email: trimmedEmail,
               password,
               name: trimmedName || undefined,
+              accepted_terms: acceptedTerms,
             });
 
       setAuthSession(res.access_token, res.email);
@@ -57,6 +60,7 @@ function AuthPageContent() {
 
   function switchMode() {
     setMode((current) => (current === "login" ? "register" : "login"));
+    setAcceptedTerms(false);
     setError("");
   }
 
@@ -117,6 +121,28 @@ function AuthPageContent() {
               </p>
             )}
           </div>
+
+          {mode === "register" && (
+            <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                我已阅读并同意
+                <Link href="/terms" className="mx-1 font-medium text-blue-600 hover:text-blue-700">
+                  用户协议
+                </Link>
+                和
+                <Link href="/privacy" className="mx-1 font-medium text-blue-600 hover:text-blue-700">
+                  隐私政策
+                </Link>
+                ，了解简历、JD 和对话内容可能会发送给第三方 AI 服务提供方用于生成分析结果。
+              </span>
+            </label>
+          )}
 
           <div className="min-h-[44px]">
             {error && (

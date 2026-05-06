@@ -75,7 +75,7 @@ async function downloadFile(path: string, fallbackFilename: string, fallbackErro
 
 // Auth
 export const auth = {
-  register: (data: { email: string; password: string; name?: string }) =>
+  register: (data: { email: string; password: string; name?: string; accepted_terms: boolean }) =>
     request<{ access_token: string; user_id: string; email: string; name?: string }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(data),

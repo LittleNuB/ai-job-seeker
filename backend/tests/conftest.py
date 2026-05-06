@@ -76,7 +76,7 @@ async def register_user(client: AsyncClient, *, email: str | None = None, passwo
     email = email or f"test-{uuid4().hex}@example.com"
     response = await client.post(
         "/api/auth/register",
-        json={"email": email, "password": password, "name": "Pytest User"},
+        json={"email": email, "password": password, "name": "Pytest User", "accepted_terms": True},
     )
     assert response.status_code == 200, response.text
     return response.json()

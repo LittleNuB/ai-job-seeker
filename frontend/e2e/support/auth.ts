@@ -26,6 +26,7 @@ export async function registerUser(request: APIRequestContext, prefix = "user"):
       email,
       password: E2E_PASSWORD,
       name: "E2E User",
+      accepted_terms: true,
     },
   });
 
@@ -48,6 +49,7 @@ export async function registerThroughUi(page: Page, nextPath: string): Promise<E
   await page.getByLabel(/昵称/).fill("E2E User");
   await page.getByLabel("邮箱").fill(email);
   await page.getByLabel("密码").fill(E2E_PASSWORD);
+  await page.getByLabel(/我已阅读并同意/).check();
   await page.getByRole("button", { name: "注册并登录" }).click();
 
   await expect(page).toHaveURL(new RegExp(`${nextPath.replace("/", "\\/")}$`));

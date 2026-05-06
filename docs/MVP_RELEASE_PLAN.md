@@ -31,8 +31,8 @@ These must be complete before inviting real trial users.
 - Account deletion: done in current function-dev pass.
 - Analysis record deletion: mostly present through history records.
 - Chat conversation deletion: done in current function-dev pass.
-- Clear privacy policy and user agreement pages.
-- Explicit disclosure that resume/JD content may be sent to third-party model providers.
+- Clear privacy policy and user agreement pages: done in current function-dev pass.
+- Explicit disclosure that resume/JD content may be sent to third-party model providers: done in current function-dev pass.
 
 ### Security Minimum
 

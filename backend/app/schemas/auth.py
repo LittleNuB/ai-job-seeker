@@ -6,6 +6,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     name: str | None = None
+    accepted_terms: bool = False
 
 
 class LoginRequest(BaseModel):

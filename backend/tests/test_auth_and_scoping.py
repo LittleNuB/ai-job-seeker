@@ -17,7 +17,7 @@ async def test_register_login_and_me(client):
 
     register = await client.post(
         "/api/auth/register",
-        json={"email": email, "password": password, "name": "Test User"},
+        json={"email": email, "password": password, "name": "Test User", "accepted_terms": True},
     )
     assert register.status_code == 200, register.text
     assert register.json()["access_token"]
@@ -29,6 +29,15 @@ async def test_register_login_and_me(client):
     me = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.status_code == 200, me.text
     assert me.json()["email"] == email
+
+
+async def test_register_requires_terms_acceptance(client):
+    response = await client.post(
+        "/api/auth/register",
+        json={"email": f"terms-{uuid4().hex}@example.com", "password": "TestPass123!", "name": "No Terms"},
+    )
+    assert response.status_code == 400
+    assert "用户协议" in response.json()["detail"]
 
 
 async def test_protected_routes_reject_anonymous(client):
@@ -174,7 +183,7 @@ async def test_delete_account_removes_only_current_user_data(client, auth_header
     owner_password = "TestPass123!"
     owner_register = await client.post(
         "/api/auth/register",
-        json={"email": owner_email, "password": owner_password, "name": "Delete Owner"},
+        json={"email": owner_email, "password": owner_password, "name": "Delete Owner", "accepted_terms": True},
     )
     assert owner_register.status_code == 200, owner_register.text
     owner_headers = {"Authorization": f"Bearer {owner_register.json()['access_token']}"}
