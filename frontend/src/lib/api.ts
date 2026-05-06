@@ -25,7 +25,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       },
       ...options,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("请求已取消");
+    }
     throw new Error("无法连接服务器，请确认后端已启动");
   }
 
@@ -83,10 +86,11 @@ export const jd = {
 
 // Match
 export const matchApi = {
-  analyze: (data: { resume_text: string; position_id: string; jd_text?: string }) =>
+  analyze: (data: { resume_text: string; position_id: string; jd_text?: string }, options?: RequestInit) =>
     request<{ record_id: string; match_score: number; result: any }>("/api/match/analyze", {
       method: "POST",
       body: JSON.stringify(data),
+      ...options,
     }),
 };
 

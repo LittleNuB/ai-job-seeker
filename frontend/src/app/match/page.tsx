@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, Download, Loader2, Target } from "lucide-react";
+import { AlertCircle, Clock3, Download, Loader2, Target, XCircle } from "lucide-react";
 import { exportApi, matchApi, positions as positionsApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 import ChatPanel from "@/components/chat/ChatPanel";
@@ -15,6 +15,27 @@ interface PositionOption {
   name: string;
 }
 
+const WAIT_STEPS = [
+  { title: "整理输入", detail: "正在读取简历和岗位要求，准备匹配上下文。" },
+  { title: "提取证据", detail: "正在从简历中寻找可验证的技能、经历和协作证据。" },
+  { title: "多维评分", detail: "正在按硬技能、经验、文化匹配和成长潜力分别打分。" },
+  { title: "生成建议", detail: "正在整理优势、缺口、面试策略和提升计划。" },
+];
+
+function waitStageIndex(seconds: number): number {
+  if (seconds >= 45) return 3;
+  if (seconds >= 22) return 2;
+  if (seconds >= 8) return 1;
+  return 0;
+}
+
+function waitProgress(seconds: number): number {
+  if (seconds < 8) return 12 + seconds * 3;
+  if (seconds < 22) return 36 + (seconds - 8) * 2;
+  if (seconds < 45) return 64 + Math.floor((seconds - 22) * 0.8);
+  return Math.min(92, 82 + Math.floor((seconds - 45) * 0.2));
+}
+
 function MatchPageContent() {
   const searchParams = useSearchParams();
   const [resumeText, setResumeText] = useState("");
@@ -24,10 +45,14 @@ function MatchPageContent() {
   const [result, setResult] = useState<any>(null);
   const [recordId, setRecordId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [positionList, setPositionList] = useState<PositionOption[]>([]);
   const [positionsLoaded, setPositionsLoaded] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadPositions = useCallback(async () => {
     if (positionsLoaded) return positionList;
@@ -80,6 +105,16 @@ function MatchPageContent() {
     }
   }, [loadPositions, searchParams]);
 
+  useEffect(() => {
+    if (!loading || !matchStartedAt) return undefined;
+
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - matchStartedAt) / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [loading, matchStartedAt]);
+
   async function handleMatch() {
     if (!resumeText.trim() || !positionId) return;
     if (!requireAuth()) {
@@ -88,18 +123,30 @@ function MatchPageContent() {
     }
 
     setLoading(true);
+    setElapsedSeconds(0);
+    setMatchStartedAt(Date.now());
     setError("");
+    setNotice("");
     setResult(null);
+    setRecordId("");
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const response = await matchApi.analyze({
         resume_text: resumeText,
         position_id: positionId,
         ...(jdText.trim() ? { jd_text: jdText } : {}),
+      }, {
+        signal: controller.signal,
       });
       setRecordId(response.record_id);
       setResult(response);
     } catch (err: unknown) {
+      if (err instanceof Error && err.message === "请求已取消") {
+        setNotice("已取消本次匹配分析，可以调整简历或岗位后重新开始。");
+        return;
+      }
       if (err instanceof AuthRequiredError) {
         setError(err.message);
         redirectToLogin();
@@ -108,7 +155,13 @@ function MatchPageContent() {
       setError(err instanceof Error ? err.message : "匹配分析失败，请稍后重试");
     } finally {
       setLoading(false);
+      setMatchStartedAt(null);
+      abortRef.current = null;
     }
+  }
+
+  function handleCancelMatch() {
+    abortRef.current?.abort();
   }
 
   function handleExport() {
@@ -208,6 +261,15 @@ function MatchPageContent() {
           <span className="text-sm text-red-700">{error}</span>
         </div>
       )}
+
+      {notice && !loading && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+          <span className="text-sm text-blue-700">{notice}</span>
+        </div>
+      )}
+
+      {loading && <MatchWaitingPanel elapsedSeconds={elapsedSeconds} onCancel={handleCancelMatch} />}
 
       {result && (
         <div className="space-y-4">
@@ -323,5 +385,85 @@ export default function MatchPage() {
     <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-8 text-center text-gray-400">加载中...</div>}>
       <MatchPageContent />
     </Suspense>
+  );
+}
+
+function MatchWaitingPanel({
+  elapsedSeconds,
+  onCancel,
+}: {
+  elapsedSeconds: number;
+  onCancel: () => void;
+}) {
+  const activeIndex = waitStageIndex(elapsedSeconds);
+  const progress = waitProgress(elapsedSeconds);
+
+  return (
+    <div className="mb-6 overflow-hidden rounded-lg border border-blue-100 bg-white shadow-sm">
+      <div className="border-b border-blue-50 bg-blue-50/60 px-4 py-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold text-gray-900">正在进行深度匹配分析</div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500">
+                <Clock3 className="h-3.5 w-3.5" />
+                已用时 {elapsedSeconds} 秒
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            取消分析
+          </button>
+        </div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-blue-100">
+          <div
+            className="h-full rounded-full bg-blue-600 transition-all duration-700 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-4 md:divide-x md:divide-y-0">
+        {WAIT_STEPS.map((step, index) => {
+          const isActive = index === activeIndex;
+          const isDone = index < activeIndex;
+          return (
+            <div key={step.title} className={`p-4 ${isActive ? "bg-blue-50/40" : "bg-white"}`}>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                    isDone
+                      ? "bg-green-100 text-green-700"
+                      : isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span className={`text-sm font-medium ${isActive ? "text-blue-700" : "text-gray-700"}`}>
+                  {step.title}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">{step.detail}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {elapsedSeconds >= 30 && (
+        <div className="border-t border-amber-100 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
+          当前模型需要完成证据提取和多维评分，等待时间可能超过 1 分钟。页面会在结果生成后自动展示。
+        </div>
+      )}
+    </div>
   );
 }
