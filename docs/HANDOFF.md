@@ -6,28 +6,28 @@ This document is for the next coding agent taking over `ai-job-seeker`.
 
 - Workspace: `C:\Users\LittleNub\ai-job-seeker`
 - Active branch: `deepseek/function-dev`
-- Latest known commit: `a5cb80c test: auto-start e2e services`
+- Latest known commit: `4184df7 feat: add auth throttling and upload guards`
 - Date of handoff update: 2026-05-06
 
 Related branches:
 
 - `deepseek/function-dev`: active product/function development branch.
-- `deepseek/eval-framework`: rubric/evaluation branch from DeepSeek work.
-- `codex/model-eval-comparison`: parked branch for future multi-model comparison setup.
-- `codex/stabilize-dev-foundation`: earlier stabilization baseline.
+- `codex/model-eval-comparison`: parked branch — two-stage rubric scoring (evidence extraction → dimension scoring), for future multi-model evaluation.
+- `deepseek/eval-framework`: parked branch — four-dimension eval framework (A+C+E+F), human annotation, eval report.
+- `codex/stabilize-dev-foundation`: earlier stabilization baseline (archived).
 
 The project is now in a much more stable development state:
 
 - FastAPI backend has authenticated user scoping on core protected workflows.
 - JWT production guardrails are in place.
 - Alembic baseline migrations are in place.
+- Account center, profile, data export, and account deletion are implemented.
+- Privacy policy, user agreement, and AI disclaimer pages are linked in the app.
+- Login rate limiting and file upload size/type guards are in place.
 - Backend pytest regression tests are in place.
-- Frontend auth copy and protected-action flows have been cleaned up.
-- Frontend Playwright E2E tests cover public pages, auth redirects, session persistence, logout, and chat-history scoping.
-- History records page and scoped record APIs are present on the active function branch.
-- Resume-match UX now includes waiting stages, elapsed time, cancel, timeout/failure messaging, and retry.
-- `scripts/check_all.ps1` can run E2E with stable worker count and can start local services for the run.
-- `scripts/check_all.ps1` is the standard local verification entrypoint.
+- Frontend Playwright E2E tests cover public pages, auth, session, history, account, and match UX.
+- Resume-match UX includes waiting stages, elapsed time, cancel, timeout/failure, and retry.
+- `scripts/check_all.ps1` is the standard verification entrypoint (supports -E2E -StartServices).
 
 ## Do Not Accidentally Commit
 
@@ -173,6 +173,7 @@ Backend pytest covers:
 - Chat history scoping by user
 - Keyword search fallback when `GLM_API_KEY` is missing
 - Production config guardrails
+- Account deletion, data export, auth throttling, upload guards
 
 Frontend E2E covers:
 
@@ -184,6 +185,8 @@ Frontend E2E covers:
 - Logout clears local session storage
 - Protected JD analysis, resume matching, and AI follow-up redirect anonymous users to login
 - Chat history messages are readable by the owner only
+- History records page lists only the current user's records
+- Account profile page loads with stats
 - Resume-match waiting panel, cancel flow, timeout failure panel, and retry success
 
 Note: chat-history E2E seeds one local SQLite conversation to avoid spending LLM quota.
@@ -209,11 +212,20 @@ Note: chat-history E2E seeds one local SQLite conversation to avoid spending LLM
 
 Recommended next product work:
 
-1. Add user/account management basics: profile page, password reset/change, account deletion.
-2. Add user data export and deletion workflows for compliance.
-3. Add chat deletion/history management.
-4. Continue model/rubric evaluation once provider configs are ready.
-5. Add frontend E2E for JD result rendering and report download.
+1. Deployment packaging and environment docs (MVP Week 2).
+2. Model config sanity pass, timeout/fallback settings (MVP Week 2).
+3. Trial acceptance testing with realistic resumes/JDs (MVP Week 2).
+4. Multi-model evaluation using rubric scoring from `codex/model-eval-comparison` branch
+   (see `docs/SECURE_PUBLIC_RELEASE_PLAN.md` Phase 4 for 7-model comparison plan).
+5. Frontend E2E for JD result rendering, match result rendering, and report download.
+
+Items completed on the active branch:
+- Account center/profile, user data export, account deletion.
+- Chat history management (delete conversations).
+- Privacy policy, user agreement, AI disclaimer pages.
+- Login rate limiting, file upload size/type guards.
+- Resume-match waiting, cancel, timeout, retry UX.
+- Two release plans: `docs/MVP_RELEASE_PLAN.md` and `docs/SECURE_PUBLIC_RELEASE_PLAN.md`.
 
 Recommended first step for a new agent:
 
