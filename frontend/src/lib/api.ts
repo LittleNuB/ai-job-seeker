@@ -27,6 +27,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
+      const reason = options?.signal instanceof AbortSignal ? options.signal.reason : undefined;
+      if (reason === "timeout") {
+        throw new Error("请求超时");
+      }
       throw new Error("请求已取消");
     }
     throw new Error("无法连接服务器，请确认后端已启动");

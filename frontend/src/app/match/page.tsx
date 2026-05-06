@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, Clock3, Download, Loader2, Target, XCircle } from "lucide-react";
+import { AlertCircle, Clock3, Download, Loader2, RefreshCw, Target, XCircle } from "lucide-react";
 import { exportApi, matchApi, positions as positionsApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 import ChatPanel from "@/components/chat/ChatPanel";
@@ -14,6 +14,15 @@ interface PositionOption {
   id: string;
   name: string;
 }
+
+interface MatchFailure {
+  title: string;
+  message: string;
+  hint: string;
+  isTimeout: boolean;
+}
+
+const MATCH_TIMEOUT_MS = 90_000;
 
 const WAIT_STEPS = [
   { title: "整理输入", detail: "正在读取简历和岗位要求，准备匹配上下文。" },
@@ -50,9 +59,11 @@ function MatchPageContent() {
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [failure, setFailure] = useState<MatchFailure | null>(null);
   const [positionList, setPositionList] = useState<PositionOption[]>([]);
   const [positionsLoaded, setPositionsLoaded] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const activeRunRef = useRef(0);
 
   const loadPositions = useCallback(async () => {
     if (positionsLoaded) return positionList;
@@ -127,10 +138,16 @@ function MatchPageContent() {
     setMatchStartedAt(Date.now());
     setError("");
     setNotice("");
+    setFailure(null);
     setResult(null);
     setRecordId("");
     const controller = new AbortController();
     abortRef.current = controller;
+    const runId = activeRunRef.current + 1;
+    activeRunRef.current = runId;
+    const timeoutId = window.setTimeout(() => {
+      controller.abort("timeout");
+    }, MATCH_TIMEOUT_MS);
 
     try {
       const response = await matchApi.analyze({
@@ -140,9 +157,11 @@ function MatchPageContent() {
       }, {
         signal: controller.signal,
       });
+      if (activeRunRef.current !== runId) return;
       setRecordId(response.record_id);
       setResult(response);
     } catch (err: unknown) {
+      if (activeRunRef.current !== runId) return;
       if (err instanceof Error && err.message === "请求已取消") {
         setNotice("已取消本次匹配分析，可以调整简历或岗位后重新开始。");
         return;
@@ -152,16 +171,33 @@ function MatchPageContent() {
         redirectToLogin();
         return;
       }
-      setError(err instanceof Error ? err.message : "匹配分析失败，请稍后重试");
+      const message = err instanceof Error ? err.message : "匹配分析失败，请稍后重试";
+      const isTimeout = message.includes("超时");
+      setFailure({
+        title: isTimeout ? "匹配分析超时" : "匹配分析失败",
+        message,
+        hint: isTimeout
+          ? "当前模型响应时间过长，可以稍后重试，或减少简历/JD 文本长度后再次分析。"
+          : "请检查网络和后端服务状态；如果输入内容较长，也可以精简后重新分析。",
+        isTimeout,
+      });
     } finally {
-      setLoading(false);
-      setMatchStartedAt(null);
-      abortRef.current = null;
+      window.clearTimeout(timeoutId);
+      if (activeRunRef.current === runId) {
+        setLoading(false);
+        setMatchStartedAt(null);
+        abortRef.current = null;
+      }
     }
   }
 
   function handleCancelMatch() {
-    abortRef.current?.abort();
+    activeRunRef.current += 1;
+    abortRef.current?.abort("cancel");
+    abortRef.current = null;
+    setLoading(false);
+    setMatchStartedAt(null);
+    setNotice("已取消本次匹配分析，可以调整简历或岗位后重新开始。");
   }
 
   function handleExport() {
@@ -270,6 +306,8 @@ function MatchPageContent() {
       )}
 
       {loading && <MatchWaitingPanel elapsedSeconds={elapsedSeconds} onCancel={handleCancelMatch} />}
+
+      {failure && !loading && <MatchFailurePanel failure={failure} onRetry={handleMatch} />}
 
       {result && (
         <div className="space-y-4">
@@ -464,6 +502,47 @@ function MatchWaitingPanel({
           当前模型需要完成证据提取和多维评分，等待时间可能超过 1 分钟。页面会在结果生成后自动展示。
         </div>
       )}
+    </div>
+  );
+}
+
+function MatchFailurePanel({
+  failure,
+  onRetry,
+}: {
+  failure: MatchFailure;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className={`mb-6 rounded-lg border bg-white p-4 shadow-sm ${
+        failure.isTimeout ? "border-amber-200" : "border-red-200"
+      }`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span
+            className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+              failure.isTimeout ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+            }`}
+          >
+            <AlertCircle className="h-4 w-4" />
+          </span>
+          <div>
+            <div className="text-sm font-semibold text-gray-900">{failure.title}</div>
+            <p className="mt-1 text-sm leading-relaxed text-gray-600">{failure.message}</p>
+            <p className="mt-2 text-xs leading-relaxed text-gray-500">{failure.hint}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        >
+          <RefreshCw className="h-4 w-4" />
+          重新分析
+        </button>
+      </div>
     </div>
   );
 }
