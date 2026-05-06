@@ -401,3 +401,20 @@ Stabilize the development foundation before feature work:
 
 - Backend pytest covers the live deletion endpoint and data cleanup behavior.
 - Frontend account E2E mocks the deletion response to verify confirmation, redirect, and local session cleanup.
+
+## 2026-05-06 - Chat History Management
+
+### Changes
+
+- Added authenticated `GET /api/chat/conversations` for user-scoped AI conversation history.
+- Added authenticated `DELETE /api/chat/conversations/{conversation_id}` with owner-only deletion and message cleanup.
+- Extended the history page with an "AI 对话" view that lists conversations, previews messages, expands full chat messages, and deletes conversations.
+- Added E2E API base URL override support through `E2E_API_BASE_URL` so local tests can bypass a stale `localhost:8000` backend.
+- Added backend and E2E coverage for conversation list, owner-only access, deletion, and UI deletion behavior.
+
+### Verification
+
+- Passed: backend pytest with 22 tests.
+- Passed: frontend typecheck and lint.
+- Passed: `chat-history.spec.ts` against a fresh temporary backend on port 8125 and frontend on port 3001.
+- Passed: `.\scripts\check_all.ps1`.

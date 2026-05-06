@@ -41,6 +41,12 @@ async def test_protected_routes_reject_anonymous(client):
     chat = await client.get(f"/api/chat/conversations/{uuid4()}/messages")
     assert chat.status_code == 401
 
+    chat_list = await client.get("/api/chat/conversations")
+    assert chat_list.status_code == 401
+
+    chat_delete = await client.delete(f"/api/chat/conversations/{uuid4()}")
+    assert chat_delete.status_code == 401
+
     profile = await client.get("/api/auth/profile")
     assert profile.status_code == 401
 
@@ -302,3 +308,54 @@ async def test_chat_history_is_scoped_to_current_user(client, auth_headers):
     owner_history = await client.get(f"/api/chat/conversations/{conversation_id}/messages", headers=owner_headers)
     assert owner_history.status_code == 200
     assert owner_history.json()[0]["content"] == "private note"
+
+
+async def test_chat_conversation_list_and_delete_are_scoped(client, auth_headers):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+
+    owner = await client.get("/api/auth/me", headers=owner_headers)
+    owner_id = owner.json()["user_id"]
+    other = await client.get("/api/auth/me", headers=other_headers)
+    other_id = other.json()["user_id"]
+
+    async with async_session() as session:
+        owner_conversation = ChatConversation(user_id=owner_id, title="Owner managed chat")
+        other_conversation = ChatConversation(user_id=other_id, title="Other managed chat")
+        session.add(owner_conversation)
+        session.add(other_conversation)
+        await session.commit()
+        await session.refresh(owner_conversation)
+        await session.refresh(other_conversation)
+
+        session.add(ChatMessage(conversation_id=owner_conversation.id, role="user", content="owner managed message"))
+        session.add(ChatMessage(conversation_id=other_conversation.id, role="user", content="other managed message"))
+        await session.commit()
+        owner_conversation_id = owner_conversation.id
+        other_conversation_id = other_conversation.id
+
+    owner_list = await client.get("/api/chat/conversations", headers=owner_headers)
+    assert owner_list.status_code == 200, owner_list.text
+    owner_items = owner_list.json()["items"]
+    assert any(item["id"] == owner_conversation_id for item in owner_items)
+    assert not any(item["id"] == other_conversation_id for item in owner_items)
+
+    other_delete = await client.delete(f"/api/chat/conversations/{owner_conversation_id}", headers=other_headers)
+    assert other_delete.status_code == 404
+
+    owner_delete = await client.delete(f"/api/chat/conversations/{owner_conversation_id}", headers=owner_headers)
+    assert owner_delete.status_code == 200
+    assert owner_delete.json()["ok"] is True
+
+    deleted_messages = await client.get(f"/api/chat/conversations/{owner_conversation_id}/messages", headers=owner_headers)
+    assert deleted_messages.status_code == 404
+
+    async with async_session() as session:
+        owner_messages = await session.execute(
+            select(ChatMessage).where(ChatMessage.conversation_id == owner_conversation_id)
+        )
+        other_messages = await session.execute(
+            select(ChatMessage).where(ChatMessage.conversation_id == other_conversation_id)
+        )
+        assert owner_messages.scalars().all() == []
+        assert len(other_messages.scalars().all()) == 1

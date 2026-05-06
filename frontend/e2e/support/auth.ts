@@ -1,6 +1,7 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export const E2E_PASSWORD = "E2ePass123!";
+const configuredApiBaseUrl = process.env.E2E_API_BASE_URL?.replace(/\/$/, "");
 
 export interface E2EUser {
   email: string;
@@ -14,9 +15,13 @@ export function uniqueEmail(prefix: string): string {
   return `e2e-${prefix}-${suffix}@example.com`;
 }
 
+export function apiPath(path: string): string {
+  return configuredApiBaseUrl ? `${configuredApiBaseUrl}${path}` : path;
+}
+
 export async function registerUser(request: APIRequestContext, prefix = "user"): Promise<E2EUser> {
   const email = uniqueEmail(prefix);
-  const response = await request.post("/api/auth/register", {
+  const response = await request.post(apiPath("/api/auth/register"), {
     data: {
       email,
       password: E2E_PASSWORD,

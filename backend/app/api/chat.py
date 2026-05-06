@@ -2,16 +2,52 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db, async_session
 from ..models.chat import ChatConversation, ChatMessage
 from ..schemas.chat import ChatRequest
+from ..schemas.records import DeleteResponse
 from ..services.agent_engine import run_agent_loop, stream_agent_loop
 from ..middleware.auth import get_current_user
 
 router = APIRouter()
+
+
+@router.get("/conversations")
+async def list_conversations(db: AsyncSession = Depends(get_db), user_id: str = Depends(get_current_user)):
+    result = await db.execute(
+        select(ChatConversation)
+        .where(ChatConversation.user_id == user_id)
+        .order_by(ChatConversation.created_at.desc())
+    )
+    conversations = result.scalars().all()
+
+    items = []
+    for conversation in conversations:
+        messages_result = await db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.conversation_id == conversation.id)
+            .order_by(ChatMessage.created_at)
+        )
+        messages = messages_result.scalars().all()
+        latest_message = messages[-1] if messages else None
+        title = conversation.title or (latest_message.content if latest_message else None) or "未命名对话"
+        items.append(
+            {
+                "id": str(conversation.id),
+                "context_type": conversation.context_type,
+                "context_id": conversation.context_id,
+                "title": title[:80] if title else "未命名对话",
+                "message_count": len(messages),
+                "latest_message_preview": latest_message.content[:120] if latest_message and latest_message.content else None,
+                "created_at": str(conversation.created_at),
+                "latest_message_at": str(latest_message.created_at) if latest_message else str(conversation.created_at),
+            }
+        )
+
+    return {"items": items, "total": len(items)}
 
 
 @router.post("/message")
@@ -174,3 +210,22 @@ async def get_conversation_messages(conversation_id: str, db: AsyncSession = Dep
     )
     messages = result.scalars().all()
     return [{"role": m.role, "content": m.content, "tool_calls": m.tool_calls, "created_at": str(m.created_at)} for m in messages]
+
+
+@router.delete("/conversations/{conversation_id}", response_model=DeleteResponse)
+async def delete_conversation(
+    conversation_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    conversation_result = await db.execute(
+        select(ChatConversation).where(ChatConversation.id == conversation_id, ChatConversation.user_id == user_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    await db.execute(delete(ChatMessage).where(ChatMessage.conversation_id == conversation.id))
+    await db.delete(conversation)
+    await db.commit()
+    return DeleteResponse(ok=True)

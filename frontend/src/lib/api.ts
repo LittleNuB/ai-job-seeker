@@ -150,6 +150,20 @@ export const exportApi = {
 
 // Chat
 export const chat = {
+  getConversations: () =>
+    request<{
+      items: {
+        id: string;
+        context_type?: string | null;
+        context_id?: string | null;
+        title: string;
+        message_count: number;
+        latest_message_preview?: string | null;
+        created_at: string;
+        latest_message_at: string;
+      }[];
+      total: number;
+    }>("/api/chat/conversations"),
   sendMessage: (data: {
     message: string;
     conversation_id?: string;
@@ -164,6 +178,8 @@ export const chat = {
     request<{ role: string; content: string; tool_calls: any; created_at: string }[]>(
       `/api/chat/conversations/${conversationId}/messages`,
     ),
+  deleteConversation: (conversationId: string) =>
+    request<{ ok: boolean }>(`/api/chat/conversations/${conversationId}`, { method: "DELETE" }),
 };
 
 // Records

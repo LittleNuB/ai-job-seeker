@@ -30,7 +30,7 @@ These must be complete before inviting real trial users.
 - User data export: done in current function-dev pass.
 - Account deletion: done in current function-dev pass.
 - Analysis record deletion: mostly present through history records.
-- Chat conversation deletion.
+- Chat conversation deletion: done in current function-dev pass.
 - Clear privacy policy and user agreement pages.
 - Explicit disclosure that resume/JD content may be sent to third-party model providers.
 
