@@ -2,7 +2,8 @@ param(
     [switch]$E2E,
     [switch]$SkipBackend,
     [switch]$SkipFrontend,
-    [string]$E2EBaseUrl = "http://localhost:3000"
+    [string]$E2EBaseUrl = "http://localhost:3000",
+    [int]$E2EWorkers = 4
 )
 
 $ErrorActionPreference = "Stop"
@@ -62,11 +63,14 @@ if ($E2E) {
 
     Invoke-CheckStep "Frontend E2E" $frontendDir {
         $previousBaseUrl = $env:E2E_BASE_URL
+        $previousWorkers = $env:E2E_WORKERS
         $env:E2E_BASE_URL = $E2EBaseUrl
+        $env:E2E_WORKERS = [string]$E2EWorkers
         try {
             & npm run test:e2e
         } finally {
             $env:E2E_BASE_URL = $previousBaseUrl
+            $env:E2E_WORKERS = $previousWorkers
         }
     }
 } else {
