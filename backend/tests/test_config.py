@@ -43,14 +43,38 @@ def test_production_rejects_weak_jwt_secret(secret):
 
 
 def test_production_rejects_debug_true():
-    with patched_env(APP_ENV="production", DEBUG="true", JWT_SECRET="x" * 40):
+    with patched_env(
+        APP_ENV="production",
+        DEBUG="true",
+        JWT_SECRET="x" * 40,
+        CORS_ALLOW_ORIGINS="https://app.example.com",
+    ):
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None)
+
+
+def test_production_rejects_missing_cors_allow_origins():
+    with patched_env(APP_ENV="production", DEBUG="false", JWT_SECRET="x" * 40, CORS_ALLOW_ORIGINS=""):
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None)
+
+
+@pytest.mark.parametrize("origins", ["*", "https://app.example.com,*", "http://app.example.com", "ftp://app.example.com"])
+def test_production_rejects_unsafe_cors_origins(origins):
+    with patched_env(APP_ENV="production", DEBUG="false", JWT_SECRET="x" * 40, CORS_ALLOW_ORIGINS=origins):
         with pytest.raises(ValidationError):
             Settings(_env_file=None)
 
 
 def test_production_accepts_strong_jwt_secret():
-    with patched_env(APP_ENV="production", DEBUG="false", JWT_SECRET="x" * 40):
+    with patched_env(
+        APP_ENV="production",
+        DEBUG="false",
+        JWT_SECRET="x" * 40,
+        CORS_ALLOW_ORIGINS="https://app.example.com, https://www.example.com",
+    ):
         settings = Settings(_env_file=None)
 
     assert settings.is_production
     assert settings.jwt_secret == "x" * 40
+    assert settings.cors_origins == ["https://app.example.com", "https://www.example.com"]

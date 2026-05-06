@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     app_name: str = "AI Job Copilot"
     app_env: str = "development"
     debug: bool = False
+    cors_allow_origins: str = ""
 
     model_config = {
         "env_file": [str(PROJECT_ROOT / ".env"), str(Path(__file__).resolve().parent.parent / ".env"), ".env"],
@@ -44,6 +45,10 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.app_env.strip().lower() in {"prod", "production"}
 
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allow_origins.split(",") if origin.strip()]
+
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
         env = self.app_env.strip().lower()
@@ -54,6 +59,13 @@ class Settings(BaseSettings):
                 raise ValueError("DEBUG must be false when APP_ENV=production.")
             if secret in WEAK_JWT_SECRETS or len(secret) < 32:
                 raise ValueError("JWT_SECRET must be set to a strong value of at least 32 characters in production.")
+            origins = self.cors_origins
+            if not origins:
+                raise ValueError("CORS_ALLOW_ORIGINS must list the production frontend origin(s).")
+            if "*" in origins:
+                raise ValueError("CORS_ALLOW_ORIGINS must not contain wildcard origins in production.")
+            if any(not origin.lower().startswith("https://") for origin in origins):
+                raise ValueError("CORS_ALLOW_ORIGINS must use HTTPS origins in production.")
             return self
 
         if secret in WEAK_JWT_SECRETS:

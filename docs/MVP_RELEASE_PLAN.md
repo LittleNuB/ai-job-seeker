@@ -40,9 +40,9 @@ These must be complete before inviting real trial users.
 - Login rate limit or auth-specific throttling: done in current function-dev pass.
 - File upload size and type limits: done in current function-dev pass.
 - Avoid logging full resume/JD/model prompt content: done in current function-dev pass.
-- HTTPS-only deployment.
-- Production CORS allowlist.
-- Environment variables documented for deployment.
+- HTTPS-only deployment: done in current function-dev pass.
+- Production CORS allowlist: done in current function-dev pass.
+- Environment variables documented for deployment: done in current function-dev pass.
 
 ### Product Stability
 

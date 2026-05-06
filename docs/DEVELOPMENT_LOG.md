@@ -466,3 +466,19 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Passed: backend pytest with 31 tests.
+
+## 2026-05-07 - Deployment Security Minimum
+
+### Changes
+
+- Added `CORS_ALLOW_ORIGINS` production configuration.
+- Production settings now reject missing CORS origins, wildcard origins, and non-HTTPS origins.
+- Backend CORS now uses exact configured production origins while preserving localhost regex support for development and E2E.
+- Added production HTTPS-only middleware that accepts direct HTTPS requests or proxied requests with `X-Forwarded-Proto: https`.
+- Added `docs/DEPLOYMENT.md` with required backend/frontend environment variables, CORS rules, HTTPS requirements, migration command, smoke checks, rollback notes, and secret handling.
+- Updated `.env.example` with deployment CORS placeholders.
+
+### Verification
+
+- Passed: config and HTTPS middleware tests.
+- Passed: `.\scripts\check_all.ps1` with 38 backend tests, frontend typecheck, and frontend lint.

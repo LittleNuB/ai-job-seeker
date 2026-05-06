@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .logging_config import configure_logging
+from .middleware.https import HTTPSOnlyMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
 
 configure_logging()
@@ -35,15 +36,19 @@ app = FastAPI(
 app.add_middleware(RateLimitMiddleware, daily_limit=20)
 
 settings = get_settings()
+if settings.is_production:
+    app.add_middleware(HTTPSOnlyMiddleware)
+
+local_dev_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=settings.cors_origins if settings.is_production else local_dev_origins,
     allow_origin_regex=None if settings.is_production else r"^http://(localhost|127\.0\.0\.1):\d+$",
     allow_credentials=True,
     allow_methods=["*"],
