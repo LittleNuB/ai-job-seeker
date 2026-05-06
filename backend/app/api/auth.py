@@ -2,12 +2,14 @@ import uuid
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
+from ..models.analysis import AnalysisRecord
+from ..models.chat import ChatConversation
 from ..models.user import User
-from ..schemas.auth import RegisterRequest, LoginRequest, AuthResponse
+from ..schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserProfileResponse, UserProfileStats
 from ..middleware.auth import create_access_token, get_current_user
 
 router = APIRouter()
@@ -65,3 +67,36 @@ async def get_me(user_id: str = Depends(get_current_user), db: AsyncSession = De
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     return {"user_id": str(user.id), "email": user.email, "name": user.name}
+
+
+async def _count_records(db: AsyncSession, user_id: str, record_type: str | None = None) -> int:
+    stmt = select(func.count()).select_from(AnalysisRecord).where(AnalysisRecord.user_id == user_id)
+    if record_type:
+        stmt = stmt.where(AnalysisRecord.type == record_type)
+    result = await db.execute(stmt)
+    return int(result.scalar_one() or 0)
+
+
+@router.get("/profile", response_model=UserProfileResponse)
+async def get_profile(user_id: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    chat_count = await db.execute(
+        select(func.count()).select_from(ChatConversation).where(ChatConversation.user_id == user_id)
+    )
+
+    return UserProfileResponse(
+        user_id=str(user.id),
+        email=user.email,
+        name=user.name,
+        created_at=user.created_at,
+        stats=UserProfileStats(
+            total_records=await _count_records(db, user_id),
+            jd_records=await _count_records(db, user_id, "jd"),
+            match_records=await _count_records(db, user_id, "match"),
+            chat_conversations=int(chat_count.scalar_one() or 0),
+        ),
+    )

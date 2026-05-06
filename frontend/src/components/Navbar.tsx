@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Brain, Compass, FileText, History, LogIn, LogOut, Target } from "lucide-react";
+import { Brain, Compass, FileText, History, LogIn, LogOut, Target, UserCircle } from "lucide-react";
 import { AUTH_CHANGED_EVENT, clearAuthSession, getAuthEmail, getLoginPath } from "@/lib/auth";
 
 const links = [
@@ -12,6 +12,7 @@ const links = [
   { href: "/jd", label: "JD 解析", icon: FileText },
   { href: "/match", label: "简历匹配", icon: Target },
   { href: "/history", label: "历史记录", icon: History },
+  { href: "/account", label: "账号", icon: UserCircle },
 ];
 
 function compactEmail(email: string): string {

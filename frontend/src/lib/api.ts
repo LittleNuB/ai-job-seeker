@@ -59,6 +59,19 @@ export const auth = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  profile: () =>
+    request<{
+      user_id: string;
+      email: string;
+      name?: string | null;
+      created_at?: string | null;
+      stats: {
+        total_records: number;
+        jd_records: number;
+        match_records: number;
+        chat_conversations: number;
+      };
+    }>("/api/auth/profile"),
 };
 
 // Positions

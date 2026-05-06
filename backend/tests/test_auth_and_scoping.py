@@ -38,6 +38,63 @@ async def test_protected_routes_reject_anonymous(client):
     chat = await client.get(f"/api/chat/conversations/{uuid4()}/messages")
     assert chat.status_code == 401
 
+    profile = await client.get("/api/auth/profile")
+    assert profile.status_code == 401
+
+
+async def test_profile_returns_scoped_account_stats(client, auth_headers):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+
+    owner = await client.get("/api/auth/me", headers=owner_headers)
+    owner_id = owner.json()["user_id"]
+    other = await client.get("/api/auth/me", headers=other_headers)
+    other_id = other.json()["user_id"]
+
+    async with async_session() as session:
+        session.add(
+            AnalysisRecord(
+                user_id=owner_id,
+                type="jd",
+                input_text="Owner JD",
+                result=json.dumps({"summary": "owner jd"}, ensure_ascii=False),
+            )
+        )
+        session.add(
+            AnalysisRecord(
+                user_id=owner_id,
+                type="match",
+                input_text="Owner resume",
+                result=json.dumps({"match_score": 80}, ensure_ascii=False),
+                match_score=80,
+            )
+        )
+        session.add(
+            AnalysisRecord(
+                user_id=other_id,
+                type="jd",
+                input_text="Other JD",
+                result=json.dumps({"summary": "other jd"}, ensure_ascii=False),
+            )
+        )
+
+        owner_conversation = ChatConversation(user_id=owner_id, title="Owner chat")
+        other_conversation = ChatConversation(user_id=other_id, title="Other chat")
+        session.add(owner_conversation)
+        session.add(other_conversation)
+        await session.commit()
+
+    profile = await client.get("/api/auth/profile", headers=owner_headers)
+    assert profile.status_code == 200, profile.text
+    data = profile.json()
+    assert data["user_id"] == owner_id
+    assert data["email"] == owner.json()["email"]
+    assert data["created_at"]
+    assert data["stats"]["total_records"] == 2
+    assert data["stats"]["jd_records"] == 1
+    assert data["stats"]["match_records"] == 1
+    assert data["stats"]["chat_conversations"] == 1
+
 
 async def test_export_is_scoped_to_current_user(client, auth_headers):
     owner_headers = await auth_headers(client)
