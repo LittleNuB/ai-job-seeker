@@ -223,7 +223,7 @@ Items completed on the active branch:
 - Account center/profile, user data export, account deletion.
 - Chat history management (delete conversations).
 - Privacy policy, user agreement, AI disclaimer pages.
-- Login rate limiting, file upload size/type guards.
+- Login rate limiting, file upload size/type guards, log redaction guardrails.
 - Resume-match waiting, cancel, timeout, retry UX.
 - Two release plans: `docs/MVP_RELEASE_PLAN.md` and `docs/SECURE_PUBLIC_RELEASE_PLAN.md`.
 

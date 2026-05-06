@@ -39,7 +39,7 @@ These must be complete before inviting real trial users.
 - Production `JWT_SECRET` required and debug disabled: already guarded.
 - Login rate limit or auth-specific throttling: done in current function-dev pass.
 - File upload size and type limits: done in current function-dev pass.
-- Avoid logging full resume/JD/model prompt content.
+- Avoid logging full resume/JD/model prompt content: done in current function-dev pass.
 - HTTPS-only deployment.
 - Production CORS allowlist.
 - Environment variables documented for deployment.

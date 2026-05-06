@@ -4,7 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
+from .logging_config import configure_logging
 from .middleware.rate_limit import RateLimitMiddleware
+
+configure_logging()
 
 
 @asynccontextmanager

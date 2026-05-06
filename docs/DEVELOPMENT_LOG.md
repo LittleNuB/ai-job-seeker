@@ -451,3 +451,18 @@ Stabilize the development foundation before feature work:
 - Passed: backend pytest with 27 tests.
 - Passed: `.\scripts\check_all.ps1`.
 - Passed: full frontend E2E with 16 tests against fresh temporary backend/frontend ports.
+
+## 2026-05-07 - Log Redaction Guardrails
+
+### Changes
+
+- Added `backend/app/logging_config.py` with a root logging redaction filter.
+- Redaction masks bearer tokens, API keys/secrets/tokens, email addresses, China mainland phone numbers, and common sensitive text fields such as `resume_text`, `jd_text`, `input_text`, `content`, `prompt`, and `messages`.
+- Long log messages are truncated to reduce accidental full resume/JD/prompt logging.
+- FastAPI startup now configures the redacting filter before route handlers run.
+- Added backend regression coverage for redaction patterns, truncation, and formatted logging records.
+- Updated MVP tracking docs for the logging/privacy guardrail.
+
+### Verification
+
+- Passed: backend pytest with 31 tests.
