@@ -100,6 +100,7 @@ export const auth = {
     }>("/api/auth/profile"),
   downloadDataExport: () =>
     downloadFile("/api/auth/export-data", "ai-job-copilot-data.json", "数据导出失败，请稍后重试"),
+  deleteAccount: () => request<{ ok: boolean }>("/api/auth/account", { method: "DELETE" }),
 };
 
 // Positions

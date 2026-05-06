@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlertCircle, BarChart3, Clock3, Database, Download, FileText, History, Loader2, Shield, Target } from "lucide-react";
+import { AlertCircle, BarChart3, Clock3, Database, Download, FileText, History, Loader2, Shield, Target, Trash2 } from "lucide-react";
 import { auth } from "@/lib/api";
-import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
+import { AuthRequiredError, clearAuthSession, redirectToLogin, requireAuth } from "@/lib/auth";
 
 interface Profile {
   user_id: string;
@@ -20,9 +21,12 @@ interface Profile {
 }
 
 export default function AccountPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -67,6 +71,28 @@ export default function AccountPage() {
       setError(err instanceof Error ? err.message : "数据导出失败，请稍后重试");
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!requireAuth()) return;
+    if (deleteConfirm !== "DELETE") return;
+
+    setDeleting(true);
+    setError("");
+    setNotice("");
+    try {
+      await auth.deleteAccount();
+      clearAuthSession();
+      router.replace("/");
+    } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) {
+        redirectToLogin();
+        return;
+      }
+      setError(err instanceof Error ? err.message : "账号注销失败，请稍后重试");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -156,7 +182,7 @@ export default function AccountPage() {
               <Database className="h-4 w-4 text-blue-600" />
               数据管理
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-sm font-medium text-gray-900">导出我的数据</div>
                 <p className="mt-1 text-xs leading-relaxed text-gray-500">
@@ -172,6 +198,38 @@ export default function AccountPage() {
                 {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {exporting ? "导出中..." : "导出数据"}
               </button>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-red-900">
+                    <Trash2 className="h-4 w-4" />
+                    注销账号
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-red-700">
+                    注销后将删除账号、分析记录、AI 对话记录，当前登录状态也会失效。
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <input
+                    value={deleteConfirm}
+                    onChange={(event) => setDeleteConfirm(event.target.value)}
+                    placeholder="输入 DELETE 确认"
+                    disabled={deleting}
+                    className="h-10 rounded-lg border border-red-200 bg-white px-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting || deleteConfirm !== "DELETE"}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    {deleting ? "注销中..." : "确认注销"}
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         </div>

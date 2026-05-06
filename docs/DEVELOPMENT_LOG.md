@@ -385,3 +385,19 @@ Stabilize the development foundation before feature work:
 
 - Backend pytest covers the live export endpoint and scoping.
 - Frontend account E2E mocks the export response to verify browser download behavior without relying on a stale local backend process.
+
+## 2026-05-06 - Account Deletion
+
+### Changes
+
+- Added authenticated `DELETE /api/auth/account` for account deletion.
+- Deletion removes the current user's chat messages, chat conversations, analysis records, and user account while preserving other users' data.
+- Protected routes now verify the JWT subject still maps to an existing user, so deleted accounts cannot keep using an old token.
+- Added account page destructive action with explicit `DELETE` confirmation and session clearing after successful deletion.
+- Added backend regression coverage for anonymous rejection, owner-only deletion, login invalidation, and other-user data preservation.
+- Extended account page E2E coverage for the account deletion flow.
+
+### Verification
+
+- Backend pytest covers the live deletion endpoint and data cleanup behavior.
+- Frontend account E2E mocks the deletion response to verify confirmation, redirect, and local session cleanup.

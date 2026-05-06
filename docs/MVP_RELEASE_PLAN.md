@@ -28,7 +28,7 @@ These must be complete before inviting real trial users.
 
 - Account center: done in `135ce41`.
 - User data export: done in current function-dev pass.
-- Account deletion.
+- Account deletion: done in current function-dev pass.
 - Analysis record deletion: mostly present through history records.
 - Chat conversation deletion.
 - Clear privacy policy and user agreement pages.

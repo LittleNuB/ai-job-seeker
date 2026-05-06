@@ -45,6 +45,9 @@ test("account page renders profile and data summary for signed-in users", async 
       }),
     });
   });
+  await page.route("**/api/auth/account", async (route) => {
+    await route.fulfill({ json: { ok: true } });
+  });
   await page.goto("/account");
 
   await expect(page.getByRole("heading", { name: "账号中心" })).toBeVisible();
@@ -60,6 +63,13 @@ test("account page renders profile and data summary for signed-in users", async 
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("ai-job-copilot-data.json");
   await expect(page.getByText("数据导出已开始下载")).toBeVisible();
+
+  await expect(page.getByRole("button", { name: "确认注销" })).toBeDisabled();
+  await page.getByPlaceholder("输入 DELETE 确认").fill("DELETE");
+  await page.getByRole("button", { name: "确认注销" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  const token = await page.evaluate(() => window.localStorage.getItem("auth_token"));
+  expect(token).toBeNull();
 });
 
 test("account page redirects anonymous users to login", async ({ page }) => {

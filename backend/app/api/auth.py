@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -14,6 +14,7 @@ from ..models.chat import ChatConversation, ChatMessage
 from ..models.user import User
 from ..schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserProfileResponse, UserProfileStats
 from ..middleware.auth import create_access_token, get_current_user
+from ..schemas.records import DeleteResponse
 
 router = APIRouter()
 
@@ -199,3 +200,24 @@ async def export_user_data(user_id: str = Depends(get_current_user), db: AsyncSe
         media_type="application/json; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.delete("/account", response_model=DeleteResponse)
+async def delete_account(user_id: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    conversations_result = await db.execute(select(ChatConversation.id).where(ChatConversation.user_id == user_id))
+    conversation_ids = list(conversations_result.scalars().all())
+
+    if conversation_ids:
+        await db.execute(delete(ChatMessage).where(ChatMessage.conversation_id.in_(conversation_ids)))
+
+    await db.execute(delete(ChatConversation).where(ChatConversation.user_id == user_id))
+    await db.execute(delete(AnalysisRecord).where(AnalysisRecord.user_id == user_id))
+    await db.delete(user)
+    await db.commit()
+
+    return DeleteResponse(ok=True)
