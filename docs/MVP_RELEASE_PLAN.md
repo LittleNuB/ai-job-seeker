@@ -37,8 +37,8 @@ These must be complete before inviting real trial users.
 ### Security Minimum
 
 - Production `JWT_SECRET` required and debug disabled: already guarded.
-- Login rate limit or auth-specific throttling.
-- File upload size and type limits.
+- Login rate limit or auth-specific throttling: done in current function-dev pass.
+- File upload size and type limits: done in current function-dev pass.
 - Avoid logging full resume/JD/model prompt content.
 - HTTPS-only deployment.
 - Production CORS allowlist.

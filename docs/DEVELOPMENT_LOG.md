@@ -435,3 +435,19 @@ Stabilize the development foundation before feature work:
 - Passed: backend pytest with 23 tests.
 - Passed: frontend typecheck and lint.
 - E2E coverage added for registration consent and legal page visibility.
+
+## 2026-05-06 - Auth Throttling And Upload Guards
+
+### Changes
+
+- Added auth-specific throttling for `POST /api/auth/login` and `POST /api/auth/register`.
+- Login attempts are limited per client/IP/email window to reduce brute-force risk.
+- Upload endpoint now rejects unsupported extensions, mismatched MIME types, empty files, and files larger than 10MB before parsing.
+- Added backend regression coverage for repeated login attempts and upload guardrails.
+- Updated MVP and compliance tracking docs.
+
+### Verification
+
+- Passed: backend pytest with 27 tests.
+- Passed: `.\scripts\check_all.ps1`.
+- Passed: full frontend E2E with 16 tests against fresh temporary backend/frontend ports.
