@@ -358,3 +358,15 @@ Stabilize the development foundation before feature work:
 - The script reuses already-running services when they are reachable.
 - The script only stops processes/ports it started itself.
 - Existing local-only data remains intentionally uncommitted: `data/ai_job_copilot.db` and root-level `test_*.json` files.
+
+## 2026-05-06 - Release Planning Docs
+
+### Changes
+
+- Added `docs/MVP_RELEASE_PLAN.md` to define the small-scope trial version goal, non-goals, P0 scope, 2-week schedule, acceptance criteria, and operating rules.
+- Added `docs/SECURE_PUBLIC_RELEASE_PLAN.md` to define the longer public-launch standard across privacy, account security, data security, AI safety, operations, model evaluation, and launch acceptance.
+
+### Notes
+
+- MVP target: trusted small-group trial after account/data rights, basic compliance pages, production config, and release validation.
+- Public launch target: 6-8 week readiness path with legal/compliance review, PostgreSQL, monitoring, backups, model evaluation, and incident response.
