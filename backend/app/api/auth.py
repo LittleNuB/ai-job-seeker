@@ -1,18 +1,34 @@
+import json
 import uuid
+from datetime import datetime, timezone
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models.analysis import AnalysisRecord
-from ..models.chat import ChatConversation
+from ..models.chat import ChatConversation, ChatMessage
 from ..models.user import User
 from ..schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserProfileResponse, UserProfileStats
 from ..middleware.auth import create_access_token, get_current_user
 
 router = APIRouter()
+
+
+def _safe_json_loads(value: str | None):
+    if not value:
+        return None
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
+
+
+def _iso(value) -> str | None:
+    return value.isoformat() if value else None
 
 
 def _password_bytes(password: str) -> bytes:
@@ -99,4 +115,87 @@ async def get_profile(user_id: str = Depends(get_current_user), db: AsyncSession
             match_records=await _count_records(db, user_id, "match"),
             chat_conversations=int(chat_count.scalar_one() or 0),
         ),
+    )
+
+
+@router.get("/export-data")
+async def export_user_data(user_id: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    records_result = await db.execute(
+        select(AnalysisRecord)
+        .where(AnalysisRecord.user_id == user_id)
+        .order_by(AnalysisRecord.created_at)
+    )
+    records = records_result.scalars().all()
+
+    conversations_result = await db.execute(
+        select(ChatConversation)
+        .where(ChatConversation.user_id == user_id)
+        .order_by(ChatConversation.created_at)
+    )
+    conversations = conversations_result.scalars().all()
+    conversation_ids = [conversation.id for conversation in conversations]
+    messages_by_conversation: dict[str, list[ChatMessage]] = {conversation_id: [] for conversation_id in conversation_ids}
+
+    if conversation_ids:
+        messages_result = await db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.conversation_id.in_(conversation_ids))
+            .order_by(ChatMessage.created_at)
+        )
+        for message in messages_result.scalars().all():
+            messages_by_conversation.setdefault(message.conversation_id, []).append(message)
+
+    exported_at = datetime.now(timezone.utc).isoformat()
+    payload = {
+        "exported_at": exported_at,
+        "account": {
+            "user_id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "created_at": _iso(user.created_at),
+        },
+        "analysis_records": [
+            {
+                "id": str(record.id),
+                "type": record.type,
+                "input_text": record.input_text,
+                "input_file_url": record.input_file_url,
+                "result": _safe_json_loads(record.result),
+                "match_score": record.match_score,
+                "created_at": _iso(record.created_at),
+            }
+            for record in records
+        ],
+        "chat_conversations": [
+            {
+                "id": str(conversation.id),
+                "context_type": conversation.context_type,
+                "context_id": conversation.context_id,
+                "title": conversation.title,
+                "created_at": _iso(conversation.created_at),
+                "messages": [
+                    {
+                        "id": str(message.id),
+                        "role": message.role,
+                        "content": message.content,
+                        "tool_calls": _safe_json_loads(message.tool_calls),
+                        "created_at": _iso(message.created_at),
+                    }
+                    for message in messages_by_conversation.get(conversation.id, [])
+                ],
+            }
+            for conversation in conversations
+        ],
+    }
+
+    filename = f"ai-job-copilot-data-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.json"
+    return Response(
+        content=json.dumps(payload, ensure_ascii=False, indent=2),
+        media_type="application/json; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

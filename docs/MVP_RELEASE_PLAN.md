@@ -27,7 +27,7 @@ These must be complete before inviting real trial users.
 ### Account And Data Rights
 
 - Account center: done in `135ce41`.
-- User data export.
+- User data export: done in current function-dev pass.
 - Account deletion.
 - Analysis record deletion: mostly present through history records.
 - Chat conversation deletion.

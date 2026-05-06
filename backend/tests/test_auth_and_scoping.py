@@ -41,6 +41,9 @@ async def test_protected_routes_reject_anonymous(client):
     profile = await client.get("/api/auth/profile")
     assert profile.status_code == 401
 
+    data_export = await client.get("/api/auth/export-data")
+    assert data_export.status_code == 401
+
 
 async def test_profile_returns_scoped_account_stats(client, auth_headers):
     owner_headers = await auth_headers(client)
@@ -94,6 +97,64 @@ async def test_profile_returns_scoped_account_stats(client, auth_headers):
     assert data["stats"]["jd_records"] == 1
     assert data["stats"]["match_records"] == 1
     assert data["stats"]["chat_conversations"] == 1
+
+
+async def test_export_data_returns_only_current_user_data(client, auth_headers):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+
+    owner = await client.get("/api/auth/me", headers=owner_headers)
+    owner_id = owner.json()["user_id"]
+    other = await client.get("/api/auth/me", headers=other_headers)
+    other_id = other.json()["user_id"]
+
+    async with async_session() as session:
+        owner_record = AnalysisRecord(
+            user_id=owner_id,
+            type="jd",
+            input_text="Owner export JD",
+            result=json.dumps({"position_overview": {"inferred_role": "Owner Role"}}, ensure_ascii=False),
+        )
+        other_record = AnalysisRecord(
+            user_id=other_id,
+            type="jd",
+            input_text="Other export JD",
+            result=json.dumps({"position_overview": {"inferred_role": "Other Role"}}, ensure_ascii=False),
+        )
+        session.add(owner_record)
+        session.add(other_record)
+
+        owner_conversation = ChatConversation(user_id=owner_id, title="Owner export chat")
+        other_conversation = ChatConversation(user_id=other_id, title="Other export chat")
+        session.add(owner_conversation)
+        session.add(other_conversation)
+        await session.commit()
+        await session.refresh(owner_conversation)
+        await session.refresh(other_conversation)
+
+        session.add(ChatMessage(conversation_id=owner_conversation.id, role="user", content="owner private message"))
+        session.add(ChatMessage(conversation_id=other_conversation.id, role="user", content="other private message"))
+        await session.commit()
+
+    response = await client.get("/api/auth/export-data", headers=owner_headers)
+    assert response.status_code == 200, response.text
+    assert "attachment" in response.headers["content-disposition"]
+    data = response.json()
+
+    assert data["account"]["user_id"] == owner_id
+    assert data["account"]["email"] == owner.json()["email"]
+    assert data["exported_at"]
+    assert any(record["input_text"] == "Owner export JD" for record in data["analysis_records"])
+    assert not any(record["input_text"] == "Other export JD" for record in data["analysis_records"])
+    assert any(conversation["title"] == "Owner export chat" for conversation in data["chat_conversations"])
+    assert not any(conversation["title"] == "Other export chat" for conversation in data["chat_conversations"])
+    exported_messages = [
+        message["content"]
+        for conversation in data["chat_conversations"]
+        for message in conversation["messages"]
+    ]
+    assert "owner private message" in exported_messages
+    assert "other private message" not in exported_messages
 
 
 async def test_export_is_scoped_to_current_user(client, auth_headers):

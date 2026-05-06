@@ -370,3 +370,18 @@ Stabilize the development foundation before feature work:
 
 - MVP target: trusted small-group trial after account/data rights, basic compliance pages, production config, and release validation.
 - Public launch target: 6-8 week readiness path with legal/compliance review, PostgreSQL, monitoring, backups, model evaluation, and incident response.
+
+## 2026-05-06 - User Data Export
+
+### Changes
+
+- Added authenticated `GET /api/auth/export-data` for user-scoped data export.
+- Export includes account metadata, analysis records, and chat conversations/messages.
+- Added account page "导出数据" action that downloads the JSON export file.
+- Added backend regression coverage for anonymous rejection and owner-only export data.
+- Added account page E2E coverage for export download.
+
+### Verification
+
+- Backend pytest covers the live export endpoint and scoping.
+- Frontend account E2E mocks the export response to verify browser download behavior without relying on a stale local backend process.

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertCircle, BarChart3, Clock3, Database, FileText, History, Loader2, Shield, Target } from "lucide-react";
+import { AlertCircle, BarChart3, Clock3, Database, Download, FileText, History, Loader2, Shield, Target } from "lucide-react";
 import { auth } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
 
@@ -22,7 +22,9 @@ interface Profile {
 export default function AccountPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (!requireAuth()) return;
@@ -48,6 +50,25 @@ export default function AccountPage() {
       mounted = false;
     };
   }, []);
+
+  async function handleDataExport() {
+    if (!requireAuth()) return;
+    setExporting(true);
+    setError("");
+    setNotice("");
+    try {
+      await auth.downloadDataExport();
+      setNotice("数据导出已开始下载，请妥善保存文件。");
+    } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) {
+        redirectToLogin();
+        return;
+      }
+      setError(err instanceof Error ? err.message : "数据导出失败，请稍后重试");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6">
@@ -75,6 +96,13 @@ export default function AccountPage() {
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
           <span className="text-sm text-red-700">{error}</span>
+        </div>
+      )}
+
+      {notice && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+          <span className="text-sm text-blue-700">{notice}</span>
         </div>
       )}
 
@@ -121,6 +149,30 @@ export default function AccountPage() {
             <ActionLink href="/history" icon={History} title="查看历史记录" description="浏览、导出或删除自己的 JD 和匹配记录。" />
             <ActionLink href="/jd" icon={FileText} title="新增 JD 解析" description="分析新的岗位描述并保存到账号记录。" />
             <ActionLink href="/match" icon={Target} title="新增简历匹配" description="基于目标岗位生成匹配分析和提升计划。" />
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <Database className="h-4 w-4 text-blue-600" />
+              数据管理
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-medium text-gray-900">导出我的数据</div>
+                <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                  下载账号资料、分析记录和 AI 对话记录的 JSON 文件。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDataExport}
+                disabled={exporting}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {exporting ? "导出中..." : "导出数据"}
+              </button>
+            </div>
           </section>
         </div>
       )}

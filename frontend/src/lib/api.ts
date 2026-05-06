@@ -47,6 +47,32 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+async function downloadFile(path: string, fallbackFilename: string, fallbackError: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    if (res.status === 401) {
+      clearAuthSession();
+      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再继续操作"));
+    }
+    throw new Error(normalizeError(error.detail, fallbackError));
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("content-disposition") || "";
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const filename = filenameMatch?.[1] || fallbackFilename;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 // Auth
 export const auth = {
   register: (data: { email: string; password: string; name?: string }) =>
@@ -72,6 +98,8 @@ export const auth = {
         chat_conversations: number;
       };
     }>("/api/auth/profile"),
+  downloadDataExport: () =>
+    downloadFile("/api/auth/export-data", "ai-job-copilot-data.json", "数据导出失败，请稍后重试"),
 };
 
 // Positions
@@ -115,29 +143,7 @@ export const matchApi = {
 export const exportApi = {
   getReportUrl: (recordId: string) => `${API_BASE}/api/export/${recordId}`,
   async downloadReport(recordId: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/api/export/${recordId}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) {
-      const error = await res.json().catch(() => ({ detail: res.statusText }));
-      if (res.status === 401) {
-        clearAuthSession();
-        throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再导出报告"));
-      }
-      throw new Error(normalizeError(error.detail, "导出失败，请稍后重试"));
-    }
-    const blob = await res.blob();
-    const disposition = res.headers.get("content-disposition") || "";
-    const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
-    const filename = filenameMatch?.[1] || `analysis-${recordId}.md`;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    await downloadFile(`/api/export/${recordId}`, `analysis-${recordId}.md`, "导出失败，请稍后重试");
   },
 };
 

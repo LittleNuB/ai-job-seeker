@@ -32,6 +32,19 @@ test("account page renders profile and data summary for signed-in users", async 
       },
     });
   });
+  await page.route("**/api/auth/export-data", async (route) => {
+    await route.fulfill({
+      headers: {
+        "content-type": "application/json",
+        "content-disposition": 'attachment; filename="ai-job-copilot-data-test.json"',
+      },
+      body: JSON.stringify({
+        account: { user_id: user.userId, email: user.email, name: "E2E User" },
+        analysis_records: [],
+        chat_conversations: [],
+      }),
+    });
+  });
   await page.goto("/account");
 
   await expect(page.getByRole("heading", { name: "账号中心" })).toBeVisible();
@@ -41,6 +54,12 @@ test("account page renders profile and data summary for signed-in users", async 
   await expect(page.getByRole("link", { name: /新增 JD 解析/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /新增简历匹配/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /查看历史记录/ })).toBeVisible();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出数据" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("ai-job-copilot-data.json");
+  await expect(page.getByText("数据导出已开始下载")).toBeVisible();
 });
 
 test("account page redirects anonymous users to login", async ({ page }) => {
