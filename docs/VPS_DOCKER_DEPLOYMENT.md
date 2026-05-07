@@ -77,6 +77,26 @@ Required changes:
 - `LLM_CHAT_MODEL`
 - `LLM_BASE_URL`
 
+If the VPS cannot reach Docker Hub reliably, uncomment and use the optional image mirror variables in `.env.production`:
+
+```env
+PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.12-slim
+NODE_IMAGE=docker.m.daocloud.io/library/node:20-alpine
+POSTGRES_IMAGE=docker.m.daocloud.io/library/postgres:16-alpine
+REDIS_IMAGE=docker.m.daocloud.io/library/redis:7-alpine
+CADDY_IMAGE=docker.m.daocloud.io/library/caddy:2-alpine
+```
+
+For local Docker Desktop smoke tests, keep Caddy listening on port 80 inside the container and override only the host ports:
+
+```env
+CADDY_SITE_ADDRESS=:80
+CADDY_HTTP_PORT=8088
+CADDY_HTTPS_PORT=8443
+```
+
+Then use `http://localhost:8088` for local checks. On the VPS, keep the default public ports `80` and `443`.
+
 Generate a strong JWT secret:
 
 ```bash
@@ -127,6 +147,12 @@ python scripts/smoke_api.py --base-url https://app.example.com
 ```
 
 Replace `https://app.example.com` with `https://<CADDY_SITE_ADDRESS>`.
+
+For a local Docker Desktop stack using the port override above:
+
+```bash
+python scripts/smoke_api.py --base-url http://localhost:8088
+```
 
 Also verify in the browser:
 

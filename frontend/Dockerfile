@@ -1,4 +1,5 @@
-FROM node:20-alpine AS deps
+ARG NODE_IMAGE=node:20-alpine
+FROM ${NODE_IMAGE} AS deps
 
 WORKDIR /app
 
@@ -13,7 +14,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY frontend ./
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM ${NODE_IMAGE} AS runner
 
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \

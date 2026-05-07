@@ -572,4 +572,6 @@ Stabilize the development foundation before feature work:
 - Passed: targeted backend config/HTTPS tests.
 - Passed: `python -m py_compile scripts\smoke_api.py`.
 - Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.
-- Docker image build not run locally because Docker Desktop/daemon was unavailable; run `docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build` on the VPS or a Docker-enabled machine.
+- Passed: Docker image build with temporary local `.env.production` and DaoCloud image mirrors for Python, Node, PostgreSQL, Redis, and Caddy.
+- Passed: local Docker Compose startup on `http://localhost:8088` using temporary staging env, including backend migration and service health checks.
+- Passed: `python scripts\smoke_api.py --base-url http://localhost:8088` against the local Compose stack.
