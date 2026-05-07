@@ -119,5 +119,8 @@ Frontend E2E: pass
 - Compliance gaps: `docs/COMPLIANCE_GAPS.md`
 - Handoff notes: `docs/HANDOFF.md`
 - Testing workflow: `docs/TESTING.md`
+- MVP release notes: `docs/MVP_RELEASE_NOTES.md`
+- Trial onboarding note: `docs/TRIAL_ONBOARDING.md`
 - Trial acceptance checklist: `docs/MVP_TRIAL_ACCEPTANCE.md`
 - Trial feedback template: `docs/TRIAL_FEEDBACK_TEMPLATE.md`
+- Trial support runbook: `docs/TRIAL_SUPPORT_RUNBOOK.md`

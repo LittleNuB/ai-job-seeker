@@ -538,3 +538,16 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Documentation-only change; no automated test run required.
+
+## 2026-05-07 - MVP Trial Delivery Materials
+
+### Changes
+
+- Added `docs/TRIAL_ONBOARDING.md` with a user-facing invited-trial message, workflow guide, privacy/data notes, feedback format, known limits, and support placeholder.
+- Added `docs/MVP_RELEASE_NOTES.md` with an internal release candidate summary, included/excluded scope, required pre-invite checks, risks, operating rules, and rollback/stop conditions.
+- Added `docs/TRIAL_SUPPORT_RUNBOOK.md` with daily checks, support triage, common issue handling, escalation triggers, and end-of-trial review fields.
+- Linked these delivery materials from the MVP release plan and handoff notes.
+
+### Verification
+
+- Documentation-only change; no automated test run required.

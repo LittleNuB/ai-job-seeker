@@ -143,8 +143,11 @@ Read these before changing behavior:
 - `docs/DATABASE_MIGRATIONS.md`: Alembic workflow.
 - `docs/LOCAL_ENVIRONMENT.md`: local Python, venv, and Git checks.
 - `docs/SMOKE_TESTS.md`: API smoke test workflow.
+- `docs/MVP_RELEASE_NOTES.md`: internal release note template for the trusted trial.
+- `docs/TRIAL_ONBOARDING.md`: user-facing onboarding note for invited trial users.
 - `docs/MVP_TRIAL_ACCEPTANCE.md`: pre-trial manual acceptance checklist.
 - `docs/TRIAL_FEEDBACK_TEMPLATE.md`: one-session feedback capture template.
+- `docs/TRIAL_SUPPORT_RUNBOOK.md`: daily trial support and escalation guide.
 
 ## Architecture Snapshot
 
@@ -217,8 +220,8 @@ Note: chat-history E2E seeds one local SQLite conversation to avoid spending LLM
 Recommended next product work:
 
 1. Trial acceptance testing with realistic resumes/JDs using `docs/MVP_TRIAL_ACCEPTANCE.md`.
-2. Trial onboarding/release notes for trusted users.
-3. Data import quality checks for expanded scraped position datasets.
+2. Data import quality checks for expanded scraped position datasets.
+3. Run a full release candidate verification with `.\scripts\check_all.ps1 -E2E -StartServices`.
 4. Multi-model evaluation using rubric scoring from `codex/model-eval-comparison` branch
    (see `docs/SECURE_PUBLIC_RELEASE_PLAN.md` Phase 4 for 7-model comparison plan).
 5. Frontend E2E gaps around history record deletion and full account/data-rights flows if UX changes.
