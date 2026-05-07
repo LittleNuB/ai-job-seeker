@@ -25,6 +25,15 @@ Use the project-level check script before commits:
 
 By default it runs backend pytest, frontend typecheck, and frontend lint.
 
+Validate the bundled position taxonomy before seeding or building a deployment image:
+
+```powershell
+python data\validate_positions.py
+python data\seed_positions.py --dry-run
+```
+
+The seed command is idempotent: it inserts new categories/positions and updates existing rows by ID.
+
 Run E2E as well after starting backend and frontend services:
 
 ```powershell

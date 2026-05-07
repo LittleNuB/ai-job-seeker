@@ -89,6 +89,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://localhost:8000")
     parser.add_argument("--email-prefix", default="smoke")
+    parser.add_argument("--min-categories", type=int, default=7)
+    parser.add_argument("--min-positions", type=int, default=40)
     args = parser.parse_args()
 
     base_url = args.base_url.rstrip("/")
@@ -101,14 +103,26 @@ def main() -> int:
         expect("health", resp.status == 200 and resp.body.get("status") == "ok", str(resp.body))
 
         resp = call(base_url, "GET", "/api/positions/categories")
-        expect("categories", resp.status == 200 and isinstance(resp.body, list), str(resp.body))
+        expect(
+            "categories",
+            resp.status == 200 and isinstance(resp.body, list) and len(resp.body) >= args.min_categories,
+            f"expected >= {args.min_categories}, got {len(resp.body) if isinstance(resp.body, list) else resp.body}",
+        )
 
         resp = call(base_url, "GET", "/api/positions/positions")
-        expect("positions", resp.status == 200 and isinstance(resp.body, list), str(resp.body))
+        expect(
+            "positions",
+            resp.status == 200 and isinstance(resp.body, list) and len(resp.body) >= args.min_positions,
+            f"expected >= {args.min_positions}, got {len(resp.body) if isinstance(resp.body, list) else resp.body}",
+        )
 
         query = parse.quote("LLM")
         resp = call(base_url, "GET", f"/api/positions/search?query={query}&top_k=3")
-        expect("position search", resp.status == 200 and isinstance(resp.body, list), str(resp.body))
+        expect(
+            "position search",
+            resp.status == 200 and isinstance(resp.body, list) and len(resp.body) > 0,
+            str(resp.body),
+        )
 
         resp = call(base_url, "POST", "/api/jd/analyze", json_body={"jd_text": "test"})
         expect("protected jd rejects anonymous", resp.status == 401, str(resp.body))

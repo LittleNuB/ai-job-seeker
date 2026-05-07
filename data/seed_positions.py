@@ -16,6 +16,7 @@ from sqlalchemy.exc import OperationalError
 DATA_DIR = Path(__file__).parent
 PROJECT_ROOT = DATA_DIR.parent
 
+sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 sys.path.insert(0, str(DATA_DIR))
 os.environ.setdefault("DEBUG", "false")

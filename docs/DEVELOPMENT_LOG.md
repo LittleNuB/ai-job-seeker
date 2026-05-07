@@ -593,3 +593,20 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Passed: `.\scripts\check_all.ps1 -E2E -StartServices` with 55 backend tests, frontend typecheck, frontend lint, and 21 E2E tests.
+
+## 2026-05-07 - Deployment Position Seed Checks
+
+### Changes
+
+- Included the validated position taxonomy files in the backend Docker image.
+- Updated the production backend startup command to run Alembic and then idempotently upsert `data/ai_positions.json` before Uvicorn starts.
+- Strengthened `scripts/smoke_api.py` so deployment smoke checks fail when position categories or position records are missing.
+- Documented manual position validation, seed dry runs, and smoke thresholds in the deployment/testing docs.
+
+### Verification
+
+- Passed: `python -m py_compile data\validate_positions.py data\seed_positions.py scripts\smoke_api.py`.
+- Passed: `python data\validate_positions.py` with 7 categories, 46 positions, and warning-only data quality notes.
+- Passed: `python data\seed_positions.py --dry-run`, reporting 2 position inserts and 44 position updates against the current local database.
+- Passed: `docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet`.
+- Passed: `docker compose --env-file .env.production -f docker-compose.prod.yml build backend`, including the position JSON and seed/validator scripts in the backend image.

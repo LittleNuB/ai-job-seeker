@@ -126,16 +126,24 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f bac
 
 ## Migrations
 
-The backend service runs Alembic before starting Uvicorn:
+The backend service runs Alembic and then upserts `data/ai_positions.json` before starting Uvicorn:
 
 ```bash
 python -m alembic upgrade head
+python data/seed_positions.py
 ```
 
 To run migrations manually:
 
 ```bash
 docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python -m alembic upgrade head
+```
+
+To validate and preview position data sync manually:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python data/validate_positions.py
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python data/seed_positions.py --dry-run
 ```
 
 ## Smoke Checks
@@ -147,6 +155,7 @@ python scripts/smoke_api.py --base-url https://app.example.com
 ```
 
 Replace `https://app.example.com` with `https://<CADDY_SITE_ADDRESS>`.
+By default the smoke check expects at least 7 categories and 40 positions; override with `--min-categories` and `--min-positions` if the trial dataset intentionally changes.
 
 For a local Docker Desktop stack using the port override above:
 
@@ -219,6 +228,6 @@ Do not roll back database migrations unless a rollback has been tested.
 
 ## Trial Caveats
 
-- PostgreSQL starts empty. Import/seed position data before inviting users, or the position exploration and resume-match dropdown will be incomplete.
+- PostgreSQL starts empty, but the backend container upserts the bundled `data/ai_positions.json` on startup. Confirm the smoke check's position-data assertions pass before inviting users.
 - Keep the user group small until `docs/MVP_TRIAL_ACCEPTANCE.md` has a `GO` or explicit `GO_WITH_NOTES` decision.
 - Keep `.env.production`, backups, and filled feedback notes out of git.
