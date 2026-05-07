@@ -84,6 +84,7 @@ These must be complete before inviting real trial users.
 - A new user can register, log in, analyze JD, match resume, view history, export reports, and manage account data.
 - A user can delete their account and request/export their stored data.
 - A user can delete analysis/chat data they no longer want stored.
+- Trial acceptance checklist has been completed with a `GO` or explicit `GO_WITH_NOTES` decision.
 - Sensitive local files and test artifacts are not committed.
 - Full verification passes:
 
@@ -118,3 +119,5 @@ Frontend E2E: pass
 - Compliance gaps: `docs/COMPLIANCE_GAPS.md`
 - Handoff notes: `docs/HANDOFF.md`
 - Testing workflow: `docs/TESTING.md`
+- Trial acceptance checklist: `docs/MVP_TRIAL_ACCEPTANCE.md`
+- Trial feedback template: `docs/TRIAL_FEEDBACK_TEMPLATE.md`

@@ -525,3 +525,16 @@ Stabilize the development foundation before feature work:
 
 - Passed: `npm run test:e2e -- e2e/analysis-results.spec.ts` against a temporary local frontend.
 - Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.
+
+## 2026-05-07 - MVP Trial Acceptance Docs
+
+### Changes
+
+- Added `docs/MVP_TRIAL_ACCEPTANCE.md` with a structured pre-trial checklist for account/consent, JD analysis, resume matching, history/data rights, position data, model runtime, and deployment smoke checks.
+- Added `docs/TRIAL_FEEDBACK_TEMPLATE.md` for recording realistic JD/resume trial sessions without committing filled user feedback to git.
+- Linked the trial acceptance checklist and feedback template from the MVP release plan and handoff notes.
+- Refreshed handoff next-work suggestions now that model config and result-flow E2E are in place.
+
+### Verification
+
+- Documentation-only change; no automated test run required.

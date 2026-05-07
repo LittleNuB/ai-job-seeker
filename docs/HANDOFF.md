@@ -143,6 +143,8 @@ Read these before changing behavior:
 - `docs/DATABASE_MIGRATIONS.md`: Alembic workflow.
 - `docs/LOCAL_ENVIRONMENT.md`: local Python, venv, and Git checks.
 - `docs/SMOKE_TESTS.md`: API smoke test workflow.
+- `docs/MVP_TRIAL_ACCEPTANCE.md`: pre-trial manual acceptance checklist.
+- `docs/TRIAL_FEEDBACK_TEMPLATE.md`: one-session feedback capture template.
 
 ## Architecture Snapshot
 
@@ -214,12 +216,12 @@ Note: chat-history E2E seeds one local SQLite conversation to avoid spending LLM
 
 Recommended next product work:
 
-1. Deployment packaging and environment docs (MVP Week 2).
-2. Model config sanity pass, timeout/fallback settings (MVP Week 2).
-3. Trial acceptance testing with realistic resumes/JDs (MVP Week 2).
+1. Trial acceptance testing with realistic resumes/JDs using `docs/MVP_TRIAL_ACCEPTANCE.md`.
+2. Trial onboarding/release notes for trusted users.
+3. Data import quality checks for expanded scraped position datasets.
 4. Multi-model evaluation using rubric scoring from `codex/model-eval-comparison` branch
    (see `docs/SECURE_PUBLIC_RELEASE_PLAN.md` Phase 4 for 7-model comparison plan).
-5. Frontend E2E for JD result rendering, match result rendering, and report download.
+5. Frontend E2E gaps around history record deletion and full account/data-rights flows if UX changes.
 
 Items completed on the active branch:
 - Account center/profile, user data export, account deletion.
@@ -227,6 +229,8 @@ Items completed on the active branch:
 - Privacy policy, user agreement, AI disclaimer pages.
 - Login rate limiting, file upload size/type guards, log redaction guardrails.
 - Production CORS allowlist, HTTPS-only middleware, deployment environment guide.
+- Generic `LLM_*` model config layer with legacy `GLM_*` fallback.
+- E2E coverage for JD/match result rendering and report downloads.
 - Resume-match waiting, cancel, timeout, retry UX.
 - Two release plans: `docs/MVP_RELEASE_PLAN.md` and `docs/SECURE_PUBLIC_RELEASE_PLAN.md`.
 
