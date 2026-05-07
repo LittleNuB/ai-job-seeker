@@ -18,4 +18,5 @@ Thumbs.db
 frontend/test-results/
 data/ai_job_copilot.db
 data/ai_positions_backup_*.json
+scripts/trial_accept_result.json
 test_*.json
