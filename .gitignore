@@ -1,4 +1,5 @@
 .env
+.env.production
 .env.local
 .streamlit/secrets.toml
 __pycache__/
@@ -8,6 +9,7 @@ venv/
 *.egg-info/
 *.egg
 *.log
+backups/
 .DS_Store
 Thumbs.db
 .mypy_cache/

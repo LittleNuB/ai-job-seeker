@@ -119,6 +119,7 @@ Frontend E2E: pass
 - Compliance gaps: `docs/COMPLIANCE_GAPS.md`
 - Handoff notes: `docs/HANDOFF.md`
 - Testing workflow: `docs/TESTING.md`
+- VPS Docker deployment runbook: `docs/VPS_DOCKER_DEPLOYMENT.md`
 - MVP release notes: `docs/MVP_RELEASE_NOTES.md`
 - Trial onboarding note: `docs/TRIAL_ONBOARDING.md`
 - Trial acceptance checklist: `docs/MVP_TRIAL_ACCEPTANCE.md`

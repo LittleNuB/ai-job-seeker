@@ -551,3 +551,25 @@ Stabilize the development foundation before feature work:
 ### Verification
 
 - Documentation-only change; no automated test run required.
+
+## 2026-05-07 - VPS Docker Compose Deployment
+
+### Changes
+
+- Created deployment branch `codex/mvp-vps-deploy`.
+- Added production Dockerfiles for the FastAPI backend and standalone Next.js frontend.
+- Added `docker-compose.prod.yml` for Caddy, frontend, backend, PostgreSQL, and Redis on a single VPS.
+- Added Caddy reverse proxy config for same-domain HTTPS with `/api/*` routed to the backend.
+- Added `.env.production.example` for production settings and same-domain frontend API routing.
+- Added PostgreSQL backup and restore helper scripts for the Docker Compose stack.
+- Updated smoke API registration to include terms acceptance.
+- Added `docs/VPS_DOCKER_DEPLOYMENT.md` and linked it from deployment, MVP, and handoff docs.
+
+### Verification
+
+- Passed: `docker compose --env-file .env.production -f docker-compose.prod.yml config` using a temporary local `.env.production` copied from `.env.production.example`.
+- Passed: frontend production build with `npm run build`.
+- Passed: targeted backend config/HTTPS tests.
+- Passed: `python -m py_compile scripts\smoke_api.py`.
+- Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.
+- Docker image build not run locally because Docker Desktop/daemon was unavailable; run `docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build` on the VPS or a Docker-enabled machine.

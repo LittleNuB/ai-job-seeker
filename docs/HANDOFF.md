@@ -143,6 +143,7 @@ Read these before changing behavior:
 - `docs/DATABASE_MIGRATIONS.md`: Alembic workflow.
 - `docs/LOCAL_ENVIRONMENT.md`: local Python, venv, and Git checks.
 - `docs/SMOKE_TESTS.md`: API smoke test workflow.
+- `docs/VPS_DOCKER_DEPLOYMENT.md`: single-VPS Docker Compose deployment runbook.
 - `docs/MVP_RELEASE_NOTES.md`: internal release note template for the trusted trial.
 - `docs/TRIAL_ONBOARDING.md`: user-facing onboarding note for invited trial users.
 - `docs/MVP_TRIAL_ACCEPTANCE.md`: pre-trial manual acceptance checklist.
@@ -221,7 +222,7 @@ Recommended next product work:
 
 1. Trial acceptance testing with realistic resumes/JDs using `docs/MVP_TRIAL_ACCEPTANCE.md`.
 2. Data import quality checks for expanded scraped position datasets.
-3. Run a full release candidate verification with `.\scripts\check_all.ps1 -E2E -StartServices`.
+3. Build and smoke-test the VPS Docker Compose stack from `docs/VPS_DOCKER_DEPLOYMENT.md`.
 4. Multi-model evaluation using rubric scoring from `codex/model-eval-comparison` branch
    (see `docs/SECURE_PUBLIC_RELEASE_PLAN.md` Phase 4 for 7-model comparison plan).
 5. Frontend E2E gaps around history record deletion and full account/data-rights flows if UX changes.

@@ -120,6 +120,7 @@ def main() -> int:
             "email": email,
             "password": password,
             "name": "Smoke Test",
+            "accepted_terms": True,
         })
         expect("register", resp.status == 200 and resp.body.get("access_token"), str(resp.body))
         token = resp.body["access_token"]

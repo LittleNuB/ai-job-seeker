@@ -4,15 +4,18 @@ This guide captures the minimum deployment expectations for the MVP trial releas
 
 ## Target Shape
 
-- Put the backend behind an HTTPS reverse proxy or managed platform.
+- For the MVP trusted trial, the preferred deployment is a single VPS with Docker Compose, Caddy, FastAPI, Next.js, PostgreSQL, and Redis.
+- Put the backend behind an HTTPS reverse proxy.
 - Serve the frontend through HTTPS.
 - Keep backend environment variables outside git.
-- Use a stable database for trial data. SQLite is acceptable only for local development.
+- Use PostgreSQL for trial data. SQLite is acceptable only for local development.
 - Run the health check before inviting users:
 
 ```text
 GET /api/health
 ```
+
+See the concrete VPS runbook in `docs/VPS_DOCKER_DEPLOYMENT.md`.
 
 ## Required Backend Environment
 
@@ -48,10 +51,10 @@ Model settings are also range-checked at startup. Prefer the generic `LLM_*` var
 ## Required Frontend Environment
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_API_URL=
 ```
 
-This value must point to the HTTPS backend origin visible to users' browsers.
+For the recommended same-domain Caddy deployment, leave this empty so browser requests use `/api/*` on the same origin. If the frontend and backend are deployed on different origins, set this to the HTTPS backend origin visible to users' browsers.
 
 ## CORS Policy
 
@@ -97,12 +100,20 @@ cd backend
 
 For Linux deployment, use the platform Python path instead of the Windows venv path.
 
+In the Docker Compose deployment, the backend container runs Alembic automatically before Uvicorn starts.
+
 ## Smoke Checks
 
 After deployment:
 
 ```powershell
 python scripts\smoke_api.py --base-url https://api.example.com
+```
+
+For same-domain Caddy deployment, use the frontend domain:
+
+```powershell
+python scripts\smoke_api.py --base-url https://app.example.com
 ```
 
 Also verify from the frontend domain:
