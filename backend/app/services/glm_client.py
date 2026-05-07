@@ -20,22 +20,27 @@ def _model_runtime_error(exc: Exception) -> RuntimeError:
 
 
 class GLMClient:
-    """异步 GLM API 封装，兼容 OpenAI 接口"""
+    """OpenAI-compatible model client.
+
+    The class name stays for compatibility with existing imports; runtime
+    settings now prefer generic LLM_* env vars and fall back to legacy GLM_*.
+    """
 
     def __init__(self):
         settings = get_settings()
-        if not settings.glm_api_key:
-            raise ValueError("未找到 GLM_API_KEY，请在 .env 文件中配置")
+        if not settings.model_api_key:
+            raise ValueError("未找到 LLM_API_KEY/GLM_API_KEY，请在 .env 文件中配置")
         self.client = AsyncOpenAI(
-            api_key=settings.glm_api_key,
-            base_url=settings.glm_base_url,
-            timeout=settings.glm_timeout_seconds,
-            max_retries=settings.glm_max_retries,
+            api_key=settings.model_api_key,
+            base_url=settings.model_base_url,
+            timeout=settings.model_timeout_seconds,
+            max_retries=settings.model_max_retries,
         )
-        self.model = settings.glm_model
-        self.temperature = settings.glm_temperature
-        self.max_tokens = settings.glm_max_tokens
-        self.embedding_model = settings.glm_embedding_model
+        self.provider = settings.model_provider
+        self.model = settings.model_chat_model
+        self.temperature = settings.model_temperature
+        self.max_tokens = settings.model_max_tokens
+        self.embedding_model = settings.model_embedding_model
 
     async def chat(self, system_prompt: str, user_prompt: str, temperature: float = None) -> str:
         try:
@@ -113,7 +118,9 @@ class GLMClient:
             raise _model_runtime_error(e) from e
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
-        """调用智谱 embedding-3 获取文本向量"""
+        """Create embeddings with the configured OpenAI-compatible model."""
+        if not self.embedding_model:
+            raise RuntimeError("未配置向量模型，语义搜索已不可用")
         try:
             response = await self.client.embeddings.create(
                 model=self.embedding_model,

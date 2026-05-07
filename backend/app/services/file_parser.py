@@ -38,8 +38,8 @@ def _extract_docx(content: bytes) -> str:
 
 async def _extract_image(content: bytes, filename: str) -> str:
     settings = get_settings()
-    if not settings.glm_api_key:
-        raise ValueError("图片文字识别需要配置 GLM_API_KEY")
+    if not settings.model_api_key:
+        raise ValueError("图片文字识别需要配置 LLM_API_KEY/GLM_API_KEY")
 
     b64 = base64.b64encode(content).decode()
 
@@ -48,14 +48,14 @@ async def _extract_image(content: bytes, filename: str) -> str:
 
     from openai import AsyncOpenAI
     client = AsyncOpenAI(
-        api_key=settings.glm_api_key,
-        base_url=settings.glm_base_url,
-        timeout=settings.glm_timeout_seconds,
-        max_retries=settings.glm_max_retries,
+        api_key=settings.model_api_key,
+        base_url=settings.model_base_url,
+        timeout=settings.model_timeout_seconds,
+        max_retries=settings.model_max_retries,
     )
 
     response = await client.chat.completions.create(
-        model=settings.glm_model,
+        model=settings.model_chat_model,
         messages=[
             {
                 "role": "user",

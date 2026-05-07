@@ -24,6 +24,11 @@ os.environ.update(
         "APP_ENV": "test",
         "DEBUG": "false",
         "DATABASE_URL": f"sqlite+aiosqlite:///{TEST_DB.as_posix()}",
+        "LLM_PROVIDER": "",
+        "LLM_API_KEY": "",
+        "LLM_BASE_URL": "",
+        "LLM_CHAT_MODEL": "",
+        "LLM_EMBEDDING_MODEL": "",
         "GLM_API_KEY": "",
         "JWT_SECRET": "test-secret-for-pytest-only-please-rotate",
     }

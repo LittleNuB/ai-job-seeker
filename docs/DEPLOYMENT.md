@@ -28,21 +28,22 @@ JWT_SECRET=<stable-random-secret-at-least-32-characters>
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_HOURS=72
 
-GLM_API_KEY=<model-provider-api-key>
-GLM_MODEL=glm-4.6V
-GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
-GLM_TEMPERATURE=0.7
-GLM_MAX_TOKENS=4096
-GLM_TIMEOUT_SECONDS=60
-GLM_MAX_RETRIES=1
-GLM_EMBEDDING_MODEL=embedding-3
+LLM_PROVIDER=glm
+LLM_API_KEY=<model-provider-api-key>
+LLM_CHAT_MODEL=glm-4.6V
+LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=4096
+LLM_TIMEOUT_SECONDS=60
+LLM_MAX_RETRIES=1
+LLM_EMBEDDING_MODEL=embedding-3
 
 CORS_ALLOW_ORIGINS=https://app.example.com,https://www.example.com
 ```
 
 Production startup refuses weak or missing `JWT_SECRET`, `DEBUG=true`, missing `CORS_ALLOW_ORIGINS`, wildcard CORS origins, and non-HTTPS CORS origins.
 
-Model settings are also range-checked at startup. Keep `GLM_TIMEOUT_SECONDS` below the frontend match timeout so users receive a clear retryable error instead of waiting indefinitely. For the MVP trial, start with one SDK retry and raise it only if transient provider/network failures are common.
+Model settings are also range-checked at startup. Prefer the generic `LLM_*` variables for new deployments; legacy `GLM_*` variables still work as a fallback for existing environments. Keep `LLM_TIMEOUT_SECONDS` below the frontend match timeout so users receive a clear retryable error instead of waiting indefinitely. For the MVP trial, start with one SDK retry and raise it only if transient provider/network failures are common. Leave `LLM_EMBEDDING_MODEL` empty only when the selected provider has no compatible embedding API; semantic search will then fall back to keyword search.
 
 ## Required Frontend Environment
 

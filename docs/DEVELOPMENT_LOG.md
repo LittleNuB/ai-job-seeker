@@ -497,3 +497,18 @@ Stabilize the development foundation before feature work:
 
 - Passed: targeted backend tests for config and GLM client behavior.
 - Passed: `.\scripts\check_all.ps1` with 46 backend tests, frontend typecheck, and frontend lint.
+
+## 2026-05-07 - Generic LLM Config Layer
+
+### Changes
+
+- Added generic `LLM_*` model settings for OpenAI-compatible providers while preserving legacy `GLM_*` fallback settings.
+- Updated the model client, image OCR parsing, startup embedding index, and semantic search checks to use the generic effective model settings.
+- Allowed `LLM_EMBEDDING_MODEL` to be empty for providers that do not expose a compatible embedding API; semantic search then falls back to keyword search.
+- Updated environment and deployment docs to prefer `LLM_*` for new deployments.
+- Added regression coverage for generic-vs-legacy precedence, invalid generic model settings, and generic client wiring.
+
+### Verification
+
+- Passed: targeted config, model client, and position fallback tests.
+- Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.

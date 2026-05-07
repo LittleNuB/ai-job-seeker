@@ -47,8 +47,8 @@ class EmbeddingService:
             ]))
 
         settings = get_settings()
-        if not settings.glm_api_key:
-            logger.info("GLM_API_KEY is not configured; semantic vector index disabled")
+        if not settings.model_api_key or not settings.model_embedding_model:
+            logger.info("Model API key or embedding model is not configured; semantic vector index disabled")
             self._loaded = True
             return
 

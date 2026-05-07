@@ -15,7 +15,7 @@ configure_logging()
 async def lifespan(app: FastAPI):
     settings = get_settings()
     # Build embedding index on startup (lazy, won't block if no API key)
-    if settings.glm_api_key:
+    if settings.model_api_key:
         from .database import async_session
         from .services.embedding_service import get_embedding_service
         try:

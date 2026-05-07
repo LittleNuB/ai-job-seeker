@@ -10,7 +10,18 @@ WEAK_JWT_SECRETS = {"", "change-me-in-production", "your-secret-here", "dev-secr
 
 
 class Settings(BaseSettings):
-    # GLM API
+    # Generic OpenAI-compatible model API. Prefer these for new deployments.
+    llm_provider: str = ""
+    llm_api_key: str = ""
+    llm_chat_model: str = ""
+    llm_base_url: str = ""
+    llm_temperature: float | None = None
+    llm_max_tokens: int | None = None
+    llm_timeout_seconds: float | None = None
+    llm_max_retries: int | None = None
+    llm_embedding_model: str = ""
+
+    # Legacy GLM API settings. Kept as fallback so existing dev/prod envs keep working.
     glm_api_key: str = ""
     glm_model: str = "glm-4.6V"
     glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
@@ -52,23 +63,75 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allow_origins.split(",") if origin.strip()]
 
+    @property
+    def uses_generic_llm_config(self) -> bool:
+        return any(
+            [
+                self.llm_provider.strip(),
+                self.llm_api_key.strip(),
+                self.llm_chat_model.strip(),
+                self.llm_base_url.strip(),
+                self.llm_temperature is not None,
+                self.llm_max_tokens is not None,
+                self.llm_timeout_seconds is not None,
+                self.llm_max_retries is not None,
+                self.llm_embedding_model.strip(),
+            ]
+        )
+
+    @property
+    def model_provider(self) -> str:
+        return self.llm_provider.strip() or "glm"
+
+    @property
+    def model_api_key(self) -> str:
+        return self.llm_api_key.strip() if self.uses_generic_llm_config else self.glm_api_key.strip()
+
+    @property
+    def model_chat_model(self) -> str:
+        return self.llm_chat_model.strip() if self.uses_generic_llm_config else self.glm_model.strip()
+
+    @property
+    def model_base_url(self) -> str:
+        return self.llm_base_url.strip() if self.uses_generic_llm_config else self.glm_base_url.strip()
+
+    @property
+    def model_temperature(self) -> float:
+        return self.llm_temperature if self.llm_temperature is not None else self.glm_temperature
+
+    @property
+    def model_max_tokens(self) -> int:
+        return self.llm_max_tokens if self.llm_max_tokens is not None else self.glm_max_tokens
+
+    @property
+    def model_timeout_seconds(self) -> float:
+        return self.llm_timeout_seconds if self.llm_timeout_seconds is not None else self.glm_timeout_seconds
+
+    @property
+    def model_max_retries(self) -> int:
+        return self.llm_max_retries if self.llm_max_retries is not None else self.glm_max_retries
+
+    @property
+    def model_embedding_model(self) -> str:
+        return self.llm_embedding_model.strip() if self.uses_generic_llm_config else self.glm_embedding_model.strip()
+
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
         env = self.app_env.strip().lower()
         secret = self.jwt_secret.strip()
 
-        if not 0 <= self.glm_temperature <= 2:
-            raise ValueError("GLM_TEMPERATURE must be between 0 and 2.")
-        if not 1 <= self.glm_max_tokens <= 32768:
-            raise ValueError("GLM_MAX_TOKENS must be between 1 and 32768.")
-        if not 1 <= self.glm_timeout_seconds <= 300:
-            raise ValueError("GLM_TIMEOUT_SECONDS must be between 1 and 300.")
-        if not 0 <= self.glm_max_retries <= 5:
-            raise ValueError("GLM_MAX_RETRIES must be between 0 and 5.")
-        if not self.glm_model.strip():
-            raise ValueError("GLM_MODEL must not be empty.")
-        if not self.glm_embedding_model.strip():
-            raise ValueError("GLM_EMBEDDING_MODEL must not be empty.")
+        if not 0 <= self.model_temperature <= 2:
+            raise ValueError("LLM_TEMPERATURE/GLM_TEMPERATURE must be between 0 and 2.")
+        if not 1 <= self.model_max_tokens <= 32768:
+            raise ValueError("LLM_MAX_TOKENS/GLM_MAX_TOKENS must be between 1 and 32768.")
+        if not 1 <= self.model_timeout_seconds <= 300:
+            raise ValueError("LLM_TIMEOUT_SECONDS/GLM_TIMEOUT_SECONDS must be between 1 and 300.")
+        if not 0 <= self.model_max_retries <= 5:
+            raise ValueError("LLM_MAX_RETRIES/GLM_MAX_RETRIES must be between 0 and 5.")
+        if not self.model_chat_model:
+            raise ValueError("LLM_CHAT_MODEL/GLM_MODEL must not be empty.")
+        if not self.model_base_url:
+            raise ValueError("LLM_BASE_URL/GLM_BASE_URL must not be empty.")
 
         if self.is_production:
             if self.debug:
