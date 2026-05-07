@@ -100,3 +100,7 @@ Current E2E coverage:
 - Protected JD analysis, resume matching, and AI follow-up redirect unauthenticated users to login.
 - JD analysis results render the expected overview, requirements, hidden needs, interview focus, and report download action.
 - Resume match results render scores, advantages, gaps, improvement plan, and report download action.
+- Account page shows real profile stats and exports real user data via the backend (no mocks).
+- Account deletion confirms with "DELETE" input, redirects to home, clears session, and invalidates the token.
+- History records list is owner-scoped; owner can delete records, intruders and anonymous users are rejected.
+- History page renders seeded JD and match records, supports type filtering, and deletes records via confirmation dialog.

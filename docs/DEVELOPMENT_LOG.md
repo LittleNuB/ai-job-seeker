@@ -575,3 +575,21 @@ Stabilize the development foundation before feature work:
 - Passed: Docker image build with temporary local `.env.production` and DaoCloud image mirrors for Python, Node, PostgreSQL, Redis, and Caddy.
 - Passed: local Docker Compose startup on `http://localhost:8088` using temporary staging env, including backend migration and service health checks.
 - Passed: `python scripts\smoke_api.py --base-url http://localhost:8088` against the local Compose stack.
+
+## 2026-05-07 - E2E Gap Closure
+
+### Changes
+
+- Unmocked account deletion and data export in `account-profile.spec.ts` so both flows now exercise the real backend.
+  - Split the combined mock test into two real-backend tests: profile + data export, and account deletion + token invalidation.
+  - Account deletion test verifies the deleted account's token is rejected by `/api/auth/me`.
+  - Data export test reads the downloaded JSON and asserts the account email is present.
+- Added `e2e/support/records.ts` with `seedJdRecord()` and `seedMatchRecord()` helpers that insert analysis records directly into the local SQLite database (same pattern as `support/chat-history.ts`).
+- Added `e2e/history-records.spec.ts` with two tests:
+  - API-level: owner list/detail/delete scoping, intruder rejection, anonymous rejection, post-deletion 404.
+  - UI-level: history page renders seeded records, type filter toggles record visibility, delete via confirmation dialog removes the record from the list.
+- Updated `docs/TESTING.md` with the new E2E coverage.
+
+### Verification
+
+- Passed: `.\scripts\check_all.ps1 -E2E -StartServices` with 55 backend tests, frontend typecheck, frontend lint, and 21 E2E tests.
