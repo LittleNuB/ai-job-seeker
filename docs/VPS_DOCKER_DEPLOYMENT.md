@@ -124,6 +124,14 @@ docker compose --env-file .env.production -f docker-compose.prod.yml ps
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f backend
 ```
 
+On Windows or local Docker Desktop, the scripted deployment check can validate data, Compose config, image build, readiness, and smoke checks:
+
+```powershell
+.\scripts\check_deploy.ps1 -EnvFile .env.production -StartStack -Cleanup
+```
+
+Use `-DestroyVolumes` only for disposable local smoke runs where deleting PostgreSQL/Redis/Caddy volumes is intended.
+
 ## Migrations
 
 The backend service runs Alembic and then upserts `data/ai_positions.json` before starting Uvicorn:
@@ -167,8 +175,9 @@ Also verify in the browser:
 
 - home page loads;
 - registration works;
-- login works;
 - `/api/health` returns `{"status":"ok"}`;
+- `/api/health/ready` returns `{"status":"ok"}` and reports non-zero position data;
+- login works;
 - JD analysis and resume match show retryable errors if the model key is invalid;
 - report download starts after a mocked or real analysis run.
 

@@ -102,6 +102,9 @@ def main() -> int:
         resp = call(base_url, "GET", "/api/health")
         expect("health", resp.status == 200 and resp.body.get("status") == "ok", str(resp.body))
 
+        resp = call(base_url, "GET", "/api/health/ready")
+        expect("readiness", resp.status == 200 and resp.body.get("status") == "ok", str(resp.body))
+
         resp = call(base_url, "GET", "/api/positions/categories")
         expect(
             "categories",

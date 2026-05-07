@@ -42,6 +42,14 @@ python scripts\trial_accept.py --base-url http://127.0.0.1:8000 --no-color
 
 This helper creates and deletes a temporary account. It skips model-costing JD and resume analysis by default; add `--run-model-checks --model-provider <provider> --chat-model <model>` only for intentional manual trial acceptance.
 
+Run the Docker deployment check against `.env.production` when validating the VPS Compose packaging:
+
+```powershell
+.\scripts\check_deploy.ps1 -EnvFile .env.production
+```
+
+Add `-StartStack -Cleanup` to start the stack, wait for `/api/health/ready`, run API smoke checks, and then stop the stack. Add `-DestroyVolumes` only for disposable local runs.
+
 Run E2E as well after starting backend and frontend services:
 
 ```powershell
@@ -80,6 +88,7 @@ The tests set their own environment:
 - Anonymous users cannot access protected JD, export, or chat history routes.
 - Export records are scoped to the current user.
 - Chat history is scoped to the current user.
+- Readiness health reports database connectivity, position data availability, and non-secret configuration status.
 - Position search falls back to keyword search when `GLM_API_KEY` is missing.
 - Position taxonomy validation covers duplicate IDs, required fields, salary shape, and warning-only quality notes.
 - Position seeding covers dry-run safety and idempotent upsert behavior.

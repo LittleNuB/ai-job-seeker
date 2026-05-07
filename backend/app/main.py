@@ -1,12 +1,17 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import func, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import get_settings
+from .database import get_db
 from .logging_config import configure_logging
 from .middleware.https import HTTPSOnlyMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
+from .models.position import Category, Position
 
 configure_logging()
 
@@ -70,3 +75,41 @@ app.include_router(records.router, prefix="/api/records", tags=["records"])
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok"}
+
+
+@app.get("/api/health/ready")
+async def readiness_check(db: AsyncSession = Depends(get_db)):
+    checks: dict[str, object] = {}
+
+    try:
+        await db.execute(text("SELECT 1"))
+        checks["database"] = {"status": "ok"}
+    except Exception as exc:
+        checks["database"] = {"status": "error", "detail": exc.__class__.__name__}
+        return JSONResponse(status_code=503, content={"status": "error", "checks": checks})
+
+    category_count = int((await db.execute(select(func.count()).select_from(Category))).scalar_one() or 0)
+    position_count = int((await db.execute(select(func.count()).select_from(Position))).scalar_one() or 0)
+    positions_ready = category_count > 0 and position_count > 0
+    checks["position_data"] = {
+        "status": "ok" if positions_ready else "empty",
+        "categories": category_count,
+        "positions": position_count,
+    }
+
+    settings = get_settings()
+    checks["config"] = {
+        "status": "ok",
+        "app_env": settings.app_env,
+        "debug": settings.debug,
+        "model_provider": settings.model_provider,
+        "chat_model_configured": bool(settings.model_chat_model),
+        "model_api_key_configured": bool(settings.model_api_key),
+        "embedding_model_configured": bool(settings.model_embedding_model),
+    }
+
+    status = "ok" if positions_ready else "degraded"
+    return JSONResponse(
+        status_code=200 if status == "ok" else 503,
+        content={"status": status, "checks": checks},
+    )
