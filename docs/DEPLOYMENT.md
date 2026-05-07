@@ -33,11 +33,16 @@ GLM_MODEL=glm-4.6V
 GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 GLM_TEMPERATURE=0.7
 GLM_MAX_TOKENS=4096
+GLM_TIMEOUT_SECONDS=60
+GLM_MAX_RETRIES=1
+GLM_EMBEDDING_MODEL=embedding-3
 
 CORS_ALLOW_ORIGINS=https://app.example.com,https://www.example.com
 ```
 
 Production startup refuses weak or missing `JWT_SECRET`, `DEBUG=true`, missing `CORS_ALLOW_ORIGINS`, wildcard CORS origins, and non-HTTPS CORS origins.
+
+Model settings are also range-checked at startup. Keep `GLM_TIMEOUT_SECONDS` below the frontend match timeout so users receive a clear retryable error instead of waiting indefinitely. For the MVP trial, start with one SDK retry and raise it only if transient provider/network failures are common.
 
 ## Required Frontend Environment
 

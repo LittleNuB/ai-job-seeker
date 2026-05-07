@@ -61,6 +61,7 @@ These must be complete before inviting real trial users.
 - Use one default model for MVP if multi-model evaluation is not ready.
 - Add a simple model config layer only if provider switching is needed during the trial.
 - Record latency, timeout rate, and failure rate manually or in logs.
+- Keep model timeout/retry settings explicit in deployment env so trial operators can tune latency without code changes.
 
 ## Suggested 2-Week Schedule
 

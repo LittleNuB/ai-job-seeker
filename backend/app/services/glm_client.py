@@ -2,9 +2,21 @@ import json
 import re
 import asyncio
 
-from openai import AsyncOpenAI, APIError, APIConnectionError, RateLimitError
+from openai import AsyncOpenAI, APIError, APIConnectionError, APITimeoutError, RateLimitError
 
 from ..config import get_settings
+
+
+def _model_runtime_error(exc: Exception) -> RuntimeError:
+    if isinstance(exc, RateLimitError):
+        return RuntimeError("请求过于频繁，请稍后再试")
+    if isinstance(exc, APITimeoutError):
+        return RuntimeError("模型响应超时，请稍后重试或减少输入内容")
+    if isinstance(exc, APIConnectionError):
+        return RuntimeError("网络连接异常，请检查网络后重试")
+    if isinstance(exc, APIError):
+        return RuntimeError(f"API调用失败：{getattr(exc, 'message', str(exc))}")
+    return RuntimeError(str(exc))
 
 
 class GLMClient:
@@ -17,10 +29,13 @@ class GLMClient:
         self.client = AsyncOpenAI(
             api_key=settings.glm_api_key,
             base_url=settings.glm_base_url,
+            timeout=settings.glm_timeout_seconds,
+            max_retries=settings.glm_max_retries,
         )
         self.model = settings.glm_model
         self.temperature = settings.glm_temperature
         self.max_tokens = settings.glm_max_tokens
+        self.embedding_model = settings.glm_embedding_model
 
     async def chat(self, system_prompt: str, user_prompt: str, temperature: float = None) -> str:
         try:
@@ -34,12 +49,8 @@ class GLMClient:
                 max_tokens=self.max_tokens,
             )
             return response.choices[0].message.content
-        except RateLimitError:
-            raise RuntimeError("请求过于频繁，请稍后再试")
-        except APIConnectionError:
-            raise RuntimeError("网络连接异常，请检查网络后重试")
-        except APIError as e:
-            raise RuntimeError(f"API调用失败：{getattr(e, 'message', str(e))}")
+        except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as e:
+            raise _model_runtime_error(e) from e
 
     async def chat_json(self, system_prompt: str, user_prompt: str, temperature: float = None) -> dict:
         raw = await self.chat(system_prompt, user_prompt, temperature)
@@ -74,8 +85,11 @@ class GLMClient:
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
-        response = await self.client.chat.completions.create(**kwargs)
-        return response.choices[0]
+        try:
+            response = await self.client.chat.completions.create(**kwargs)
+            return response.choices[0]
+        except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as e:
+            raise _model_runtime_error(e) from e
 
     async def stream_chat(self, messages: list[dict], tools: list[dict] = None,
                           temperature: float = None):
@@ -90,19 +104,24 @@ class GLMClient:
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
-        stream = await self.client.chat.completions.create(**kwargs)
-        async for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta:
-                yield chunk.choices[0]
+        try:
+            stream = await self.client.chat.completions.create(**kwargs)
+            async for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta:
+                    yield chunk.choices[0]
+        except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as e:
+            raise _model_runtime_error(e) from e
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         """调用智谱 embedding-3 获取文本向量"""
-        settings = get_settings()
-        response = await self.client.embeddings.create(
-            model="embedding-3",
-            input=texts,
-        )
-        return [item.embedding for item in response.data]
+        try:
+            response = await self.client.embeddings.create(
+                model=self.embedding_model,
+                input=texts,
+            )
+            return [item.embedding for item in response.data]
+        except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as e:
+            raise _model_runtime_error(e) from e
 
 
 def parse_json_response(text: str) -> dict:

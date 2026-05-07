@@ -78,3 +78,33 @@ def test_production_accepts_strong_jwt_secret():
     assert settings.is_production
     assert settings.jwt_secret == "x" * 40
     assert settings.cors_origins == ["https://app.example.com", "https://www.example.com"]
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("GLM_TEMPERATURE", "2.1"),
+        ("GLM_MAX_TOKENS", "0"),
+        ("GLM_TIMEOUT_SECONDS", "0"),
+        ("GLM_MAX_RETRIES", "6"),
+        ("GLM_MODEL", ""),
+        ("GLM_EMBEDDING_MODEL", ""),
+    ],
+)
+def test_rejects_unsafe_model_settings(key, value):
+    env = {
+        "APP_ENV": "development",
+        "DEBUG": "false",
+        "JWT_SECRET": "test-secret-for-model-settings",
+        "GLM_TEMPERATURE": "0.7",
+        "GLM_MAX_TOKENS": "4096",
+        "GLM_TIMEOUT_SECONDS": "60",
+        "GLM_MAX_RETRIES": "1",
+        "GLM_MODEL": "glm-test",
+        "GLM_EMBEDDING_MODEL": "embedding-test",
+        key: value,
+    }
+
+    with patched_env(**env):
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None)

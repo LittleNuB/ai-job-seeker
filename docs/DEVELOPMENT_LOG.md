@@ -482,3 +482,18 @@ Stabilize the development foundation before feature work:
 
 - Passed: config and HTTPS middleware tests.
 - Passed: `.\scripts\check_all.ps1` with 38 backend tests, frontend typecheck, and frontend lint.
+
+## 2026-05-07 - Model Runtime Settings
+
+### Changes
+
+- Added explicit model runtime settings for `GLM_TIMEOUT_SECONDS`, `GLM_MAX_RETRIES`, and `GLM_EMBEDDING_MODEL`.
+- Added startup validation for model temperature, max tokens, timeout, retry count, chat model, and embedding model.
+- Wired the OpenAI-compatible GLM client to use configured timeout/retry settings for chat, tool chat, streaming chat, and embeddings.
+- Wired image OCR upload parsing to use the same timeout/retry settings and return a clear error when `GLM_API_KEY` is missing.
+- Updated deployment and MVP docs with the model runtime settings.
+
+### Verification
+
+- Passed: targeted backend tests for config and GLM client behavior.
+- Passed: `.\scripts\check_all.ps1` with 46 backend tests, frontend typecheck, and frontend lint.

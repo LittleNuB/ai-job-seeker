@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
     glm_temperature: float = 0.7
     glm_max_tokens: int = 4096
+    glm_timeout_seconds: float = 60.0
+    glm_max_retries: int = 1
+    glm_embedding_model: str = "embedding-3"
 
     # Database (SQLite for dev, PostgreSQL for production)
     _db_path = PROJECT_ROOT / "data" / "ai_job_copilot.db"
@@ -53,6 +56,19 @@ class Settings(BaseSettings):
     def validate_security_settings(self) -> "Settings":
         env = self.app_env.strip().lower()
         secret = self.jwt_secret.strip()
+
+        if not 0 <= self.glm_temperature <= 2:
+            raise ValueError("GLM_TEMPERATURE must be between 0 and 2.")
+        if not 1 <= self.glm_max_tokens <= 32768:
+            raise ValueError("GLM_MAX_TOKENS must be between 1 and 32768.")
+        if not 1 <= self.glm_timeout_seconds <= 300:
+            raise ValueError("GLM_TIMEOUT_SECONDS must be between 1 and 300.")
+        if not 0 <= self.glm_max_retries <= 5:
+            raise ValueError("GLM_MAX_RETRIES must be between 0 and 5.")
+        if not self.glm_model.strip():
+            raise ValueError("GLM_MODEL must not be empty.")
+        if not self.glm_embedding_model.strip():
+            raise ValueError("GLM_EMBEDDING_MODEL must not be empty.")
 
         if self.is_production:
             if self.debug:
