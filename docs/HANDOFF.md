@@ -187,6 +187,8 @@ Frontend E2E covers:
 - Chat history messages are readable by the owner only
 - History records page lists only the current user's records
 - Account profile page loads with stats
+- JD analysis results render key sections and report download starts
+- Resume match results render score details and report download starts
 - Resume-match waiting panel, cancel flow, timeout failure panel, and retry success
 
 Note: chat-history E2E seeds one local SQLite conversation to avoid spending LLM quota.

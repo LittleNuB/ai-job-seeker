@@ -98,3 +98,5 @@ Current E2E coverage:
 - Logout clears local session storage and protected actions return to login.
 - Chat history messages are readable by the owner only.
 - Protected JD analysis, resume matching, and AI follow-up redirect unauthenticated users to login.
+- JD analysis results render the expected overview, requirements, hidden needs, interview focus, and report download action.
+- Resume match results render scores, advantages, gaps, improvement plan, and report download action.

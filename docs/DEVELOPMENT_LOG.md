@@ -512,3 +512,16 @@ Stabilize the development foundation before feature work:
 
 - Passed: targeted config, model client, and position fallback tests.
 - Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.
+
+## 2026-05-07 - Analysis Result E2E Coverage
+
+### Changes
+
+- Added Playwright coverage for JD analysis result rendering, including overview, requirements, hidden needs, interview focus, and report download.
+- Added Playwright coverage for resume match result rendering, including score breakdown, advantages, gaps, improvement plan, and report download.
+- Updated testing and handoff docs with the new frontend E2E coverage.
+
+### Verification
+
+- Passed: `npm run test:e2e -- e2e/analysis-results.spec.ts` against a temporary local frontend.
+- Passed: `.\scripts\check_all.ps1` with 55 backend tests, frontend typecheck, and frontend lint.
