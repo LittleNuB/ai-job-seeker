@@ -141,7 +141,7 @@ def main() -> int:
         body, content_type = multipart_file("file", "unsupported.txt", b"hello", "text/plain")
         resp = call(base_url, "POST", "/api/files/upload", token=token, body=body,
                     headers={"Content-Type": content_type})
-        expect("file upload auth path", resp.status == 400, str(resp.body))
+        expect("file upload auth path", resp.status == 415, str(resp.body))
 
     except SmokeFailure as exc:
         print(f"FAIL {exc}", file=sys.stderr)
