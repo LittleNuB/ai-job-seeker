@@ -610,3 +610,17 @@ Stabilize the development foundation before feature work:
 - Passed: `python data\seed_positions.py --dry-run`, reporting 2 position inserts and 44 position updates against the current local database.
 - Passed: `docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet`.
 - Passed: `docker compose --env-file .env.production -f docker-compose.prod.yml build backend`, including the position JSON and seed/validator scripts in the backend image.
+
+## 2026-05-07 - Position Data Tool Tests
+
+### Changes
+
+- Added backend pytest coverage for `data/validate_positions.py`.
+- Covered valid taxonomy data, duplicate position IDs, invalid salary ranges, and warning-only data quality findings.
+- Added backend pytest coverage for `data/seed_positions.py` dry-run behavior and idempotent category/position upserts.
+- Updated testing docs with the new position data tool coverage.
+
+### Verification
+
+- Passed: `pytest tests\test_position_data_tools.py -q` with 6 tests.
+- Passed: backend pytest with 61 tests.

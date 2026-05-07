@@ -73,6 +73,8 @@ The tests set their own environment:
 - Export records are scoped to the current user.
 - Chat history is scoped to the current user.
 - Position search falls back to keyword search when `GLM_API_KEY` is missing.
+- Position taxonomy validation covers duplicate IDs, required fields, salary shape, and warning-only quality notes.
+- Position seeding covers dry-run safety and idempotent upsert behavior.
 - Production config rejects weak JWT secrets and `DEBUG=true`.
 
 ## Frontend E2E Tests
