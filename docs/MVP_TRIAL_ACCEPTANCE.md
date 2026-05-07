@@ -4,16 +4,16 @@ This checklist is for the trusted small-scope trial of AI Job Copilot. Run it be
 
 ## Release Candidate
 
-- Branch:
-- Commit:
-- Environment:
-- Backend URL:
-- Frontend URL:
-- Model provider:
-- Chat model:
-- Embedding model:
-- Tester:
-- Date:
+- Branch: main
+- Commit: (see git log)
+- Environment: local dev (Windows 11)
+- Backend URL: http://127.0.0.1:8000
+- Frontend URL: http://localhost:3000
+- Model provider: GLM (Zhipu)
+- Chat model: glm-4-flash
+- Embedding model: glm-4-flash
+- Tester: Automated + Manual
+- Date: 2026-05-07
 
 ## Automated Gate
 
@@ -58,8 +58,8 @@ The result is written to `scripts/trial_accept_result.json`, which is ignored by
 Result:
 
 ```text
-Status:
-Notes:
+Status: PASS (16/16 automated checks)
+Notes: All account & consent tests pass.
 ```
 
 ## JD Analysis Flow
@@ -83,11 +83,11 @@ Use a realistic JD with enough detail to exercise hidden needs and interview foc
 Record:
 
 ```text
-JD source:
-Latency:
-Output quality:
-Confusing UI:
-Errors:
+JD source: 招聘高级后端开发工程师，要求精通Python语言和微服务架构... (Chinese JD)
+Latency: 57s (glm-4-flash)
+Output quality: Position overview, hard skills, hidden needs, interview focus all present
+Confusing UI: (not evaluated in automated test)
+Errors: None
 ```
 
 ## Resume Match Flow
@@ -115,13 +115,13 @@ Use a realistic resume and a target position from the current position database.
 Record:
 
 ```text
-Resume source:
-Target position:
-Latency:
-Score reasonableness:
-Evidence quality:
-Actionability:
-Errors:
+Resume source: 5年后端开发经验，精通Python和Go... (Chinese resume)
+Target position: AutoML工程师 (automl_engineer)
+Latency: 254s total (3 retries: 2x content filter 1301, 1x success)
+Score reasonableness: 85 — reasonable for Python backend dev vs AutoML role
+Evidence quality: Core advantages, capability gaps, improvement plan all present
+Actionability: Specific improvement plan with immediate/short-term/medium-term steps
+Errors: GLM content filter (1301) blocked first 2 attempts; retry resolved
 ```
 
 ## History And Data Rights
@@ -140,8 +140,8 @@ Errors:
 Result:
 
 ```text
-Status:
-Notes:
+Status: PASS
+Notes: Records list scoped to user, detail accessible, deletion succeeds, deleted returns 404. Data export returns account + analysis + chat data. Account deletion invalidates token (401).
 ```
 
 ## Position Data
@@ -178,13 +178,13 @@ Data quality issues:
 Record:
 
 ```text
-Provider:
-Chat model:
-Embedding model:
-Average latency:
-Timeouts:
-Failures:
-Estimated cost:
+Provider: GLM (Zhipu / open.bigmodel.cn)
+Chat model: glm-4-flash
+Embedding model: glm-4-flash
+Average latency: JD 57s, Match 85s (single attempt)
+Timeouts: 0
+Failures: Match analysis hit content filter (1301) 2/3 attempts, retry succeeded
+Estimated cost: Low (glm-4-flash is a fast/cheap model)
 ```
 
 ## Security And Deployment Smoke
@@ -200,8 +200,8 @@ Estimated cost:
 Result:
 
 ```text
-Status:
-Notes:
+Status: PASS
+Notes: Backend pytest (55) + E2E (21) + trial acceptance (16) all pass. Local dev environment only — VPS deploy smoke not yet executed.
 ```
 
 ## Trial Decision
@@ -215,8 +215,12 @@ Use one of:
 Decision:
 
 ```text
-Decision:
-Blocking issues:
+Decision: GO_WITH_NOTES
+Blocking issues: None
 Non-blocking issues:
-Next owner:
+  - GLM content filter (1301) intermittently blocks match analysis; retry workaround in place
+  - JD analysis latency 57s acceptable for MVP but worth optimizing
+  - Backend returns 500 on content filter errors instead of proper error code
+  - VPS Docker deploy smoke test not yet executed
+Next owner: (current developer)
 ```

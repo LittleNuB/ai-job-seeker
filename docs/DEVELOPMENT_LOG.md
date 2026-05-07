@@ -640,3 +640,45 @@ Stabilize the development foundation before feature work:
 - Passed: `python -m py_compile scripts\trial_accept.py`.
 - Passed: `python scripts\trial_accept.py --help`.
 - Passed: unreachable-backend smoke of `scripts\trial_accept.py` returned failure status cleanly and wrote a structured result file.
+
+## 2026-05-07 - MVP Trial Acceptance Complete
+
+### Changes
+
+- Switched model from `glm-4.6V` to `glm-4-flash` in `.env` — reduced JD latency from 120s+ to 57s.
+- Added `GLM_TIMEOUT_SECONDS=90`, `GLM_MAX_RETRIES=0` to `.env`.
+- Fixed `scripts/trial_accept.py`: handle non-JSON HTTP error responses, retry match API up to 3x with exponential backoff (GLM content filter 1301 intermittent).
+- Reinstated live model checks in trial acceptance (JD analysis + resume match).
+- Filled `docs/MVP_TRIAL_ACCEPTANCE.md` with actual trial run results.
+- Cleaned up `scripts/match_body.json` temp file.
+
+### Results
+
+- **Trial acceptance: 16/16 PASS** — registration, consent, auth, JD analysis (57s), resume match (85 score, 3 retries), history CRUD, data export, account deletion.
+- Backend pytest: 55 pass. Frontend E2E: 21 pass.
+- Decision: **GO_WITH_NOTES** — GLM content filter (1301) intermittently blocks match analysis (retry workaround in place); backend returns 500 on content filter errors (should be fixed).
+
+### Verification
+
+- Passed: `python scripts/trial_accept.py` with 16/16 checks against live backend (glm-4-flash).
+
+## 2026-05-07 - Model Selection: GLM-4.5-AirX
+
+### Changes
+
+- Benchmarked 6 GLM models (glm-5, glm-5.1, glm-4.7, glm-4.7-flashX, glm-4.6, GLM-4.5-AirX) on production JD analysis prompt.
+- Wrote `docs/MODEL_EVALUATION.md` with full evaluation methodology and results.
+- Switched `.env` `GLM_MODEL` from `glm-4-flash` to `GLM-4.5-AirX`.
+
+### Why GLM-4.5-AirX
+
+- **Quality**: 2852 effective tokens (4.7x more than glm-4.7's 610), deepest hidden_needs analysis (118 chars team context + 126 chars hiring rationale).
+- **Zero waste**: 0% reasoning token overhead — all output tokens are usable content. All other models waste 52-75% on invisible reasoning.
+- **JSON stability**: 2/2 valid JSON in both simple and complex tasks. glm-5/5.1/flashX all failed JSON on match task.
+- **Chinese-native**: glm-5 produced English output despite Chinese prompt, disqualifying it.
+- Trade-off: 63-81s latency (vs 40s for glm-4.7), acceptable for async analysis.
+
+### Verification
+
+- Passed: `python scripts/trial_accept.py --run-model-checks --model-provider glm --chat-model GLM-4.5-AirX` — **16/16 PASS**.
+- JD analysis: 63.5s. Resume match: 170.1s (1 retry, score 85).
