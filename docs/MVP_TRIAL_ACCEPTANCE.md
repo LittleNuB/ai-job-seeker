@@ -31,6 +31,20 @@ Expected result:
 - Frontend E2E: pass
 - No local database, secrets, temporary files, or scraper raw outputs staged for commit unless explicitly intended
 
+Optional live API acceptance script:
+
+```powershell
+python scripts\trial_accept.py --base-url http://127.0.0.1:8000 --no-color
+```
+
+By default this script skips JD analysis and resume matching to avoid model cost. To intentionally exercise the model runtime, record the provider/model and run:
+
+```powershell
+python scripts\trial_accept.py --base-url http://127.0.0.1:8000 --run-model-checks --model-provider glm --chat-model glm-4.7flashX --no-color
+```
+
+The result is written to `scripts/trial_accept_result.json`, which is ignored by git.
+
 ## Account And Consent
 
 - New user can register with email, password, optional name, and terms/privacy consent.

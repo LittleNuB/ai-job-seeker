@@ -34,6 +34,14 @@ python data\seed_positions.py --dry-run
 
 The seed command is idempotent: it inserts new categories/positions and updates existing rows by ID.
 
+Run the live trial acceptance helper against an already running backend when preparing a release candidate:
+
+```powershell
+python scripts\trial_accept.py --base-url http://127.0.0.1:8000 --no-color
+```
+
+This helper creates and deletes a temporary account. It skips model-costing JD and resume analysis by default; add `--run-model-checks --model-provider <provider> --chat-model <model>` only for intentional manual trial acceptance.
+
 Run E2E as well after starting backend and frontend services:
 
 ```powershell

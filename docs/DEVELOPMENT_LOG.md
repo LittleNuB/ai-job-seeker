@@ -624,3 +624,19 @@ Stabilize the development foundation before feature work:
 
 - Passed: `pytest tests\test_position_data_tools.py -q` with 6 tests.
 - Passed: backend pytest with 61 tests.
+
+## 2026-05-07 - Trial Acceptance Script Cleanup
+
+### Changes
+
+- Reworked `scripts/trial_accept.py` into a parameterized CLI for live MVP trial acceptance.
+- Added `--base-url`, `--output`, `--model-provider`, `--chat-model`, retry/timeout controls, and `--no-color`.
+- Made model-costing JD analysis and resume matching opt-in via `--run-model-checks`.
+- Kept the default result file at ignored path `scripts/trial_accept_result.json`.
+- Documented light and model-runtime acceptance commands.
+
+### Verification
+
+- Passed: `python -m py_compile scripts\trial_accept.py`.
+- Passed: `python scripts\trial_accept.py --help`.
+- Passed: unreachable-backend smoke of `scripts\trial_accept.py` returned failure status cleanly and wrote a structured result file.
