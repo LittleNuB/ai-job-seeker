@@ -60,6 +60,16 @@ class Settings(BaseSettings):
         return self.app_env.strip().lower() in {"prod", "production"}
 
     @property
+    def normalized_database_url(self) -> str:
+        """Normalize DATABASE_URL for SQLAlchemy async driver."""
+        url = self.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+
+    @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allow_origins.split(",") if origin.strip()]
 

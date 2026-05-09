@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
 
 def _get_engine():
     settings = get_settings()
-    url = settings.database_url
+    url = settings.normalized_database_url
     # SQLite: use aiosqlite driver
     if url.startswith("sqlite"):
         # Ensure parent directory exists
