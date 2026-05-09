@@ -1,94 +1,86 @@
-# Quick Launch: Vercel + Railway
+# Quick Launch: Railway 全栈部署
 
-将 AI Job Copilot 上线到公网，用于作品集展示。前端 Vercel（免费），后端 Railway（含免费额度）。
-
-预计耗时：1-2 小时 | 月费：~$0-5
+将 AI Job Copilot 上线到公网，前后端统一部署在 Railway。预计耗时 30 分钟。
 
 ## 架构
 
 ```
 用户浏览器
     │
-    ├─ https://your-app.vercel.app (Vercel)
-    │       Next.js 前端，处理页面渲染和静态资源
+    ├─ https://frontend.railway.app
+    │       Next.js 前端（nixpacks 自动检测）
+    │       NEXT_PUBLIC_API_URL → 指向后端
     │
-    └─ https://your-api.railway.app (Railway)
-            FastAPI 后端 + PostgreSQL + Redis
-            处理认证、LLM 分析、数据存储
+    └─ https://backend.railway.app
+            FastAPI + PostgreSQL + Redis
+            Dockerfile 构建，railway.toml 配置
 ```
 
-## 第一步：Railway 部署后端
+## 部署步骤
 
-1. 注册 [Railway](https://railway.app)（GitHub 登录即可）
-2. 新建项目 → "Deploy from GitHub repo" → 选择 `ai-job-seeker` 仓库
-3. 在项目设置中添加插件：
-   - **PostgreSQL** — 自动注入 `DATABASE_URL`
-   - **Redis** — 自动注入 `REDIS_URL`
-4. 设置环境变量（见下方清单）
-5. Railway 自动检测 `railway.toml` 并构建部署
+### 1. 打开 Railway 项目
 
-### 环境变量清单
+打开 https://railway.app → GitHub 登录 → New Project → Deploy from GitHub repo → 选择 `LittleNuB/ai-job-seeker`，分支选 `feat/quick-launch-portfolio`
 
-以下变量在 Railway 项目 Settings → Environment 中手动添加：
+Railway 会自动检测根目录的 `railway.toml` 并启动后端服务。
 
-| 变量 | 值 | 必填 |
-|------|-----|------|
-| `APP_ENV` | `production` | 是 |
-| `JWT_SECRET` | 生成 32+ 字符随机串 | 是 |
-| `CORS_ALLOW_ORIGINS` | 先填 `*`，拿到 Vercel 域名后改 | 是 |
-| `GLM_API_KEY` | 你的智谱 API Key | 是 |
-| `GLM_MODEL` | `GLM-4.5-AirX` | 是 |
-| `GLM_BASE_URL` | `https://open.bigmodel.cn/api/paas/v4/` | 是 |
-| `GLM_TEMPERATURE` | `0.7` | 否 |
-| `GLM_MAX_TOKENS` | `8192` | 否 |
-| `GLM_TIMEOUT_SECONDS` | `120` | 否 |
-| `GLM_MAX_RETRIES` | `1` | 否 |
+### 2. 添加插件（后端）
 
-> `DATABASE_URL` 和 `REDIS_URL` 由 Railway 插件自动注入，**不要手动设置**。
+进入后端 Service → 右上角 **Add Plugin**：
+- **PostgreSQL** — 自动注入 `DATABASE_URL`
+- **Redis** — 自动注入 `REDIS_URL`
 
-部署完成后，访问 `https://<your-service>.railway.app/api/health` 确认返回 `{"status":"ok"}`。
+### 3. 设置后端环境变量
 
-## 第二步：Vercel 部署前端
-
-1. 注册 [Vercel](https://vercel.com)（GitHub 登录）
-2. Import 同一个仓库 → 设置 Root Directory 为 `frontend`
-3. Framework 自动识别为 Next.js
-4. 添加环境变量：
+在后端 Service → Variables 中手动添加：
 
 | 变量 | 值 |
 |------|-----|
-| `NEXT_PUBLIC_API_URL` | Railway 后端 URL，如 `https://xxx.railway.app` |
+| `APP_ENV` | `production` |
+| `JWT_SECRET` | 随机生成 32 位字符串 |
+| `CORS_ALLOW_ORIGINS` | `https://*.up.railway.app` |
+| `GLM_API_KEY` | 你的智谱 API Key |
+| `GLM_MODEL` | `GLM-4.5-AirX` |
+| `GLM_BASE_URL` | `https://open.bigmodel.cn/api/paas/v4/` |
+| `GLM_TEMPERATURE` | `0.7` |
+| `GLM_MAX_TOKENS` | `8192` |
+| `GLM_TIMEOUT_SECONDS` | `120` |
+| `GLM_MAX_RETRIES` | `1` |
 
-5. 点击 Deploy
+> `DATABASE_URL` 和 `REDIS_URL` 由插件自动注入，**不要手动添加**。
 
-部署完成后 Vercel 会给出域名如 `https://ai-job-seeker.vercel.app`。
+等部署完成，浏览器打开后端域名 `/api/health` 确认返回 `{"status":"ok"}`。
 
-## 第三步：修整
+### 4. 添加前端服务
 
-1. 将 Vercel 域名更新到 Railway 的 `CORS_ALLOW_ORIGINS`（替换 `*`）
-2. 在 Railway 中重新部署一次使 CORS 生效
-3. 在浏览器中打开 Vercel 域名，完成注册、JD 分析等测试
+在 Railway 项目中点 **+ Add Service** → 选择同一个 GitHub 仓库 `LittleNuB/ai-job-seeker`，分支 `feat/quick-launch-portfolio`。
 
-## 成本估算
+Railway 会自动检测 `frontend/` 目录下的 Next.js 项目（nixpacks）。
 
-| 平台 | 免费额度 | 预计月费 |
-|------|---------|---------|
-| Vercel | 100GB 带宽, 6000 构建分钟 | $0 |
-| Railway | $5 信用额度, PostgreSQL 512MB RAM | $0-5 |
-| 智谱 GLM-4.5-AirX | 按量计费 | ~$0.01/次分析 |
+设置前端环境变量：
 
-每月 100 次分析约 $1-6。
+| 变量 | 值 |
+|------|-----|
+| `NEXT_PUBLIC_API_URL` | 第三步中后端服务的域名，如 `https://xxx.railway.app` |
 
-## 常见问题
+### 5. 验证
 
-**Q: 后端请求超时怎么办？**
-Railway 默认超时 300s，项目设置里可以调。把 `GLM_TIMEOUT_SECONDS` 调低（如 90），前端超时也相应调整。
+1. 打开前端域名 → 首页正常渲染
+2. 注册账号 → 登录
+3. 粘贴一份 JD 文本 → 点分析 → 等待结果
+4. 探索岗位页面正常显示
 
-**Q: 怎么绑定自己的域名？**
-Vercel 和 Railway 都支持自定义域名，在各自项目的 Settings → Domains 中添加即可。
+## 成本
 
-**Q: 数据库数据会丢吗？**
-Railway PostgreSQL 是持久化的。如需备份，在 Railway 中启用自动备份。
+| 项目 | 月费 |
+|------|------|
+| Railway (PostgreSQL 512MB + Redis 256MB) | ~$5/mo |
+| 智谱 GLM-4.5-AirX | ~$0.01/次 |
 
-**Q: 不想公开代码怎么办？**
-Vercel 和 Railway 都支持私有仓库。或者 fork 一份公开的演示版，只放 frontend 代码。
+每月 50-100 次分析，总计约 $5-6/月。Railway 新用户有 $5 免费额度。
+
+## 故障排查
+
+- **后端 502**: 查看 Railway 部署日志，通常是环境变量缺失
+- **前端 API 调用失败**: 确认 `NEXT_PUBLIC_API_URL` 设置正确，确认 `CORS_ALLOW_ORIGINS` 包含前端域名
+- **LLM 超时**: Railway 默认 300s 超时，调低 `GLM_TIMEOUT_SECONDS` 即可

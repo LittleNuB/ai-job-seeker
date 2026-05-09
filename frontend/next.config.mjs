@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const isVercel = process.env.VERCEL === "1";
+// standalone only for Docker VPS builds; Vercel and Railway use default output
+const useStandalone = process.env.BUILD_STANDALONE === "1";
 
 const nextConfig = {
-  // standalone mode for Docker builds; Vercel uses its own output mode
-  ...(isVercel ? {} : { output: "standalone" }),
+  ...(useStandalone ? { output: "standalone" } : {}),
   async rewrites() {
     return [
       {

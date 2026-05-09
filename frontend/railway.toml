@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+nixpacksConfigPath = "frontend"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "always"
