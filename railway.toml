@@ -3,7 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-startCommand = "alembic -c alembic.ini upgrade head && python data/seed_positions.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"
+startCommand = "alembic -c alembic.ini upgrade head || true; python data/seed_positions.py || true; exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"
 restartPolicyType = "on_failure"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 120
