@@ -1,7 +1,2 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-
-[deploy]
-startCommand = "node server.js"
-restartPolicyType = "always"
+builder = "nixpacks"
