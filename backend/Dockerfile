@@ -23,4 +23,4 @@ COPY data/validate_positions.py ./data/validate_positions.py
 
 EXPOSE 8000
 
-CMD alembic -c alembic.ini upgrade head && python data/seed_positions.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers
+CMD bash -c 'for i in 1 2 3 4 5; do alembic -c alembic.ini upgrade head && break || sleep 5; done && python data/seed_positions.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers'
