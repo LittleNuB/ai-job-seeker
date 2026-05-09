@@ -682,3 +682,25 @@ Stabilize the development foundation before feature work:
 
 - Passed: `python scripts/trial_accept.py --run-model-checks --model-provider glm --chat-model GLM-4.5-AirX` — **16/16 PASS**.
 - JD analysis: 63.5s. Resume match: 170.1s (1 retry, score 85).
+
+## 2026-05-07 - Quick Launch: Vercel + Railway
+
+### Changes
+
+- Created `feat/quick-launch-portfolio` branch (off `feat/model-eval-airx`).
+- Modified `frontend/next.config.mjs`: conditional `output: "standalone"` — disabled when `VERCEL=1`, kept for Docker builds.
+- Added `railway.toml` for Railway v2 deployment with Dockerfile builder and migration seed start command.
+- Added `.env.production.railway.example` with Railway-specific env var template.
+- Added `docs/QUICK_LAUNCH.md` step-by-step deployment guide.
+
+### Architecture
+
+Frontend on Vercel (free) → `NEXT_PUBLIC_API_URL` points to Railway backend.
+Backend on Railway → PostgreSQL + Redis via Railway plugins, `CORS_ALLOW_ORIGINS` set to Vercel domain.
+No Docker Compose or Caddy needed for this deployment path.
+
+### Verification
+
+- `railway.toml` syntax validated.
+- `next.config.mjs` conditional logic: Vercel build skips standalone, local Docker build keeps it.
+- Branch isolated from main VPS deployment configs.

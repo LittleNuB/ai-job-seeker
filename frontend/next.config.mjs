@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const isVercel = process.env.VERCEL === "1";
 
 const nextConfig = {
-  output: "standalone",
+  // standalone mode for Docker builds; Vercel uses its own output mode
+  ...(isVercel ? {} : { output: "standalone" }),
   async rewrites() {
     return [
       {
