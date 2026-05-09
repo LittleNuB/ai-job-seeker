@@ -1,7 +1,7 @@
 [build]
-builder = "nixpacks"
-nixpacksConfigPath = "frontend"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node server.js"
 restartPolicyType = "always"
