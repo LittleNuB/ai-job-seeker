@@ -1,5 +1,3 @@
-import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -20,20 +18,17 @@ configure_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Build embedding index in background so health check passes immediately
-    async def _build_index():
-        await asyncio.sleep(3)
-        settings = get_settings()
-        if settings.model_api_key:
-            from .database import async_session
-            from .services.embedding_service import get_embedding_service
-            try:
-                async with async_session() as db:
-                    await get_embedding_service().build_index(db)
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Embedding index build skipped: {e}")
-
-    asyncio.create_task(_build_index())
+    settings = get_settings()
+    # Build embedding index on startup (lazy, won't block if no API key)
+    if settings.model_api_key:
+        from .database import async_session
+        from .services.embedding_service import get_embedding_service
+        try:
+            async with async_session() as db:
+                await get_embedding_service().build_index(db)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Embedding index build skipped: {e}")
     yield
 
 
