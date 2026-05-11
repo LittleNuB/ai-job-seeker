@@ -28,6 +28,15 @@ async def export_report(record_id: str, db: AsyncSession = Depends(get_db), user
         md = export_jd_markdown(data, jd_text=record.input_text or "")
     elif record.type == "match":
         md = export_match_markdown(data, resume_text=record.input_text or "")
+    elif record.type == "action_plan":
+        md = data.get("markdown") or f"# 7 天求职行动计划\n\n{data.get('summary', '')}"
+    elif record.type == "position_radar":
+        lines = ["# AI 岗位适配雷达", "", data.get("summary", "")]
+        for item in data.get("recommended_positions", []):
+            lines.append(f"\n## {item.get('position_name')}｜{item.get('fit_score')}/100")
+            for reason in item.get("why_fit", []):
+                lines.append(f"- {reason}")
+        md = "\n".join(lines)
     else:
         raise HTTPException(status_code=400, detail="不支持的记录类型")
 

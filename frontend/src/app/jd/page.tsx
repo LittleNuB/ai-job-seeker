@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, Download, FileText, Loader2, Tag } from "lucide-react";
 import { exportApi, jd as jdApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
+import ActionPlanPanel from "@/components/ActionPlanPanel";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 
@@ -233,6 +234,33 @@ export default function JDPage() {
                 </div>
               )}
 
+              {analysis.credible_breakdown && (
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-500">可信拆解</h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <InsightList title="硬门槛" items={analysis.credible_breakdown.hard_requirements} color="red" />
+                    <InsightList title="加分项" items={analysis.credible_breakdown.bonus_points} color="green" />
+                    <InsightList title="隐藏信号" items={analysis.credible_breakdown.hidden_signals} color="blue" />
+                    <InsightList title="低权重套话" items={analysis.credible_breakdown.low_weight_phrases} color="gray" />
+                  </div>
+                </div>
+              )}
+
+              {analysis.evidence_chain?.length > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-gray-500">判断证据链</h3>
+                  <div className="space-y-2">
+                    {analysis.evidence_chain.map((item: any, index: number) => (
+                      <div key={index} className="rounded-lg bg-slate-50 p-3 text-sm">
+                        <div className="font-medium text-slate-900">{item.claim}</div>
+                        <div className="mt-1 text-slate-600">{item.evidence}</div>
+                        <div className="mt-1 text-xs text-slate-400">置信度：{item.confidence}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 {recordId && (
                   <button
@@ -251,6 +279,7 @@ export default function JDPage() {
                   用此 JD 匹配简历 <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
+              <ActionPlanPanel sourceType="jd" sourceRecordId={recordId} />
             </div>
           )}
 
@@ -263,6 +292,30 @@ export default function JDPage() {
       </div>
 
       <ChatPanel contextType="jd" contextData={analysis ? { analysis } : undefined} />
+    </div>
+  );
+}
+
+function InsightList({ title, items, color }: { title: string; items?: string[]; color: "red" | "green" | "blue" | "gray" }) {
+  const colorClass = {
+    red: "bg-red-50 text-red-700",
+    green: "bg-green-50 text-green-700",
+    blue: "bg-blue-50 text-blue-700",
+    gray: "bg-gray-50 text-gray-700",
+  }[color];
+
+  if (!items?.length) return null;
+
+  return (
+    <div>
+      <div className="mb-2 text-xs font-medium text-gray-400">{title}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((item, index) => (
+          <span key={index} className={`rounded px-2 py-1 text-xs ${colorClass}`}>
+            {item}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -194,6 +194,8 @@ export default function HistoryPage() {
             { label: "全部", value: undefined },
             { label: "JD 解析", value: "jd" },
             { label: "简历匹配", value: "match" },
+            { label: "岗位雷达", value: "position_radar" },
+            { label: "行动计划", value: "action_plan" },
           ].map((tab) => (
             <button
               key={tab.label}

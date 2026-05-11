@@ -61,4 +61,77 @@ def build_resume_prompt(resume_text: str, position_details: str) -> tuple[str, s
 
 async def match_resume(glm_client, resume_text: str, position_details: str) -> dict:
     system_prompt, user_prompt = build_resume_prompt(resume_text, position_details)
-    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)
+    result = await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)
+    return enrich_match_result(result, resume_text)
+
+
+def _snippet(text: str) -> str:
+    clean = " ".join(text.strip().split())
+    return clean[:160] if clean else "简历中已有经历"
+
+
+def enrich_match_result(result: dict, resume_text: str) -> dict:
+    """Add explainable matching fields while keeping the original response shape."""
+    score = int(result.get("match_score") or 0)
+    if score >= 80:
+        decision = "建议投"
+        score_reason = "核心能力和岗位要求重合度较高，适合进入定制简历和面试准备。"
+    elif score >= 62:
+        decision = "可以冲"
+        score_reason = "已有部分相关基础，但需要补强证据和岗位关键词表达。"
+    else:
+        decision = "暂缓投"
+        score_reason = "当前简历与目标岗位存在明显差距，建议先补项目或调整主投方向。"
+
+    advantages = result.get("core_advantages") or []
+    gaps = result.get("capability_gaps") or []
+    resume_snippet = _snippet(resume_text)
+
+    result.setdefault("application_decision", decision)
+    result.setdefault("score_explanation", score_reason)
+    result.setdefault(
+        "resume_evidence",
+        [
+            {
+                "capability": item.get("advantage", "相关能力") if isinstance(item, dict) else str(item),
+                "resume_evidence": item.get("evidence", resume_snippet) if isinstance(item, dict) else resume_snippet,
+                "strength": "strong" if score >= 75 else "medium",
+            }
+            for item in advantages[:4]
+        ]
+        or [
+            {
+                "capability": "可迁移经历",
+                "resume_evidence": resume_snippet,
+                "strength": "medium",
+            }
+        ],
+    )
+    result.setdefault(
+        "gap_severity",
+        [
+            {
+                "gap": item.get("gap", "岗位关键能力表达不足") if isinstance(item, dict) else str(item),
+                "severity": item.get("severity", "中") if isinstance(item, dict) else "中",
+                "impact": item.get("impact", "可能影响简历筛选或面试追问") if isinstance(item, dict) else "可能影响简历筛选或面试追问",
+                "fix": item.get("mitigation", "补充项目证据并用 JD 关键词重写经历") if isinstance(item, dict) else "补充项目证据并用 JD 关键词重写经历",
+            }
+            for item in gaps[:4]
+        ],
+    )
+    result.setdefault(
+        "resume_rewrite_suggestions",
+        [
+            "将项目描述改成「动作 + 技术选择 + 业务/效果指标」结构。",
+            "把目标岗位高频关键词自然放入项目经历，而不是集中堆在技能栏。",
+            "补充一条能证明端到端落地能力的经历，包括数据、模型、部署或协作结果。",
+        ],
+    )
+    result.setdefault(
+        "interview_risks",
+        [
+            "面试官可能追问项目是否真实落地、你负责的边界和最终效果。",
+            "如果简历只写工具名，可能被追问技术选择、失败案例和优化过程。",
+        ],
+    )
+    return result

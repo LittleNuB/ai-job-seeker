@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AlertCircle, Clock3, Download, Loader2, RefreshCw, Target, XCircle } from "lucide-react";
 import { exportApi, matchApi, positions as positionsApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
+import ActionPlanPanel from "@/components/ActionPlanPanel";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 import ScoreBar from "@/components/ScoreBar";
@@ -333,6 +334,18 @@ function MatchPageContent() {
             </div>
           </div>
 
+          {(result.result?.application_decision || result.result?.score_explanation) && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500">投递判断</h3>
+                  <div className="mt-2 text-xl font-bold text-gray-900">{result.result.application_decision}</div>
+                </div>
+                <p className="max-w-2xl text-sm leading-6 text-gray-600">{result.result.score_explanation}</p>
+              </div>
+            </div>
+          )}
+
           {result.result?.core_advantages && (
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <h3 className="mb-3 text-sm font-semibold text-green-600">核心优势</h3>
@@ -366,6 +379,62 @@ function MatchPageContent() {
                       <span className="ml-2 text-gray-600">{gap.mitigation}</span>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.result?.resume_evidence?.length > 0 && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-blue-600">简历证据链</h3>
+              <div className="space-y-2">
+                {result.result.resume_evidence.map((item: any, index: number) => (
+                  <div key={index} className="rounded-lg bg-blue-50 p-3 text-sm">
+                    <div className="font-medium text-blue-900">{item.capability}</div>
+                    <div className="mt-1 text-blue-800">{item.resume_evidence}</div>
+                    <div className="mt-1 text-xs text-blue-500">证据强度：{item.strength}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.result?.gap_severity?.length > 0 && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-orange-600">缺口严重度</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                {result.result.gap_severity.map((item: any, index: number) => (
+                  <div key={index} className="rounded-lg bg-orange-50 p-3 text-sm text-orange-900">
+                    <div className="font-semibold">{item.gap}</div>
+                    <div className="mt-1">影响：{item.impact}</div>
+                    <div className="mt-1">补救：{item.fix}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.result?.resume_rewrite_suggestions?.length > 0 && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-500">简历改写建议</h3>
+              <div className="space-y-2">
+                {result.result.resume_rewrite_suggestions.map((item: string, index: number) => (
+                  <div key={index} className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.result?.interview_risks?.length > 0 && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-500">面试风险</h3>
+              <div className="flex flex-wrap gap-2">
+                {result.result.interview_risks.map((item: string, index: number) => (
+                  <span key={index} className="rounded-full bg-red-50 px-3 py-1 text-sm text-red-700">
+                    {item}
+                  </span>
                 ))}
               </div>
             </div>
@@ -410,6 +479,7 @@ function MatchPageContent() {
               </button>
             </div>
           )}
+          <ActionPlanPanel sourceType="match" sourceRecordId={recordId} />
         </div>
       )}
 

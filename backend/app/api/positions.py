@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models.position import Position, Category
 from ..services.embedding_service import get_embedding_service
+from ..services.jd_database_service import search_real_jds
 
 router = APIRouter()
 
@@ -58,6 +59,21 @@ async def get_position(position_id: str, db: AsyncSession = Depends(get_db)):
 async def semantic_search(query: str, top_k: int = Query(default=10, le=50), db: AsyncSession = Depends(get_db)):
     service = get_embedding_service()
     return await service.search(query, db, top_k=top_k)
+
+
+@router.get("/real-jds")
+async def get_real_jds(
+    position_id: str | None = None,
+    query: str | None = None,
+    company: str | None = None,
+    limit: int = Query(default=8, ge=1, le=20),
+    db: AsyncSession = Depends(get_db),
+):
+    position = None
+    if position_id:
+        result = await db.execute(select(Position).where(Position.id == position_id))
+        position = result.scalar_one_or_none()
+    return search_real_jds(position=position, query=query, company=company, limit=limit)
 
 
 def _position_to_dict(p: Position) -> dict:

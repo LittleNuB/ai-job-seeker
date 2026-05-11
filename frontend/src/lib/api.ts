@@ -146,12 +146,42 @@ export const positions = {
     request<{ id: string; name: string; name_en: string; summary: string; score: number }[]>(
       `/api/positions/search?query=${encodeURIComponent(query)}&top_k=${topK || 10}`,
     ),
+  getRealJds: (params?: { position_id?: string; query?: string; company?: string; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.position_id) searchParams.set("position_id", params.position_id);
+    if (params?.query) searchParams.set("query", params.query);
+    if (params?.company) searchParams.set("company", params.company);
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    const qs = searchParams.toString();
+    return request<{
+      total: number;
+      dataset_total: number;
+      companies: string[];
+      items: any[];
+    }>(`/api/positions/real-jds${qs ? `?${qs}` : ""}`);
+  },
 };
 
 // JD
 export const jd = {
   analyze: (data: { jd_text: string; position_id?: string }) =>
     request<{ record_id: string; result: any }>("/api/jd/analyze", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+// Position Radar
+export const positionRadar = {
+  analyze: (data: {
+    resume_text: string;
+    preferences?: {
+      target_city?: string;
+      experience_level?: string;
+      preferred_tracks?: string[];
+    };
+  }) =>
+    request<{ record_id: string; result: any }>("/api/position-radar", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -164,6 +194,15 @@ export const matchApi = {
       method: "POST",
       body: JSON.stringify(data),
       ...options,
+    }),
+};
+
+// Action Plan
+export const actionPlan = {
+  create: (data: { source_type: "position_radar" | "jd" | "match"; source_record_id: string }) =>
+    request<{ record_id: string; result: any }>("/api/action-plan", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };
 

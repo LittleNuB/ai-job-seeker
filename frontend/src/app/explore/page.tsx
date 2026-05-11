@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Clock, DollarSign, Search } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Clock, DollarSign, ExternalLink, Loader2, Search } from "lucide-react";
 import { positions } from "@/lib/api";
 import ChatPanel from "@/components/chat/ChatPanel";
 import Timeline from "@/components/Timeline";
@@ -43,6 +43,14 @@ export default function ExplorePage() {
   const [positionList, setPositionList] = useState<Position[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [jdQuery, setJdQuery] = useState("");
+  const [jdCompany, setJdCompany] = useState("");
+  const [realJds, setRealJds] = useState<any[]>([]);
+  const [jdCompanies, setJdCompanies] = useState<string[]>([]);
+  const [jdDatasetTotal, setJdDatasetTotal] = useState(0);
+  const [jdTotal, setJdTotal] = useState(0);
+  const [jdLoading, setJdLoading] = useState(false);
+  const [expandedJdIndex, setExpandedJdIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -111,17 +119,53 @@ export default function ExplorePage() {
   }
 
   async function selectPosition(position: Position) {
+    setRealJds([]);
+    setExpandedJdIndex(null);
     if (!position.capability_requirements && !position.salary_range) {
       try {
         const full = await positions.getPosition(position.id);
         setSelectedPosition(full);
+        loadRealJds(full.id);
         return;
       } catch {
         setSelectedPosition(position);
+        loadRealJds(position.id);
         return;
       }
     }
     setSelectedPosition(position);
+    loadRealJds(position.id);
+  }
+
+  async function loadRealJds(positionId = selectedPosition?.id, options?: { query?: string; company?: string }) {
+    setJdLoading(true);
+    setExpandedJdIndex(null);
+    try {
+      const response = await positions.getRealJds({
+        position_id: positionId,
+        query: options?.query ?? jdQuery,
+        company: options?.company ?? jdCompany,
+        limit: 8,
+      });
+      setRealJds(response.items);
+      setJdCompanies(response.companies);
+      setJdDatasetTotal(response.dataset_total);
+      setJdTotal(response.total);
+    } catch (err) {
+      console.error("Failed to load real JDs:", err);
+      setRealJds([]);
+    } finally {
+      setJdLoading(false);
+    }
+  }
+
+  function handleJdSearch() {
+    loadRealJds();
+  }
+
+  function handleCompanyChange(company: string) {
+    setJdCompany(company);
+    loadRealJds(selectedPosition?.id, { company });
   }
 
   function goToMatch() {
@@ -303,7 +347,7 @@ export default function ExplorePage() {
             )}
 
             {selectedPosition.common_interview_topics && (
-              <div>
+              <div className="mb-6">
                 <h3 className="mb-2 text-sm font-semibold text-gray-500">常见面试主题</h3>
                 <div className="space-y-1">
                   {selectedPosition.common_interview_topics.map((topic: any, index: number) => (
@@ -317,6 +361,22 @@ export default function ExplorePage() {
                 </div>
               </div>
             )}
+
+            <RealJdPanel
+              query={jdQuery}
+              company={jdCompany}
+              companies={jdCompanies}
+              datasetTotal={jdDatasetTotal}
+              total={jdTotal}
+              items={realJds}
+              loading={jdLoading}
+              expandedIndex={expandedJdIndex}
+              onQueryChange={setJdQuery}
+              onCompanyChange={handleCompanyChange}
+              onSearch={handleJdSearch}
+              onRefresh={() => loadRealJds()}
+              onToggleExpand={(index) => setExpandedJdIndex(expandedJdIndex === index ? null : index)}
+            />
 
             <button
               type="button"
@@ -333,6 +393,141 @@ export default function ExplorePage() {
         contextType="explore"
         contextData={selectedPosition ? { position: selectedPosition } : undefined}
       />
+    </div>
+  );
+}
+
+function RealJdPanel({
+  query,
+  company,
+  companies,
+  datasetTotal,
+  total,
+  items,
+  loading,
+  expandedIndex,
+  onQueryChange,
+  onCompanyChange,
+  onSearch,
+  onRefresh,
+  onToggleExpand,
+}: {
+  query: string;
+  company: string;
+  companies: string[];
+  datasetTotal: number;
+  total: number;
+  items: any[];
+  loading: boolean;
+  expandedIndex: number | null;
+  onQueryChange: (value: string) => void;
+  onCompanyChange: (value: string) => void;
+  onSearch: () => void;
+  onRefresh: () => void;
+  onToggleExpand: (index: number) => void;
+}) {
+  return (
+    <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <BriefcaseBusiness className="h-4 w-4 text-blue-600" />
+            真实 JD 样本
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            来自清洗后的招聘 JD 数据库，当前数据集 {datasetTotal || "-"} 条；本岗位匹配 {total} 条。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+          刷新样本
+        </button>
+      </div>
+
+      <div className="mb-3 grid gap-2 md:grid-cols-[1fr_160px_auto]">
+        <input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && onSearch()}
+          placeholder="在真实 JD 中搜索关键词，如 RAG、Agent、CUDA"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={company}
+          onChange={(event) => onCompanyChange(event.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">全部公司</option>
+          {companies.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onSearch}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          搜索
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-8 text-sm text-slate-400">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          正在读取真实 JD...
+        </div>
+      ) : items.length > 0 ? (
+        <div className="space-y-3">
+          {items.map((jd, index) => (
+            <div key={`${jd.company}-${jd.title}-${index}`} className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <div className="font-medium text-slate-900">{jd.title}</div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+                    {jd.company && <span>{jd.company}</span>}
+                    {jd.city && <span>{jd.city}</span>}
+                    {jd.level && <span>{jd.level}</span>}
+                    {jd.scraped_at && <span>抓取于 {jd.scraped_at}</span>}
+                  </div>
+                </div>
+                {jd.url && (
+                  <a
+                    href={jd.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                  >
+                    来源
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                {expandedIndex === index ? jd.jd_text : jd.excerpt}
+              </p>
+              {jd.jd_text && jd.excerpt && jd.jd_text.length > jd.excerpt.length && (
+                <button
+                  type="button"
+                  onClick={() => onToggleExpand(index)}
+                  className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+                >
+                  {expandedIndex === index ? "收起原文" : "展开查看原文"}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white py-8 text-center text-sm text-slate-400">
+          暂未匹配到真实 JD，可换一个关键词或查看全部公司。
+        </div>
+      )}
     </div>
   );
 }

@@ -60,12 +60,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .api import auth, positions, jd, match, chat, files, export, records
+from .api import action_plan, auth, chat, export, files, jd, match, position_radar, positions, records
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(positions.router, prefix="/api/positions", tags=["positions"])
+app.include_router(position_radar.router, prefix="/api/position-radar", tags=["position-radar"])
 app.include_router(jd.router, prefix="/api/jd", tags=["jd"])
 app.include_router(match.router, prefix="/api/match", tags=["match"])
+app.include_router(action_plan.router, prefix="/api/action-plan", tags=["action-plan"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(files.router, prefix="/api/files", tags=["files"])
 app.include_router(export.router, prefix="/api/export", tags=["export"])

@@ -27,6 +27,10 @@ def _extract_summary(type_: str, result_json: str) -> str | None:
     elif type_ == "match":
         score = data.get("match_score")
         return f"匹配得分：{score}/100" if score is not None else None
+    elif type_ == "position_radar":
+        return data.get("summary") or data.get("suggested_primary_path")
+    elif type_ == "action_plan":
+        return data.get("summary") or data.get("focus")
     return None
 
 

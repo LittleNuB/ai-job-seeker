@@ -55,4 +55,60 @@ def build_jd_prompt(jd_text: str) -> tuple[str, str]:
 
 async def analyze_jd(glm_client, jd_text: str) -> dict:
     system_prompt, user_prompt = build_jd_prompt(jd_text)
-    return await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)
+    result = await glm_client.chat_with_retry(system_prompt, user_prompt, temperature=0.2)
+    return enrich_jd_insights(result, jd_text)
+
+
+def _first_sentence(text: str, fallback: str) -> str:
+    clean = " ".join(text.strip().split())
+    if not clean:
+        return fallback
+    for mark in ["。", "；", ";", "."]:
+        if mark in clean:
+            return clean.split(mark, 1)[0][:120]
+    return clean[:120]
+
+
+def enrich_jd_insights(result: dict, jd_text: str) -> dict:
+    """Add stable, evidence-oriented fields for the differentiated JD page."""
+    surface = result.get("surface_requirements") or {}
+    hidden = result.get("hidden_needs") or {}
+    interview = result.get("interview_focus") or {}
+
+    hard_requirements = surface.get("hard_skills") or surface.get("experience") or []
+    bonus_points = surface.get("soft_skills") or []
+    hidden_signals = hidden.get("real_priorities") or []
+    interview_topics = interview.get("likely_topics") or []
+    evidence_seed = _first_sentence(jd_text, "基于 JD 原文和岗位描述推断")
+
+    result.setdefault(
+        "credible_breakdown",
+        {
+            "hard_requirements": hard_requirements[:6],
+            "bonus_points": bonus_points[:6],
+            "low_weight_phrases": ["抗压能力", "沟通协作", "学习能力"],
+            "hidden_signals": hidden_signals[:5],
+            "candidate_risks": interview.get("red_flags", [])[:5],
+            "suitable_for": ["有相关项目证据、能解释技术选择和业务结果的候选人"],
+            "not_suitable_for": ["只有关键词堆砌、缺少项目落地或复盘证据的候选人"],
+        },
+    )
+    result.setdefault(
+        "evidence_chain",
+        [
+            {
+                "claim": "该岗位的核心要求需要结合 JD 原文判断，不能只看标题",
+                "evidence": evidence_seed,
+                "confidence": "medium",
+            },
+            *[
+                {
+                    "claim": topic.get("topic", "高概率面试主题") if isinstance(topic, dict) else str(topic),
+                    "evidence": evidence_seed,
+                    "confidence": "medium",
+                }
+                for topic in interview_topics[:3]
+            ],
+        ],
+    )
+    return result
