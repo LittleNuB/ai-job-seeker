@@ -704,3 +704,28 @@ No Docker Compose or Caddy needed for this deployment path.
 - `railway.toml` syntax validated.
 - `next.config.mjs` conditional logic: Vercel build skips standalone, local Docker build keeps it.
 - Branch isolated from main VPS deployment configs.
+
+## 2026-05-09 - Switched to Render (Railway abandoned)
+
+### Why
+Railway multi-service monorepo support was unreliable — frontend build kept using wrong Dockerfile context, health checks failed intermittently, and restartPolicy caused infinite loops. After extensive debugging, switched backend to Render which worked on the first try.
+
+### Changes
+- Added `render.yaml` for Render Blueprint deployment.
+- Modified `backend/Dockerfile` CMD to include alembic + seed steps (Render doesn't support `startCommand` for Docker).
+- Added `settings.normalized_database_url` property to convert Render's `postgres://` format to `postgresql+asyncpg://`.
+- Updated `backend/alembic/env.py` and `backend/app/database.py` to use `normalized_database_url`.
+- Added Alembic retry loop in Dockerfile CMD for DB readiness.
+- Removed `@lru_cache` from `get_settings()` (later reverted — kept for local dev).
+- Reverted `main.py` lifespan to blocking embedding index build (background task caused instability).
+- Added `.env.production.render.example` and updated `docs/QUICK_LAUNCH.md`.
+
+### Current Deployment
+- Frontend: https://ai-jobcopilot.vercel.app (Vercel, free)
+- Backend: https://ai-job-copilot-backend-m0md.onrender.com (Render, free tier)
+- Render free tier sleeps after 15min inactivity; cold start takes 30-60s.
+
+### Verification
+- CORS preflight passes: `access-control-allow-origin: https://ai-jobcopilot.vercel.app`
+- Health check: 200 OK
+- All features functional (register, JD analysis, match, positions, export, account deletion)
