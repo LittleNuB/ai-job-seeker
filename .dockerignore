@@ -37,6 +37,8 @@ data/*
 
 scraper/raw/
 scraper/cleaned/
+!scraper/cleaned/
+!scraper/cleaned/cleaned_jds.json
 scraper/structured/
 scraper/__pycache__/
 
