@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-04-28",
+  "last_updated": "2026-05-07",
   "categories": [
     {
       "id": "algorithm",
@@ -831,8 +831,8 @@
           "industry_trends": "联邦学习正与AIoT、区块链深度融合，隐私增强技术（如同态加密）成为研究热点。其在金融、医疗、政务等高敏感数据领域的应用需求激增，推动技术向更高效、更安全的方向发展。",
           "related_positions": [
             "data_scientist",
-            "ml_engineer",
-            "backend_engineer"
+            "llm_engineer",
+            "ai_infra_engineer"
           ],
           "common_interview_topics": [
             "请解释联邦学习的核心概念、主要挑战（如数据异构性、通信开销）及你的理解。",
@@ -842,6 +842,77 @@
             "请分享一个你优化联邦学习系统性能（如通信效率、训练速度）的具体案例。"
           ],
           "id": "federated_learning_engineer"
+        },
+        {
+          "name": "知识图谱工程师",
+          "name_en": "Knowledge Graph Engineer",
+          "level": "主流职级（初级至高级）",
+          "summary": "构建、管理和应用知识图谱，以实现智能搜索、推荐和问答系统。",
+          "positioning": "负责构建结构化知识库，为上层应用（如智能问答、推荐系统）提供语义理解与推理能力。",
+          "capability_requirements": {
+            "must_have": [
+              "自然语言处理（NLP）基础",
+              "图数据库（如Neo4j, JanusGraph）与图算法",
+              "实体识别与关系抽取",
+              "机器学习/深度学习框架（如PyTorch, TensorFlow）",
+              "扎实的编程能力（如Python）",
+              "知识图谱构建全流程（本体设计、数据融合、链接预测等）"
+            ],
+            "nice_to_have": [
+              "大语言模型（LLM）与RAG（检索增强生成）技术",
+              "多模态数据处理与融合",
+              "云平台知识图谱服务经验",
+              "基于知识图谱的推理与查询"
+            ],
+            "tools": [
+              "PyTorch",
+              "TensorFlow",
+              "Neo4j",
+              "Elasticsearch",
+              "Apache Jena",
+              "Apache Spark"
+            ]
+          },
+          "career_path": {
+            "junior": "协助构建知识图谱，负责数据清洗、实体抽取等基础工作，1-2年经验。",
+            "mid": "独立负责知识图谱子模块的设计与开发，优化实体/关系抽取模型，3-5年经验。",
+            "senior": "主导知识图谱项目架构设计与技术选型，攻克复杂场景下的构建与推理难题，5年以上经验。",
+            "leadership": "管理知识图谱团队，制定技术战略，推动知识图谱在业务中的规模化应用，8年以上经验。"
+          },
+          "salary_range": {
+            "junior": {
+              "min": 25,
+              "max": 40,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            },
+            "mid": {
+              "min": 40,
+              "max": 70,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            },
+            "senior": {
+              "min": 70,
+              "max": 120,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            }
+          },
+          "industry_trends": "知识图谱正与LLM深度融合（RAG），向多模态、自动化构建方向发展，在智能搜索、推荐和决策支持领域应用广泛，成为企业智能化转型的核心基础设施。",
+          "related_positions": [
+            "nlp_engineer",
+            "search_algorithm_engineer",
+            "data_engineer"
+          ],
+          "common_interview_topics": [
+            "请解释知识图谱的三元组结构，并说明其与普通数据库的区别。",
+            "描述一个从零开始构建知识图谱的完整流程，包括数据源、本体设计、抽取、融合和存储。",
+            "如何利用机器学习/深度学习模型进行实体识别和关系抽取？请举例说明。",
+            "请用Cypher（Neo4j）或SPARQL写一个查询，找出与‘苹果公司’有‘总部位于’关系的所有实体。",
+            "请设计一个基于知识图谱的智能问答系统，并说明其工作原理。"
+          ],
+          "id": "kg_engineer"
         }
       ]
     },
@@ -1619,7 +1690,7 @@
           "related_positions": [
             "ai_product_manager",
             "data_product_manager",
-            "business_developer"
+            "ai_ops_specialist"
           ],
           "common_interview_topics": [
             "请描述一个你负责的AI产品商业化案例，包括策略、执行和结果。",
@@ -2046,8 +2117,8 @@
           "industry_trends": "行业趋势：标注流程自动化（AIA）成为热点，对标注员技能要求从体力转向技能；众包管理平台化、智能化；数据质量评估体系愈发重要；特定领域（如自动驾驶、医疗）的标注需求激增。",
           "related_positions": [
             "data_scientist",
-            "algorithm_engineer",
-            "product_manager"
+            "llm_engineer",
+            "ai_product_manager"
           ],
           "common_interview_topics": [
             "请描述一次你建立或优化标注流程的经历，并说明如何衡量其效果。",
@@ -2121,7 +2192,6 @@
           "related_positions": [
             "data_analyst",
             "data_engineer",
-            "data_architect",
             "data_product_manager"
           ],
           "common_interview_topics": [
@@ -2382,7 +2452,8 @@
           "career_path": {
             "junior": "AI合规专员 (0-2年)：负责具体合规流程执行，协助进行风险评估与文档撰写。",
             "mid": "AI合规专家/经理 (2-5年)：独立负责AI产品线的合规审查，主导风险评估与策略制定，协调跨部门资源。",
-            "senior": "AI合规总监/负责人 (5年以上)：制定公司整体AI合规战略与框架，管理合规团队，应对监管挑战，推动合规文化建设。"
+            "senior": "AI合规总监/负责人 (5年以上)：制定公司整体AI合规战略与框架，管理合规团队，应对监管挑战，推动合规文化建设。",
+            "leadership": "AI合规负责人/治理负责人 (8年以上)：负责公司级AI治理体系、监管沟通、跨业务风险管理与团队建设。"
           },
           "salary_range": {
             "junior": {
@@ -2406,9 +2477,9 @@
           },
           "industry_trends": "全球对AI的监管日趋严格，从数据隐私到算法公平性均有立法跟进。企业对AI合规人才需求激增，合规能力成为AI产品落地的核心竞争力之一。",
           "related_positions": [
-            "AI_Ethics_Officer",
-            "Data_Privacy_Officer",
-            "Legal_Advisor_AI"
+            "ai_safety_engineer",
+            "data_governance_engineer",
+            "ai_solution_architect"
           ],
           "common_interview_topics": [
             "请描述一个你处理过的AI偏见案例，以及你如何识别和缓解它。",
@@ -2475,9 +2546,9 @@
           },
           "industry_trends": "行业正从人工标注向“人机协同”的半自动化标注发展，对标注人员的领域知识和逻辑判断能力要求更高。同时，数据伦理、偏见消除和高质量数据集构建成为核心关注点，推动标注工作向更精细化、专业化方向发展。",
           "related_positions": [
-            "data_annotator",
+            "annotation_manager",
             "data_engineer",
-            "machine_learning_engineer"
+            "llm_engineer"
           ],
           "common_interview_topics": [
             "请描述一次你处理模糊或矛盾标注指南的经历，你是如何解决的？",
@@ -2559,6 +2630,75 @@
             "请设计一个简单的数字人交互系统架构，包括前端、后端和AI服务，并说明各模块间的通信方式。"
           ],
           "id": "digital_human_engineer"
+        },
+        {
+          "name": "AI内容运营",
+          "name_en": "AI Content Operations",
+          "level": "中高级",
+          "summary": "负责AI生成内容的策划、生产、运营与推广，提升用户参与度与内容质量。",
+          "positioning": "在AI产品链路中，连接AI技术与用户，通过内容策略驱动产品增长和用户粘性。",
+          "capability_requirements": {
+            "must_have": [
+              "内容策划与创意能力",
+              "AI工具使用与理解",
+              "用户/创作者洞察力",
+              "数据驱动运营",
+              "网感与热点敏感度",
+              "沟通与协作能力",
+              "内容审美与判断力"
+            ],
+            "nice_to_have": [
+              "垂直领域专业知识",
+              "项目管理/执行能力",
+              "内容生产/制作能力"
+            ],
+            "tools": [
+              "Stable Diffusion (SD)",
+              "ComfyUI",
+              "剪映 / PR",
+              "抖音",
+              "网易云音乐",
+              "小红书",
+              "Instagram / TikTok / X (Twitter)",
+              "AI Skills"
+            ]
+          },
+          "career_path": {
+            "junior": "AI内容运营实习生/专员，负责基础内容执行、数据整理和用户反馈收集，1年以下经验。",
+            "mid": "AI内容运营，独立负责特定内容模块的策划、生产与运营，具备一定的数据分析能力，1-3年经验。",
+            "senior": "资深AI内容运营/内容运营经理，负责核心内容策略制定、团队管理或从零到一搭建内容体系，3-5年经验。",
+            "leadership": "内容运营总监，负责整体内容方向、团队建设与跨部门战略协同，5年以上经验。"
+          },
+          "salary_range": {
+            "junior": {
+              "min": 15,
+              "max": 25,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            },
+            "mid": {
+              "min": 25,
+              "max": 40,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            },
+            "senior": {
+              "min": 40,
+              "max": 60,
+              "unit": "万/年",
+              "city_tier": "一线城市"
+            }
+          },
+          "industry_trends": "AI内容运营正从简单的AI辅助生产向深度融合AI技术、驱动内容生态创新转变，对从业者的技术理解、创意策划和数据驱动能力要求越来越高，同时垂直领域和海外市场的精细化运营成为新的增长点。",
+          "related_positions": [],
+          "common_interview_topics": [
+            "请分享一个你使用AI工具成功策划或优化内容的案例，并说明你的思考过程。",
+            "你如何理解“网感”？请举例说明你如何根据平台特性和用户反馈调整内容策略。",
+            "请描述一次你通过数据分析发现问题并推动内容优化的经历。",
+            "你对我们产品/领域的AIGC内容生态有什么看法？你认为未来的机会和挑战在哪里？",
+            "如果让你负责一个新上线的AI内容功能，你会如何制定前三个月的运营计划？"
+          ],
+          "id": "ai_content_ops"
         }
       ]
     },
@@ -2626,10 +2766,9 @@
           },
           "industry_trends": "AI芯片正朝着更高算力、更低功耗、更强通用性的方向发展，异构计算架构、先进封装技术、Chiplet设计成为主流趋势。",
           "related_positions": [
-            "chip_design_engineer",
-            "digital_ic_designer",
-            "soc_architect",
-            "verification_engineer"
+            "asic_design_engineer",
+            "cuda_engineer",
+            "ai_infra_engineer"
           ],
           "common_interview_topics": [
             "请描述一个你参与过的SoC项目，并详细说明你在其中负责的架构设计部分。",
@@ -2846,9 +2985,9 @@
           },
           "industry_trends": "行业正从L2/L3向L4/L5高阶自动驾驶演进，多传感器融合（尤其是4D毫米波雷达）、基于Transformer的端到端模型、以及仿真驱动的开发成为关键技术趋势。",
           "related_positions": [
-            "ai_engineer",
             "cv_engineer",
-            "perception_engineer"
+            "multimodal_engineer",
+            "ai_robotics_engineer"
           ],
           "common_interview_topics": [
             "请设计一个算法，用于在点云数据中检测和跟踪车辆。",
@@ -2914,8 +3053,9 @@
           },
           "industry_trends": "AI教育正从工具化向个性化、自适应学习发展，大模型应用、AI导师、智能评测是热点，同时注重教育公平与伦理。",
           "related_positions": [
-            "product_manager",
-            "ai_algorithm_engineer"
+            "ai_product_manager",
+            "llm_engineer",
+            "prompt_engineer"
           ],
           "common_interview_topics": [
             "请描述一个你主导的AI教育产品从0到1的过程，并说明你如何平衡技术可行性与用户需求。",
@@ -2987,9 +3127,8 @@
           "industry_trends": "AI在金融领域的应用正从单一模型向端到端自动化、可解释性、多模态融合方向发展，MLOps成为核心竞争力，合规与伦理要求日益凸显。",
           "related_positions": [
             "data_scientist",
-            "ml_engineer",
-            "quantitative_analyst",
-            "risk_modeler"
+            "data_analyst",
+            "anomaly_detection_engineer"
           ],
           "common_interview_topics": [
             "请详细描述一个你主导的金融算法项目，包括业务背景、技术方案、遇到的挑战及最终效果。",
@@ -3059,7 +3198,8 @@
           "industry_trends": "AI医疗正从单一模态诊断向多模态融合、治疗规划、药物研发等方向拓展。个性化医疗、联邦学习（保护数据隐私）和边缘计算成为热点。同时，算法的可解释性、鲁棒性及合规性（如NMPA/FDA认证）要求日益提高。",
           "related_positions": [
             "data_scientist",
-            "ml_engineer"
+            "cv_engineer",
+            "multimodal_engineer"
           ],
           "common_interview_topics": [
             "请描述一个你处理过的医学影像项目，包括数据预处理、模型选择和评估方法。",
