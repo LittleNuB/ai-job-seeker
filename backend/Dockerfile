@@ -20,6 +20,7 @@ COPY backend/app ./app
 COPY data/ai_positions.json ./data/ai_positions.json
 COPY data/seed_positions.py ./data/seed_positions.py
 COPY data/validate_positions.py ./data/validate_positions.py
+COPY scraper/cleaned/cleaned_jds.json ./scraper/cleaned/cleaned_jds.json
 
 EXPOSE 8000
 

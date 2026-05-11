@@ -9,8 +9,14 @@ from typing import Any
 from .position_radar_service import _as_text
 from ..models.position import Position
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-JD_DATA_PATH = PROJECT_ROOT / "scraper" / "cleaned" / "cleaned_jds.json"
+def _project_root() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "scraper" / "cleaned" / "cleaned_jds.json").exists():
+            return parent
+    return Path(__file__).resolve().parents[3]
+
+
+JD_DATA_PATH = _project_root() / "scraper" / "cleaned" / "cleaned_jds.json"
 
 
 def _normalize(text: str | None) -> str:
