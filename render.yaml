@@ -19,6 +19,6 @@ services:
       - key: GLM_MAX_RETRIES
         value: "1"
       - key: JWT_SECRET
-        value: replace-with-random-32-char-string
+        sync: false
       - key: GLM_API_KEY
-        value: your-glm-api-key
+        sync: false
