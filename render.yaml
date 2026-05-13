@@ -11,9 +11,9 @@ services:
       - key: CORS_ALLOW_ORIGINS
         value: https://ai-jobcopilot.vercel.app
       - key: GLM_MODEL
-        value: GLM-4.5-AirX
+        value: deepseek-v4-flash
       - key: GLM_BASE_URL
-        value: https://open.bigmodel.cn/api/paas/v4/
+        value: https://api.deepseek.com
       - key: GLM_TIMEOUT_SECONDS
         value: "120"
       - key: GLM_MAX_RETRIES
