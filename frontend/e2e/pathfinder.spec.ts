@@ -197,6 +197,14 @@ test("guards recommendation when fixed demo is not loaded", async ({ page }) => 
 test("runs static P0 pathfinder loop and exports markdown", async ({ page }) => {
   await page.goto("/pathfinder");
   await expect(page.getByRole("heading", { name: "寻径星图：小 C 的工程企业知识库 AI 助手试航" })).toBeVisible();
+  await expect(page.getByText("独立参赛 Demo / 产品原型")).toBeVisible();
+  await expect(page.getByRole("link", { name: "寻径星图" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "AI Job Copilot" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "岗位雷达" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "岗位探索" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "JD 解析" })).toHaveCount(0);
+  await expect(page.getByText("AI Job Copilot 试用版")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "隐私政策" })).toHaveCount(0);
   await expect(page.getByText("这不是简历包装工具，也不做能力认证、企业推荐或录用预测")).toBeVisible();
 
   await page.getByRole("link", { name: "进入小 C Demo" }).click();

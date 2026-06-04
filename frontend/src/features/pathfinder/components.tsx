@@ -21,10 +21,10 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <Link href="/pathfinder" className="group">
             <div className="text-sm font-semibold text-teal-700">
-              AI Job Copilot
+              独立参赛 Demo / 产品原型
             </div>
             <div className="text-xl font-semibold tracking-normal text-slate-950">
-              寻径星图 P0
+              寻径星图
             </div>
           </Link>
           <nav
