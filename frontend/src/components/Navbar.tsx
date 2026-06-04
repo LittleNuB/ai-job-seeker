@@ -46,13 +46,13 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+      <div className="mx-auto flex min-h-14 max-w-7xl flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-blue-600">
           <Brain className="h-6 w-6" />
           AI Job Copilot
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto pb-1 md:w-auto md:pb-0">
           {links.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (

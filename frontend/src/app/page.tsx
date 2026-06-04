@@ -43,8 +43,11 @@ export default function Home() {
               专注 AI 岗位的求职决策 Copilot
             </div>
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-slate-950 md:text-5xl">
-              看懂 AI 岗位，再决定怎么求职
+              AI Job Copilot
             </h1>
+            <p className="mt-3 text-2xl font-semibold leading-tight text-slate-900 md:text-3xl">
+              看懂 AI 岗位，再决定怎么求职
+            </p>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
               AI Job Copilot 不只是简历美化器。它会结合 AI 岗位库、真实 JD 信号和你的简历证据，判断适合投什么、差距在哪里，以及未来 7 天该做什么。
             </p>
