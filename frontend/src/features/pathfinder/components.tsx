@@ -16,15 +16,38 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-[#eef3f4] text-slate-900">
+      <header className="border-b border-slate-800 bg-[#0b1418] text-slate-100 shadow-sm">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <Link href="/pathfinder" className="group">
-            <div className="text-sm font-semibold text-teal-700">
-              独立参赛 Demo / 产品原型
-            </div>
-            <div className="text-xl font-semibold tracking-normal text-slate-950">
-              寻径星图
+          <Link href="/pathfinder" className="group flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md border border-teal-400/40 text-teal-200">
+              <svg viewBox="0 0 32 32" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M16 3v26M3 16h26M16 7l4 9-4 9-4-9 4-9Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.7"
+                />
+                <circle
+                  cx="16"
+                  cy="16"
+                  r="11"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeOpacity="0.55"
+                  strokeWidth="1"
+                />
+              </svg>
+            </span>
+            <div>
+              <div className="text-sm font-semibold text-teal-200">
+                独立参赛 Demo / 产品原型
+              </div>
+              <div className="text-xl font-semibold tracking-normal text-white">
+                寻径星图
+              </div>
             </div>
           </Link>
           <nav
@@ -39,11 +62,17 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
                   href={step.href}
                   className={`flex min-w-fit items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${
                     active
-                      ? "border-teal-500 bg-teal-50 text-teal-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                      ? "border-teal-400 bg-teal-400/10 text-teal-100"
+                      : "border-slate-700 bg-slate-900/40 text-slate-300 hover:border-slate-500 hover:text-white"
                   }`}
                 >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-current text-[11px] font-semibold text-white">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${
+                      active
+                        ? "bg-teal-300 text-slate-950"
+                        : "bg-slate-700 text-slate-200"
+                    }`}
+                  >
                     {index + 1}
                   </span>
                   {step.label}

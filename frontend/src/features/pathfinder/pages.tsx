@@ -1,6 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  CircleAlert,
+  ClipboardList,
+  Database,
+  FileText,
+  GitBranch,
+  LockKeyhole,
+  Map as MapIcon,
+  Navigation,
+  PenLine,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ActionButton,
   BulletList,
@@ -43,6 +59,7 @@ import { usePathfinder } from "./state";
 import type {
   BackendSyncStatus,
   PathfinderRecordStatus,
+  PathId,
   PathVerdict,
   RequiredMarkdownSection,
 } from "./types";
@@ -50,7 +67,7 @@ import type {
 function toneForVerdict(verdict: PathVerdict) {
   if (verdict === "priority_trial") return "teal";
   if (verdict === "explore") return "amber";
-  return "rose";
+  return "amber";
 }
 
 function labelForMissing(questionId: string) {
@@ -91,6 +108,90 @@ function toneForBackendSyncStatus(status: BackendSyncStatus) {
   return "amber";
 }
 
+const pathVisualMeta: Record<
+  PathId,
+  {
+    index: string;
+    routeClass: string;
+    routeStroke: string;
+    nodeClass: string;
+    badgeClass: string;
+    panelClass: string;
+    muted: string;
+    shortLabel: string;
+    x: number;
+    y: number;
+  }
+> = {
+  "industry-ai-product-assistant": {
+    index: "01",
+    routeClass: "border-teal-300 bg-teal-400/10 text-teal-100",
+    routeStroke: "#2dd4bf",
+    nodeClass: "border-teal-300 bg-teal-300 text-slate-950 shadow-[0_0_24px_rgba(45,212,191,0.35)]",
+    badgeClass: "border-teal-300 bg-teal-300 text-slate-950",
+    panelClass: "border-teal-200 bg-teal-50",
+    muted: "text-teal-700",
+    shortLabel: "主航线",
+    x: 76,
+    y: 27,
+  },
+  "industry-ai-solution-assistant": {
+    index: "02",
+    routeClass: "border-sky-300 bg-sky-400/10 text-sky-100",
+    routeStroke: "#93c5fd",
+    nodeClass: "border-sky-300 bg-sky-100 text-slate-900",
+    badgeClass: "border-sky-200 bg-sky-50 text-sky-800",
+    panelClass: "border-sky-200 bg-sky-50",
+    muted: "text-sky-700",
+    shortLabel: "次级航线",
+    x: 76,
+    y: 53,
+  },
+  "algorithm-llm-engineer": {
+    index: "03",
+    routeClass: "border-amber-400/60 bg-amber-400/10 text-amber-100",
+    routeStroke: "#a3a3a3",
+    nodeClass: "border-amber-300 bg-slate-200 text-slate-700",
+    badgeClass: "border-amber-200 bg-amber-50 text-amber-800",
+    panelClass: "border-amber-200 bg-amber-50",
+    muted: "text-amber-700",
+    shortLabel: "远距边界",
+    x: 76,
+    y: 78,
+  },
+};
+
+const evidenceIconMap = {
+  "JD 证据": FileText,
+  "小 C 背景证据": UserRound,
+  "OpenDocuments 证据": Database,
+  "风险证据": ShieldCheck,
+  "下一步试航": Navigation,
+};
+
+const evidenceShortLabelMap: Record<string, string> = {
+  "JD 证据": "JD",
+  "小 C 背景证据": "背景",
+  "OpenDocuments 证据": "OpenDocs",
+  "风险证据": "风险",
+  "下一步试航": "试航",
+};
+
+function detailTitleForEvidence(title: string) {
+  const titles: Record<string, string> = {
+    "JD 证据": "JD 信号详情",
+    "小 C 背景证据": "背景信号详情",
+    "OpenDocuments 证据": "OpenDocuments 参照详情",
+    "风险证据": "风险边界详情",
+    "下一步试航": "试航动作详情",
+  };
+  return titles[title] ?? title;
+}
+
+function firstPoint(points: string[]) {
+  return points[0] ?? "";
+}
+
 export function PathfinderEntryPage() {
   const { loadDemo } = usePathfinder();
 
@@ -101,62 +202,94 @@ export function PathfinderEntryPage() {
         description={pageCopy.entrySubtitle}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Panel tone="teal">
-          <h2 className="text-2xl font-semibold text-slate-950">
-            固定 Demo 边界
-          </h2>
-          <p className="mt-3 text-sm leading-6 text-slate-700">
-            {pageCopy.entryScope}
-          </p>
-          <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-5">
-            {["小 C 背景", "3 条样例 JD", "OpenDocuments", "6 问试航", "Markdown"].map(
-              (step, index) => (
-                <div
-                  key={step}
-                  className="rounded-md border border-teal-200 bg-white p-3"
-                >
-                  <div className="text-xs font-semibold text-teal-700">
-                    Step {index + 1}
+      <div className="grid gap-6 lg:grid-cols-[1.05fr_1.25fr]">
+        <div className="rounded-lg border border-slate-800 bg-[#111b20] p-5 text-slate-100 shadow-sm">
+          <div
+            className="rounded-md border border-slate-700/80 p-5"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 30%, rgba(45,212,191,0.18) 0 1px, transparent 2px), radial-gradient(circle at 78% 24%, rgba(226,232,240,0.26) 0 1px, transparent 2px), linear-gradient(rgba(148,163,184,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.12) 1px, transparent 1px)",
+              backgroundSize: "180px 140px, 220px 180px, 42px 42px, 42px 42px",
+            }}
+          >
+            <div className="inline-flex rounded-md border border-teal-300/50 px-3 py-1 text-sm font-semibold text-teal-100">
+              固定 Demo
+            </div>
+            <h2 className="mt-5 text-2xl font-semibold text-white">
+              小 C Demo 起点
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              {pageCopy.entryScope}
+            </p>
+            <div className="mt-6 grid gap-3">
+              {["小 C 背景", "3 条样例 JD", "OpenDocuments", "6 问试航", "Markdown"].map(
+                (step, index) => (
+                  <div key={step} className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-teal-300/60 bg-teal-300/10 text-sm font-semibold text-teal-100">
+                      {index + 1}
+                    </span>
+                    <div className="h-px flex-1 bg-slate-700" />
+                    <span className="min-w-[8.5rem] rounded-md border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100">
+                      {step}
+                    </span>
                   </div>
-                  <div className="mt-1 font-medium text-slate-900">{step}</div>
-                </div>
-              ),
-            )}
+                ),
+              )}
+            </div>
+            <p className="mt-6 text-sm leading-6 text-slate-300">
+              本次 Demo 只围绕 OpenDocuments 和工程企业知识库 AI 助手试航展开，
+              不扩展真实检索、多项目推荐或动态岗位生成。
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink
+                href="/pathfinder/background"
+                onClick={loadDemo}
+                variant="primary"
+              >
+                进入小 C Demo
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </ButtonLink>
+              <ButtonLink href="/pathfinder/background" variant="secondary">
+                查看固定样例
+              </ButtonLink>
+            </div>
           </div>
-          <p className="mt-6 text-sm leading-6 text-slate-700">
-            本次 Demo 只围绕 OpenDocuments 和工程企业知识库 AI 助手试航展开，
-            不扩展真实检索、多项目推荐或动态岗位生成。
-          </p>
-          <div className="mt-5">
-            <Notice title="反包装边界" tone="amber">
-              {pageCopy.entryBoundaryNotice}
-            </Notice>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink
-              href="/pathfinder/background"
-              onClick={loadDemo}
-              variant="primary"
-            >
-              进入小 C Demo
-            </ButtonLink>
-            <ButtonLink href="/pathfinder/background" variant="secondary">
-              查看固定样例
-            </ButtonLink>
-          </div>
-        </Panel>
+        </div>
 
-        <Panel>
-          <h2 className="text-lg font-semibold text-slate-950">固定输入 / 输出</h2>
-          <div className="mt-4">
-            <BulletList items={pageCopy.entryBoundary} />
-          </div>
-          <div className="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-            输出内容包括航迹表摘要、作品集一页纸草稿、指标表、风险清单和
-            Markdown 导出。
-          </div>
-        </Panel>
+        <div className="grid gap-5">
+          <Panel>
+            <div className="flex items-start gap-3">
+              <MapIcon className="mt-1 h-5 w-5 shrink-0 text-teal-700" aria-hidden="true" />
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  固定输入 / 输出
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  输入到输出保持固定链路，便于演示和反包装复核。
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm font-semibold text-slate-950">输入坐标</div>
+                <div className="mt-3">
+                  <BulletList items={pageCopy.entryBoundary} />
+                </div>
+              </div>
+              <div className="rounded-md border border-teal-200 bg-teal-50 p-4 text-sm leading-6 text-slate-700">
+                <div className="font-semibold text-slate-950">输出资产</div>
+                <p className="mt-3">
+                  输出内容包括航迹表摘要、作品集一页纸草稿、指标表、风险清单和
+                  Markdown 导出。
+                </p>
+              </div>
+            </div>
+          </Panel>
+
+          <Notice title="反包装边界" tone="amber">
+            {pageCopy.entryBoundaryNotice}
+          </Notice>
+        </div>
       </div>
     </div>
   );
@@ -186,11 +319,30 @@ export function PathfinderBackgroundPage() {
 
       <Section title="小 C 优势 / 短板 / 目标">
         <Panel>
+          <div className="mb-5 flex items-center gap-3 border-b border-slate-200 pb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-teal-200 bg-teal-50 text-teal-700">
+              <UserRound className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-teal-700">起点坐标</div>
+              <div className="text-base font-semibold text-slate-950">
+                小 C 当前背景
+              </div>
+            </div>
+          </div>
           <div className="grid gap-5 lg:grid-cols-4">
-            <InfoBlock title="身份" items={[candidateProfile.identity]} />
-            <InfoBlock title="优势" items={[candidatePolish.advantage]} />
-            <InfoBlock title="短板" items={[candidatePolish.weakness]} />
-            <InfoBlock title="目标" items={[candidatePolish.goal]} />
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+              <InfoBlock title="身份" items={[candidateProfile.identity]} />
+            </div>
+            <div className="rounded-md border border-teal-200 bg-teal-50 p-4">
+              <InfoBlock title="优势" items={[candidatePolish.advantage]} />
+            </div>
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+              <InfoBlock title="短板" items={[candidatePolish.weakness]} />
+            </div>
+            <div className="rounded-md border border-slate-200 bg-white p-4">
+              <InfoBlock title="目标" items={[candidatePolish.goal]} />
+            </div>
           </div>
           <div className="mt-5 border-t border-slate-200 pt-5">
             <InfoBlock
@@ -206,8 +358,17 @@ export function PathfinderBackgroundPage() {
         description={sampleJdNotice}
       >
         <div className="grid gap-4 lg:grid-cols-3">
-          {sampleJds.map((jd) => (
-            <Panel key={jd.id}>
+          {sampleJds.map((jd, index) => (
+            <div
+              key={jd.id}
+              className="min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-normal text-slate-500">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-700">
+                  {index + 1}
+                </span>
+                路径观测样本
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-lg font-semibold text-slate-950">
                   {jd.title}
@@ -232,7 +393,7 @@ export function PathfinderBackgroundPage() {
                 <InfoBlock title="小 C 连接点" items={jd.candidateConnection} />
                 <InfoBlock title="待补点" items={jd.gapOrAdvice} />
               </div>
-            </Panel>
+            </div>
           ))}
         </div>
       </Section>
@@ -242,6 +403,9 @@ export function PathfinderBackgroundPage() {
 
 export function PathfinderRecommendationPage() {
   const { state, ensurePriorityPath } = usePathfinder();
+  const [selectedPathId, setSelectedPathId] = useState<PathId>(priorityPathId);
+  const selectedPath = getRecommendationPath(selectedPathId);
+  const selectedMeta = pathVisualMeta[selectedPathId];
 
   if (!state.demoLoaded) {
     return (
@@ -273,55 +437,279 @@ export function PathfinderRecommendationPage() {
         </Notice>
       </div>
 
-      <div className="grid gap-5">
-        {recommendationPaths.map((path) => (
-          <Panel key={path.id} tone={toneForVerdict(path.verdict)}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold text-slate-950">
-                    {path.title}
-                  </h2>
-                  <StatusPill
-                    label={path.statusLabel}
-                    tone={toneForVerdict(path.verdict)}
-                  />
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                  {path.summary}
-                </p>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="rounded-lg border border-slate-800 bg-[#111b20] p-4 text-slate-100 shadow-sm sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-teal-200">
+                路径星图工作台
               </div>
-              {path.id === "industry-ai-product-assistant" ? (
-                <ButtonLink
-                  href="/pathfinder/trial"
-                  onClick={ensurePriorityPath}
-                  variant="primary"
-                >
-                  开始 OpenDocuments 试航
-                </ButtonLink>
-              ) : (
-                <div className="rounded-md border border-white/70 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                  对照路径，仅保留下一步说明
-                </div>
-              )}
+              <p className="mt-1 text-sm text-slate-400">
+                中心节点为小 C 当前背景；航线只表达本次固定 Demo 的试航判断。
+              </p>
             </div>
-            <div className="mt-5 grid gap-3 lg:grid-cols-5">
-              {path.evidence.map((evidence) => (
+            <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">
+              风险边界：可视化提示，不做能力否定
+            </div>
+          </div>
+          <div
+            className="relative hidden min-h-[590px] overflow-hidden rounded-md border border-slate-700/80 lg:block"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 18% 22%, rgba(45,212,191,0.2) 0 1px, transparent 2px), radial-gradient(circle at 60% 12%, rgba(226,232,240,0.32) 0 1px, transparent 2px), radial-gradient(circle at 82% 76%, rgba(226,232,240,0.24) 0 1px, transparent 2px), linear-gradient(rgba(148,163,184,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.13) 1px, transparent 1px)",
+              backgroundSize: "170px 130px, 210px 150px, 240px 190px, 48px 48px, 48px 48px",
+            }}
+          >
+            <svg
+              className="absolute inset-0 h-full w-full"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M20 82 C36 70 58 70 92 77 L92 96 L18 96 C10 90 11 86 20 82Z"
+                fill="rgba(245, 158, 11, 0.11)"
+                stroke="rgba(245, 158, 11, 0.55)"
+                strokeDasharray="1.2 1.2"
+              />
+              <circle cx="18" cy="49" r="18" fill="none" stroke="rgba(148,163,184,0.16)" />
+              <circle cx="18" cy="49" r="30" fill="none" stroke="rgba(148,163,184,0.11)" />
+              <path
+                d="M18 49 C32 25 52 28 76 27"
+                fill="none"
+                stroke={pathVisualMeta["industry-ai-product-assistant"].routeStroke}
+                strokeLinecap="round"
+                strokeWidth="0.75"
+              />
+              <path
+                d="M18 49 C34 51 55 52 76 53"
+                fill="none"
+                stroke={pathVisualMeta["industry-ai-solution-assistant"].routeStroke}
+                strokeLinecap="round"
+                strokeWidth="0.55"
+              />
+              <path
+                d="M18 49 C35 72 56 74 76 78"
+                fill="none"
+                stroke={pathVisualMeta["algorithm-llm-engineer"].routeStroke}
+                strokeDasharray="1.4 1.4"
+                strokeLinecap="round"
+                strokeWidth="0.5"
+              />
+            </svg>
+
+            <div className="absolute left-[7%] top-[38%] flex h-36 w-36 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-teal-300 bg-slate-950/85 text-center shadow-[0_0_34px_rgba(45,212,191,0.24)]">
+              <UserRound className="h-8 w-8 text-teal-200" aria-hidden="true" />
+              <div className="mt-2 text-lg font-semibold text-white">小 C</div>
+              <div className="text-sm text-teal-100">当前背景</div>
+            </div>
+
+            {recommendationPaths.map((path) => {
+              const meta = pathVisualMeta[path.id];
+              const selected = selectedPathId === path.id;
+              const evidenceNodes = path.evidence;
+              return (
+                <div key={path.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPathId(path.id)}
+                    className={`absolute w-[180px] rounded-md border p-3 text-left transition ${
+                      selected
+                        ? `${meta.routeClass} shadow-[0_0_28px_rgba(45,212,191,0.18)]`
+                        : "border-slate-600 bg-slate-950/70 text-slate-200 hover:border-slate-400"
+                    }`}
+                    style={{
+                      left: `${meta.x}%`,
+                      top: `${meta.y}%`,
+                      transform: "translateY(-50%)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold text-slate-400">
+                        {meta.shortLabel}
+                      </span>
+                      <StatusPill
+                        label={path.statusLabel}
+                        tone={toneForVerdict(path.verdict)}
+                      />
+                    </div>
+                    <h2 className="mt-2 text-base font-semibold leading-6 text-white">
+                      {path.title}
+                    </h2>
+                  </button>
+
+                  {evidenceNodes.map((evidence, index) => {
+                    const Icon = evidenceIconMap[evidence.title];
+                    const yOffset = path.id === "industry-ai-product-assistant"
+                      ? 31
+                      : path.id === "industry-ai-solution-assistant"
+                        ? 53
+                        : 74;
+                    const xOffset = [36, 46, 56, 65, 72][index];
+                    return (
+                      <div
+                        key={`${path.id}-${evidence.title}`}
+                        className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center"
+                        style={{ left: `${xOffset}%`, top: `${yOffset}%` }}
+                      >
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full border ${meta.nodeClass}`}>
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <h3
+                          role="heading"
+                          aria-level={3}
+                          className="max-w-[4.75rem] text-xs font-semibold leading-5 text-slate-100"
+                        >
+                          <span className="sr-only">{evidence.title}</span>
+                          <span aria-hidden="true">
+                            {evidenceShortLabelMap[evidence.title]}
+                          </span>
+                        </h3>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            <div className="absolute bottom-5 left-5 rounded-md border border-slate-700 bg-slate-950/75 p-4 text-xs text-slate-300">
+              <div className="mb-3 font-semibold text-slate-100">航线状态图例</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1 w-9 rounded-full bg-teal-300" />
+                  优先试航（主航线）
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1 w-9 rounded-full bg-sky-300" />
+                  适合探索（次航线）
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1 w-9 rounded-full border-t border-dashed border-slate-300" />
+                  短期不建议
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-9 rounded-sm border border-amber-300/70 bg-amber-300/20" />
+                  风险边界
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 lg:hidden">
+            {recommendationPaths.map((path) => {
+              const meta = pathVisualMeta[path.id];
+              const primary = path.id === priorityPathId;
+              return (
+                <div
+                  key={path.id}
+                  className={`rounded-lg border p-4 ${
+                    primary ? "border-teal-300 bg-white" : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border text-sm font-semibold ${meta.badgeClass}`}>
+                        {meta.index}
+                      </span>
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-950">
+                          {path.title}
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {primary ? path.summary : firstPoint(path.evidence[3]?.points ?? [])}
+                        </p>
+                      </div>
+                    </div>
+                    <StatusPill
+                      label={path.statusLabel}
+                      tone={toneForVerdict(path.verdict)}
+                    />
+                  </div>
+                  {primary ? (
+                    <div className="mt-4 rounded-md border border-teal-100 bg-teal-50 p-3">
+                      <div className="text-sm font-semibold text-teal-800">
+                        主路径证据节点
+                      </div>
+                      <div className="mt-3 grid gap-2">
+                        {path.evidence.slice(0, 4).map((evidence) => {
+                          const Icon = evidenceIconMap[evidence.title];
+                          return (
+                            <div
+                              key={evidence.title}
+                              className="flex items-center gap-3 rounded-md border border-white bg-white px-3 py-2 text-sm text-slate-700"
+                            >
+                              <Icon className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                              {detailTitleForEvidence(evidence.title)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPathId(path.id)}
+                      className="mt-4 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-semibold text-slate-700"
+                    >
+                      展开查看当前路径说明
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className={`text-sm font-semibold ${selectedMeta.muted}`}>
+                当前选中路径
+              </div>
+              <div className="mt-2 text-xl font-semibold text-slate-950">
+                {selectedPath.title}
+              </div>
+            </div>
+            <span className={`rounded-md border px-3 py-1 text-xs font-semibold ${selectedMeta.badgeClass}`}>
+              {selectedPath.statusLabel}
+            </span>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-700">
+            {selectedPath.summary}
+          </p>
+          <div className="mt-5 space-y-3">
+            {selectedPath.evidence.map((evidence) => {
+              const Icon = evidenceIconMap[evidence.title];
+              return (
                 <div
                   key={evidence.title}
-                  className="rounded-md border border-white/70 bg-white p-4"
+                  className={`rounded-md border p-3 ${selectedMeta.panelClass}`}
                 >
-                  <h3 className="text-sm font-semibold text-slate-950">
-                    {evidence.title}
-                  </h3>
-                  <div className="mt-3">
-                    <BulletList items={evidence.points} />
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {detailTitleForEvidence(evidence.title)}
                   </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                    {firstPoint(evidence.points)}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </Panel>
-        ))}
+              );
+            })}
+          </div>
+          <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+            风险提示只用于提示表达边界，不代表失败、分数或岗位结果预测。
+          </div>
+          <div className="mt-5">
+            <ButtonLink
+              href="/pathfinder/trial"
+              onClick={ensurePriorityPath}
+              variant="primary"
+            >
+              开始 OpenDocuments 试航
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </ButtonLink>
+          </div>
+        </aside>
       </div>
     </div>
   );
@@ -362,44 +750,80 @@ export function PathfinderTrialPage() {
       />
 
       <div className="mb-6">
-        <Notice title="边界提示" tone="teal">
-          {pageCopy.trialBoundary}
-        </Notice>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          <div className="flex items-start gap-3">
+            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <div>
+              <div className="font-semibold">左侧是来源，右侧是作答</div>
+              <div className="mt-1">{pageCopy.trialBoundary}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr]">
         <div className="space-y-6">
           <Section title="OpenDocuments 原项目能力">
-            <Panel>
-              <div className="text-sm leading-6 text-slate-700">
-                <p className="font-semibold text-slate-950">
-                  OpenDocuments 是公开参考项目
-                </p>
-                <p className="mt-2">
-                  原项目能力包括多来源文档接入、AI 文档搜索、RAG 问答、引用来源展示，以及 Web UI / CLI / MCP 等公开能力。
-                </p>
-                <p className="mt-2 text-slate-600">
+            <div
+              className="rounded-lg border border-sky-200 bg-sky-50 p-5 shadow-sm"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(14,116,144,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(14,116,144,0.08) 1px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }}
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-sky-200 pb-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-sky-300 bg-white text-sky-800">
+                    <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-950">
+                      OpenDocuments 是公开参考项目
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      原项目能力包括多来源文档接入、AI 文档搜索、RAG 问答、引用来源展示，以及 Web UI / CLI / MCP 等公开能力。
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-md border border-sky-200 bg-white px-2.5 py-1 text-xs font-semibold text-sky-800">
+                  只读来源
+                </span>
+              </div>
+              <div className="mt-4 rounded-md border border-sky-200 bg-white p-3 text-sm leading-6 text-slate-700">
+                <div className="font-semibold text-slate-950">来源坐标</div>
+                <div className="mt-2">
+                  来源：
+                  <span className="break-all">{openSourceProject.sourceUrl}</span>
+                  <br />
+                  License：{openSourceProject.license}
+                  <br />
                   定位：{openSourceProject.positioning}
-                </p>
+                </div>
               </div>
-              <div className="mt-4">
-                <BulletList items={openSourceProject.originalCapabilities} />
+              <div className="mt-4 grid gap-2">
+                {openSourceProject.originalCapabilities.map((capability) => (
+                  <div
+                    key={capability}
+                    className="flex items-center gap-3 rounded-md border border-sky-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    <Database className="h-4 w-4 shrink-0 text-sky-800" aria-hidden="true" />
+                    {capability}
+                  </div>
+                ))}
               </div>
-              <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-                来源：
-                <span className="break-all">{openSourceProject.sourceUrl}</span>
-                <br />
-                License：{openSourceProject.license}
-              </div>
-            </Panel>
+            </div>
           </Section>
 
           <Section title="小 C 本次试航贡献">
-            <Panel tone="slate">
-              <p className="text-sm leading-6 text-slate-700">
-                小 C 的贡献只包括：场景拆解、2 周 MVP 方案、指标、风险、演示材料和作品集表达草稿。不得写成 OpenDocuments 官方贡献或个人开发成果。
-              </p>
-            </Panel>
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <PenLine className="mt-1 h-5 w-5 shrink-0 text-teal-700" aria-hidden="true" />
+                <p className="text-sm leading-6 text-slate-700">
+                  小 C 的贡献只包括：场景拆解、2 周 MVP 方案、指标、风险、演示材料和作品集表达草稿。不得写成 OpenDocuments 官方贡献或个人开发成果。
+                </p>
+              </div>
+            </div>
           </Section>
 
           <Section title="试航进度">
@@ -472,17 +896,64 @@ export function PathfinderTrialPage() {
         </div>
 
         <Section title="小 C 本次试航贡献 / 固定 6 问作答">
-          <div className="space-y-4">
+          <div
+            className="rounded-lg border border-slate-300 bg-white p-4 shadow-sm sm:p-5"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}
+          >
+            <div className="mb-5 flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <ClipboardList className="mt-1 h-5 w-5 shrink-0 text-teal-700" aria-hidden="true" />
+                <div>
+                  <div className="text-base font-semibold text-slate-950">
+                    试航工单
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    固定 6 问可编辑，影响结果模块保持可追溯。
+                  </p>
+                </div>
+              </div>
+              <StatusPill
+                label={`已完成 ${trialQuestions.length - missing.length} / ${trialQuestions.length}`}
+                tone={missing.length > 0 ? "amber" : "teal"}
+              />
+            </div>
+            <div className="space-y-4">
             {trialQuestions.map((question, index) => {
               const value = trialAnswerMap[question.id] ?? "";
               return (
-                <Panel key={question.id}>
-                  <label
-                    htmlFor={question.id}
-                    className="block text-base font-semibold text-slate-950"
-                  >
-                    {index + 1}. {question.title}
-                  </label>
+                <div
+                  key={question.id}
+                  className={`rounded-md border bg-white p-4 ${
+                    value.trim()
+                      ? "border-teal-100"
+                      : question.id === "ai_usage_explanation"
+                        ? "border-amber-300"
+                        : "border-slate-200"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <label
+                      htmlFor={question.id}
+                      className="flex min-w-0 items-start gap-3 text-base font-semibold text-slate-950"
+                    >
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-sm ${
+                        value.trim()
+                          ? "border-teal-200 bg-teal-50 text-teal-800"
+                          : "border-slate-200 bg-slate-50 text-slate-700"
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <span>{question.title}</span>
+                    </label>
+                    <StatusPill
+                      label={value.trim() ? "已填写" : "缺项"}
+                      tone={value.trim() ? "teal" : "amber"}
+                    />
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-slate-700">
                     {question.prompt}
                   </p>
@@ -506,9 +977,10 @@ export function PathfinderTrialPage() {
                         : "这一问会影响结果页对应模块。"}
                     </p>
                   ) : null}
-                </Panel>
+                </div>
               );
             })}
+            </div>
           </div>
         </Section>
       </div>
@@ -580,15 +1052,18 @@ export function PathfinderResultPage() {
   return (
     <div>
       <PageHeader
-        title="航迹表结果页"
+        title="航迹档案：航迹表结果页"
         description={pageCopy.resultBoundary}
         eyebrow={`推荐路径：${selectedPath.title} / ${labelForRecordStatus(state.trailRecord.status)}`}
       />
 
-      <div className="mb-6">
-        <Panel tone={toneForRecordStatus(state.trailRecord.status)}>
+      <div className="mb-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="text-sm font-semibold text-slate-950">追溯链</div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <GitBranch className="h-4 w-4 text-teal-700" aria-hidden="true" />
+              追溯链
+            </div>
             <StatusPill
               label={labelForRecordStatus(state.trailRecord.status)}
               tone={toneForRecordStatus(state.trailRecord.status)}
@@ -602,7 +1077,7 @@ export function PathfinderResultPage() {
               tone={toneForBackendSyncStatus(state.backendSync.status)}
             />
           </div>
-          <p className="mt-2 text-base leading-7 text-slate-800">
+          <p className="mt-3 text-base leading-7 text-slate-800">
             {traceChain}
           </p>
           {state.backendSync.status === "failed" ? (
@@ -610,18 +1085,57 @@ export function PathfinderResultPage() {
               后端保存失败，不影响本地试航；可继续编辑或导出本地草稿。
             </p>
           ) : null}
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-white bg-white p-3 text-sm text-slate-700">
-              输入：样例 JD、小 C 背景、OpenDocuments 原项目能力
+          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
+            <TraceNode
+              icon={<FileText className="h-5 w-5" aria-hidden="true" />}
+              title="输入"
+              body="样例 JD、小 C 背景、OpenDocuments 原项目能力"
+            />
+            <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
+            <TraceNode
+              icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
+              title="过程"
+              body="固定 6 问试航作答"
+            />
+            <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
+            <TraceNode
+              icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
+              title="输出"
+              body="航迹表、作品集草稿、Markdown"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md border ${
+              markdownResult.ok
+                ? "border-teal-200 bg-teal-50 text-teal-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}>
+              {markdownResult.ok ? (
+                <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <CircleAlert className="h-6 w-6" aria-hidden="true" />
+              )}
             </div>
-            <div className="rounded-md border border-white bg-white p-3 text-sm text-slate-700">
-              过程：固定 6 问试航作答
-            </div>
-            <div className="rounded-md border border-white bg-white p-3 text-sm text-slate-700">
-              输出：航迹表、作品集草稿、Markdown
+            <div>
+              <div className="text-sm font-semibold text-slate-500">
+                航迹档案状态
+              </div>
+              <div className="mt-1 text-xl font-semibold text-slate-950">
+                {markdownResult.ok
+                  ? "可生成完整 Markdown"
+                  : "存在导出阻断，需补齐说明"}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {antiPackagingCheck.exportAllowed
+                  ? "反包装检查未发现阻断。"
+                  : "缺项或风险表达会阻断完整导出。"}
+              </p>
             </div>
           </div>
-        </Panel>
+        </div>
       </div>
 
       <Section title="P1-A 反包装检查摘要">
@@ -631,9 +1145,9 @@ export function PathfinderResultPage() {
               title="检查状态"
               items={[
                 antiPackagingCheck.status === "passed"
-                  ? "通过，可完整导出"
+                  ? "未发现导出阻断，可生成完整 Markdown"
                   : antiPackagingCheck.status === "blocked"
-                    ? "阻断完整 Markdown 导出"
+                    ? "存在导出阻断，需补齐说明"
                     : antiPackagingCheck.status,
               ]}
             />
@@ -913,6 +1427,26 @@ function InfoBlock({ title, items }: { title: string; items: string[] }) {
       <div className="mt-2">
         <BulletList items={items} />
       </div>
+    </div>
+  );
+}
+
+function TraceNode({
+  icon,
+  title,
+  body,
+}: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+        <span className="text-teal-700">{icon}</span>
+        {title}
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-700">{body}</p>
     </div>
   );
 }
