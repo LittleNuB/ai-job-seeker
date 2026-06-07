@@ -19,7 +19,6 @@ from app.schemas.pathfinder import (
     PATHFINDER_TYPE,
     P1A_TRIAL_PACKAGE,
     SCHEMA_VERSION,
-    SELECTED_PATH_ID,
     TRIAL_PACKAGE_ID,
     TRIAL_PACKAGE_VERSION,
     AntiPackagingCheck,
@@ -80,6 +79,8 @@ async def create_pathfinder_record(
     now = _now_iso()
     anti_check = default_anti_packaging_check()
     trial_answers = default_trial_answers()
+    selected_path_id = payload.selectedPathId or _selected_path_id_from_snapshot(payload.selectedPath)
+    trial_package_snapshot = payload.trialPackageSnapshot or P1A_TRIAL_PACKAGE
     result_payload = {
         "schemaVersion": SCHEMA_VERSION,
         "status": PathfinderRecordStatus.draft.value,
@@ -97,9 +98,10 @@ async def create_pathfinder_record(
                 "schemaVersion": SCHEMA_VERSION,
                 "trialPackageId": payload.trialPackageId,
                 "trialPackageVersion": payload.trialPackageVersion,
-                "selectedPathId": payload.selectedPathId,
-                "userProfileSnapshot": payload.userProfileSnapshot,
-                "trialPackageSnapshot": P1A_TRIAL_PACKAGE,
+                "selectedPathId": selected_path_id,
+                "selectedPath": _jsonable(payload.selectedPath),
+                "userProfileSnapshot": _jsonable(payload.userProfileSnapshot),
+                "trialPackageSnapshot": _jsonable(trial_package_snapshot),
             }
         ),
         input_file_url=None,
@@ -148,6 +150,8 @@ async def update_trial_answers(
         next_result["portfolioDraft"] = portfolio_draft
     if interview_prep := result_payload.get("interviewPrep"):
         next_result["interviewPrep"] = interview_prep
+    if evidence_mapping := result_payload.get("evidenceMapping"):
+        next_result["evidenceMapping"] = evidence_mapping
 
     record.result = _dump_json(next_result)
 
@@ -171,7 +175,7 @@ async def save_pathfinder_result(
 ) -> PathfinderResultResponse:
     record = await _get_owned_pathfinder_record(session, user_id, record_id)
     current_result = _load_result(record)
-    trial_answers = _extract_trial_answers(current_result)
+    trial_answers = normalize_trial_answers(payload.trialAnswers) if payload.trialAnswers is not None else _extract_trial_answers(current_result)
     anti_check = payload.antiPackagingCheck
     markdown_snapshot = payload.markdownSnapshot
 
@@ -188,6 +192,7 @@ async def save_pathfinder_result(
     }
 
     for key, value in (
+        ("evidenceMapping", _jsonable(payload.evidenceMapping)),
         ("portfolioDraft", pydantic_to_json(payload.portfolioDraft)),
         ("interviewPrep", pydantic_to_json(payload.interviewPrep)),
         ("markdownSnapshot", pydantic_to_json(markdown_snapshot)),
@@ -260,14 +265,16 @@ def _to_p1a_record_response(
     return TrailRecord(
         schemaVersion=SCHEMA_VERSION,
         recordId=record.id,
-        trialPackageId=_literal_or_default(input_payload.get("trialPackageId"), TRIAL_PACKAGE_ID),
+        trialPackageId=str(input_payload.get("trialPackageId") or TRIAL_PACKAGE_ID),
         trialPackageVersion=str(input_payload.get("trialPackageVersion") or TRIAL_PACKAGE_VERSION),
         status=status_value,
         userProfileSnapshot=input_payload.get(
             "userProfileSnapshot",
             input_payload.get("candidateProfile") or {},
         ),
-        selectedPathId=_literal_or_default(input_payload.get("selectedPathId"), SELECTED_PATH_ID),
+        selectedPathId=str(input_payload.get("selectedPathId") or _selected_path_id_from_snapshot(input_payload.get("selectedPath"))),
+        selectedPath=input_payload.get("selectedPath"),
+        evidenceMapping=result_payload.get("evidenceMapping"),
         trialAnswers=trial_answers,
         antiPackagingCheck=anti_check,
         portfolioDraft=result_payload.get("portfolioDraft"),
@@ -290,11 +297,13 @@ def _to_legacy_record_response(
     return TrailRecord(
         schemaVersion=SCHEMA_VERSION,
         recordId=record.id,
-        trialPackageId=_literal_or_default(input_payload.get("demoVersion"), TRIAL_PACKAGE_ID),
+        trialPackageId=str(input_payload.get("trialPackageId") or input_payload.get("demoVersion") or TRIAL_PACKAGE_ID),
         trialPackageVersion=TRIAL_PACKAGE_VERSION,
         status=_infer_legacy_status(trial_answers, markdown_snapshot),
         userProfileSnapshot=input_payload.get("candidateProfile") or input_payload.get("userProfileSnapshot") or {},
-        selectedPathId=_literal_or_default(input_payload.get("selectedPathId"), SELECTED_PATH_ID),
+        selectedPathId=str(input_payload.get("selectedPathId") or _selected_path_id_from_snapshot(input_payload.get("selectedPath"))),
+        selectedPath=input_payload.get("selectedPath"),
+        evidenceMapping=result_payload.get("evidenceMapping"),
         trialAnswers=trial_answers,
         antiPackagingCheck=anti_check,
         markdownSnapshot=markdown_snapshot,
@@ -410,5 +419,17 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def _literal_or_default(value: Any, default: str) -> str:
-    return value if value == default else default
+def _selected_path_id_from_snapshot(value: Any) -> str:
+    if isinstance(value, dict) and value.get("id"):
+        return str(value["id"])
+    return "industry-ai-product-assistant"
+
+
+def _jsonable(value: Any) -> Any:
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json", exclude_none=True)
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _jsonable(child) for key, child in value.items()}
+    return value

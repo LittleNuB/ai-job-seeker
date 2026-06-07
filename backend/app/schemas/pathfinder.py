@@ -8,9 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 PATHFINDER_TYPE = "pathfinder"
 SCHEMA_VERSION = "p1-a.v1"
-TRIAL_PACKAGE_ID = "p0-xiaoc-opendocuments"
+TRIAL_PACKAGE_ID = "p1a-opendocuments-engineering-kb"
 TRIAL_PACKAGE_VERSION = "1.0.0"
-DEMO_VERSION = TRIAL_PACKAGE_ID
+LEGACY_TRIAL_PACKAGE_ID = "p0-xiaoc-opendocuments"
+DEMO_VERSION = LEGACY_TRIAL_PACKAGE_ID
 SELECTED_PATH_ID = "industry-ai-product-assistant"
 
 
@@ -72,10 +73,25 @@ class RequiredMarkdownSection(str, Enum):
     sample_jd_note = "sample_jd_note"
     opendocuments_source_license = "opendocuments_source_license"
     opendocuments_original_capabilities = "opendocuments_original_capabilities"
+    user_trial_contribution = "user_trial_contribution"
+    # Legacy P0 snapshots may still carry this key; P1-A no longer requires it.
     xiaoc_trial_contribution = "xiaoc_trial_contribution"
     forbidden_claims = "forbidden_claims"
     six_question_answers = "six_question_answers"
     disclaimer = "disclaimer"
+
+
+CURRENT_REQUIRED_MARKDOWN_SECTIONS = (
+    RequiredMarkdownSection.candidate_background,
+    RequiredMarkdownSection.path_conclusion,
+    RequiredMarkdownSection.sample_jd_note,
+    RequiredMarkdownSection.opendocuments_source_license,
+    RequiredMarkdownSection.opendocuments_original_capabilities,
+    RequiredMarkdownSection.user_trial_contribution,
+    RequiredMarkdownSection.forbidden_claims,
+    RequiredMarkdownSection.six_question_answers,
+    RequiredMarkdownSection.disclaimer,
+)
 
 
 class MarkdownTemplateSource(str, Enum):
@@ -119,8 +135,8 @@ FORBIDDEN_RESULT_KEYS = {
 P1A_TRIAL_PACKAGE: dict[str, Any] = {
     "id": TRIAL_PACKAGE_ID,
     "version": TRIAL_PACKAGE_VERSION,
-    "title": "小 C 的 OpenDocuments 工程企业知识库 AI 助手试航",
-    "targetUser": "小 C",
+    "title": "OpenDocuments 工程企业知识库 AI 助手试航",
+    "targetUser": "真实转岗用户",
     "sourceProject": {
         "name": "OpenDocuments",
         "url": "https://github.com/joungminsung/OpenDocuments",
@@ -137,6 +153,24 @@ P1A_TRIAL_PACKAGE: dict[str, Any] = {
 
 class P1ABaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class UserProfileInput(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+    displayName: str | None = None
+    educationBackground: str | None = None
+    industryBackground: list[str] = Field(default_factory=list)
+    projectExperience: list[str] = Field(default_factory=list)
+    documentAndResearchExperience: list[str] = Field(default_factory=list)
+    technicalBasics: list[str] = Field(default_factory=list)
+    aiToolUsage: list[str] = Field(default_factory=list)
+    targetDirections: list[str] = Field(default_factory=list)
+    careerConstraints: list[dict[str, Any]] = Field(default_factory=list)
+    availableTimeWindow: str | None = None
+    createdAt: str | None = None
+    updatedAt: str | None = None
 
 
 class SourceProject(P1ABaseModel):
@@ -195,10 +229,18 @@ class AntiPackagingCheck(P1ABaseModel):
     blockingCount: int = 0
     warningCount: int = 0
 
+    @model_validator(mode="before")
+    @classmethod
+    def accept_required_sections_alias(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "requiredSections" in value and "requiredMarkdownSections" not in value:
+            value = dict(value)
+            value["requiredMarkdownSections"] = value.pop("requiredSections")
+        return value
+
     @model_validator(mode="after")
     def fill_required_markdown_sections(self) -> "AntiPackagingCheck":
         sections = dict(self.requiredMarkdownSections)
-        for section in RequiredMarkdownSection:
+        for section in CURRENT_REQUIRED_MARKDOWN_SECTIONS:
             sections.setdefault(section, False)
         self.requiredMarkdownSections = sections
         return self
@@ -233,8 +275,10 @@ class PortfolioDraft(P1ABaseModel):
     mvpScope: list[str]
     metrics: list[PortfolioMetric]
     risks: list[PortfolioRisk]
-    opendocumentsReference: OpenDocumentsReference
-    xiaocTrialContribution: list[str]
+    sourceProjectReference: OpenDocumentsReference | None = None
+    opendocumentsReference: OpenDocumentsReference | None = None
+    userTrialContribution: list[str] = Field(default_factory=list)
+    xiaocTrialContribution: list[str] | None = None
     notClaimed: list[str]
     disclaimer: str
     updatedAt: str | None = None
@@ -276,11 +320,13 @@ class MarkdownSnapshot(P1ABaseModel):
 class TrailRecord(P1ABaseModel):
     schemaVersion: Literal["p1-a.v1"] = SCHEMA_VERSION
     recordId: str | None = None
-    trialPackageId: Literal["p0-xiaoc-opendocuments"]
+    trialPackageId: str
     trialPackageVersion: str
     status: PathfinderRecordStatus
-    userProfileSnapshot: Any
-    selectedPathId: Literal["industry-ai-product-assistant"]
+    userProfileSnapshot: UserProfileInput | dict[str, Any]
+    selectedPathId: str
+    selectedPath: dict[str, Any] | None = None
+    evidenceMapping: dict[str, Any] | list[dict[str, Any]] | None = None
     trialAnswers: list[TrialAnswer]
     antiPackagingCheck: AntiPackagingCheck
     portfolioDraft: PortfolioDraft | None = None
@@ -292,16 +338,28 @@ class TrailRecord(P1ABaseModel):
 
 class PathfinderCreateRequest(P1ABaseModel):
     schemaVersion: Literal["p1-a.v1"] = SCHEMA_VERSION
-    trialPackageId: Literal["p0-xiaoc-opendocuments"]
-    trialPackageVersion: Literal["1.0.0"]
-    selectedPathId: Literal["industry-ai-product-assistant"]
-    userProfileSnapshot: Any
+    trialPackageId: str = TRIAL_PACKAGE_ID
+    trialPackageVersion: str = TRIAL_PACKAGE_VERSION
+    selectedPathId: str | None = None
+    selectedPath: dict[str, Any] | None = None
+    userProfileSnapshot: UserProfileInput | dict[str, Any]
+    trialPackageSnapshot: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def reject_forbidden_snapshot_fields(self) -> "PathfinderCreateRequest":
-        forbidden = _find_forbidden_keys(self.userProfileSnapshot)
+        forbidden = _find_forbidden_keys(
+            {
+                "userProfileSnapshot": self.userProfileSnapshot,
+                "selectedPath": self.selectedPath,
+                "trialPackageSnapshot": self.trialPackageSnapshot,
+            }
+        )
         if forbidden:
             raise ValueError(_format_forbidden_fields_error("P1-A input", forbidden))
+        if not self.trialPackageId.strip():
+            raise ValueError("trialPackageId is required")
+        if not self.trialPackageVersion.strip():
+            raise ValueError("trialPackageVersion is required")
         return self
 
 
@@ -320,6 +378,8 @@ class PathfinderResultRequest(P1ABaseModel):
     schemaVersion: Literal["p1-a.v1"] = SCHEMA_VERSION
     status: PathfinderRecordStatus
     antiPackagingCheck: AntiPackagingCheck
+    trialAnswers: list[TrialAnswer] | None = None
+    evidenceMapping: dict[str, Any] | list[dict[str, Any]] | None = None
     portfolioDraft: PortfolioDraft | None = None
     interviewPrep: InterviewPrep | None = None
     markdownSnapshot: MarkdownSnapshot | None = None
@@ -330,6 +390,8 @@ class PathfinderResultRequest(P1ABaseModel):
         forbidden = _find_forbidden_keys(payload)
         if forbidden:
             raise ValueError(_format_forbidden_fields_error("P1-A result", forbidden))
+        if self.trialAnswers is not None:
+            _assert_exact_trial_answer_ids(self.trialAnswers)
         return self
 
 
@@ -364,7 +426,7 @@ def default_anti_packaging_check() -> AntiPackagingCheck:
         status=AntiPackagingCheckStatus.not_run,
         exportAllowed=False,
         findings=[],
-        requiredMarkdownSections={section: False for section in RequiredMarkdownSection},
+        requiredMarkdownSections={section: False for section in CURRENT_REQUIRED_MARKDOWN_SECTIONS},
         blockingCount=0,
         warningCount=0,
     )
@@ -409,7 +471,7 @@ def are_trial_answers_complete(answers: list[TrialAnswer]) -> bool:
 
 
 def all_required_markdown_sections_present(anti_check: AntiPackagingCheck) -> bool:
-    return all(bool(anti_check.requiredMarkdownSections.get(section)) for section in RequiredMarkdownSection)
+    return all(bool(anti_check.requiredMarkdownSections.get(section)) for section in CURRENT_REQUIRED_MARKDOWN_SECTIONS)
 
 
 def compute_pathfinder_status(

@@ -29,7 +29,7 @@ REQUIRED_SECTIONS = [
     "sample_jd_note",
     "opendocuments_source_license",
     "opendocuments_original_capabilities",
-    "xiaoc_trial_contribution",
+    "user_trial_contribution",
     "forbidden_claims",
     "six_question_answers",
     "disclaimer",
@@ -47,7 +47,7 @@ async def client(tmp_path) -> AsyncIterator[AsyncClient]:
     async with session_factory() as session:
         session.add_all(
             [
-                User(id=TEST_USER_ID, email="pathfinder@example.com", password="x", name="小 C"),
+                User(id=TEST_USER_ID, email="pathfinder@example.com", password="x", name="真实用户 A"),
                 User(id=OTHER_USER_ID, email="other@example.com", password="x", name="其他用户"),
             ]
         )
@@ -71,14 +71,25 @@ def auth_headers(user_id: str = TEST_USER_ID) -> dict[str, str]:
 def create_payload() -> dict:
     return {
         "schemaVersion": "p1-a.v1",
-        "trialPackageId": "p0-xiaoc-opendocuments",
+        "trialPackageId": "p1a-opendocuments-engineering-kb",
         "trialPackageVersion": "1.0.0",
         "selectedPathId": "industry-ai-product-assistant",
+        "selectedPath": {
+            "id": "industry-ai-product-assistant",
+            "title": "行业 AI 应用产品助理",
+            "verdict": "priority_trial",
+        },
         "userProfileSnapshot": {
-            "name": "小 C",
-            "identity": "传统工科硕士",
-            "timeline": "3 个月内求职",
-            "target": "转向行业 AI 应用产品助理 / 行业 AI 解决方案助理",
+            "displayName": "真实用户 A",
+            "educationBackground": "传统工科硕士",
+            "industryBackground": ["工程实施", "资料管理"],
+            "projectExperience": ["参与过工程项目资料整理"],
+            "documentAndResearchExperience": ["能做资料调研和结构化整理"],
+            "technicalBasics": ["Python 基础", "表格处理"],
+            "aiToolUsage": ["使用 AI 辅助整理草稿"],
+            "targetDirections": ["行业 AI 应用产品助理", "行业 AI 解决方案助理"],
+            "careerConstraints": [],
+            "availableTimeWindow": "3 个月内求职",
         },
     }
 
@@ -138,9 +149,65 @@ def markdown_snapshot_payload(export_scope: str = "full") -> dict:
         "templateSource": "frontend",
         "templateVersion": "frontend.pathfinder.p1-a.v1",
         "exportScope": export_scope,
-        "content": "# 小 C 寻径星图试航\n\n完整 Markdown 由前端生成。",
+        "content": "# 寻径星图试航记录\n\n完整 Markdown 由前端生成。",
         "contentHash": "djb2-test",
         "createdAt": "2026-06-04T00:00:00Z",
+    }
+
+
+def portfolio_draft_payload() -> dict:
+    return {
+        "title": "工程企业知识库 AI 助手试航作品集草稿",
+        "targetPathId": "industry-ai-product-assistant",
+        "problemContext": "工程资料分散，知识检索和复用成本高。",
+        "userScenario": "面向工程企业资料管理团队的内部知识库试点。",
+        "solutionOutline": "以公开参考项目为来源边界，设计资料上传、检索和人工复核流程。",
+        "mvpScope": ["资料目录整理", "检索问答流程", "人工复核节点"],
+        "metrics": [
+            {
+                "dimension": "效率",
+                "metric": "资料定位时间",
+                "acceptanceLens": "试点阶段只观察样本流程变化",
+            }
+        ],
+        "risks": [
+            {
+                "risk": "公开项目归属表达越界",
+                "manifestation": "把参考项目写成个人贡献",
+                "mitigation": "保留来源、License 和不可声称边界",
+            }
+        ],
+        "sourceProjectReference": {
+            "name": "OpenDocuments",
+            "url": "https://github.com/joungminsung/OpenDocuments",
+            "license": "MIT",
+            "role": "reference_only",
+            "originalCapabilities": ["公开项目参考", "文档问答能力参考"],
+        },
+        "userTrialContribution": ["完成场景拆解", "设计试点范围和风险边界"],
+        "notClaimed": ["不声称参与 OpenDocuments 官方开发"],
+        "disclaimer": "本记录只用于试航作品集草稿，不构成能力认证。",
+    }
+
+
+def interview_prep_payload() -> dict:
+    return {
+        "items": [
+            {
+                "question": "这个试航项目中你的贡献是什么？",
+                "answerPoints": ["我完成了场景拆解、MVP 范围和风险边界整理。"],
+                "evidenceSources": [
+                    {
+                        "sourceType": "trial_answer",
+                        "sourceId": "application_solution",
+                        "note": "对应第 4 问作答",
+                    }
+                ],
+                "boundaryReminder": "OpenDocuments 是公开参考项目，不声称官方贡献。",
+                "forbiddenClaims": ["不声称能力认证", "不声称录用概率"],
+            }
+        ],
+        "updatedAt": "2026-06-04T00:00:00Z",
     }
 
 
@@ -168,9 +235,10 @@ async def test_create_pathfinder_record_stores_p1a_envelopes(client: AsyncClient
     body = response.json()
     record_id = body["recordId"]
     assert body["schemaVersion"] == "p1-a.v1"
-    assert body["trialPackageId"] == "p0-xiaoc-opendocuments"
+    assert body["trialPackageId"] == "p1a-opendocuments-engineering-kb"
     assert body["trialPackageVersion"] == "1.0.0"
     assert body["selectedPathId"] == "industry-ai-product-assistant"
+    assert body["selectedPath"]["title"] == "行业 AI 应用产品助理"
     assert body["status"] == "draft"
     assert len(body["trialAnswers"]) == 6
     assert body["antiPackagingCheck"]["status"] == "not_run"
@@ -187,10 +255,10 @@ async def test_create_pathfinder_record_stores_p1a_envelopes(client: AsyncClient
         input_payload = json.loads(record.input_text)
         result_payload = json.loads(record.result)
         assert input_payload["schemaVersion"] == "p1-a.v1"
-        assert input_payload["trialPackageId"] == "p0-xiaoc-opendocuments"
+        assert input_payload["trialPackageId"] == "p1a-opendocuments-engineering-kb"
         assert input_payload["trialPackageVersion"] == "1.0.0"
         assert input_payload["selectedPathId"] == "industry-ai-product-assistant"
-        assert input_payload["trialPackageSnapshot"]["id"] == "p0-xiaoc-opendocuments"
+        assert input_payload["trialPackageSnapshot"]["id"] == "p1a-opendocuments-engineering-kb"
         assert result_payload["schemaVersion"] == "p1-a.v1"
         assert result_payload["status"] == "draft"
         assert len(result_payload["trialAnswers"]) == 6
@@ -207,7 +275,7 @@ async def test_get_pathfinder_record_success_and_scope_guard(client: AsyncClient
     body = response.json()
     assert body["recordId"] == record_id
     assert body["schemaVersion"] == "p1-a.v1"
-    assert body["userProfileSnapshot"]["identity"] == "传统工科硕士"
+    assert body["userProfileSnapshot"]["educationBackground"] == "传统工科硕士"
     forbidden_response_keys = {
         "matchScore",
         "match_score",
@@ -313,6 +381,18 @@ async def test_save_result_preserves_frontend_markdown_snapshot_and_marks_export
             "schemaVersion": "p1-a.v1",
             "status": "exported",
             "antiPackagingCheck": anti_check_payload(),
+            "evidenceMapping": {
+                "summary": "样例 JD、用户背景、公开项目来源和试航作答已形成轻量追溯摘要。",
+                "nodes": [
+                    {
+                        "sourceType": "trial_answer",
+                        "sourceId": "application_solution",
+                        "targetType": "portfolio_section",
+                    }
+                ],
+            },
+            "portfolioDraft": portfolio_draft_payload(),
+            "interviewPrep": interview_prep_payload(),
             "markdownSnapshot": snapshot,
         },
         headers=auth_headers(),
@@ -325,6 +405,9 @@ async def test_save_result_preserves_frontend_markdown_snapshot_and_marks_export
     get_response = await client.get(f"/api/pathfinder/records/{record_id}", headers=auth_headers())
     body = get_response.json()
     assert body["status"] == "exported"
+    assert body["evidenceMapping"]["summary"].startswith("样例 JD")
+    assert body["portfolioDraft"]["userTrialContribution"] == ["完成场景拆解", "设计试点范围和风险边界"]
+    assert body["interviewPrep"]["items"][0]["question"] == "这个试航项目中你的贡献是什么？"
     assert body["markdownSnapshot"]["templateSource"] == "frontend"
     assert body["markdownSnapshot"]["content"] == snapshot["content"]
 
@@ -413,7 +496,7 @@ async def test_forbidden_scope_fields_are_rejected(client: AsyncClient) -> None:
         "/api/pathfinder/records",
         json={
             **create_payload(),
-            "userProfileSnapshot": {"name": "小 C", "offerProbability": 0.9},
+            "userProfileSnapshot": {"displayName": "真实用户 A", "offerProbability": 0.9},
         },
         headers=auth_headers(),
     )
