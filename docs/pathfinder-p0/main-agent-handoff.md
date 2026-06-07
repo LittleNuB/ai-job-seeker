@@ -215,6 +215,7 @@
   - 分支：`codex/pathfinder-fe-002`
   - 任务摘要：将前端从固定小 C Demo 改为真实用户输入的固定试航产品流，保留反包装、Markdown 和 fallback。
   - 预期交付：Pathfinder 前端页面、状态、Markdown、安全测试和 E2E 更新。
+  - 当前状态：已回传初版 commit `36fb447`，但主 Agent 初审发现 current contract 仍使用 `p0-xiaoc-opendocuments` 和 `xiaoc_trial_contribution`。已要求前端开发B修正为 `p1a-opendocuments-engineering-kb` 和 `user_trial_contribution`；修正回传前不得合并。
 
 - `BE-002`
   - 子对话名称：`后端开发A`
