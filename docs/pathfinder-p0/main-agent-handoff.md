@@ -128,11 +128,16 @@
 - `GOV-001`：初始化主 Agent 协作制度与主控 handoff。
 - `P0.5-COPY-001`：评委/体验者文案收口，commit `e0b8820`。
 - `P0.5-VISUAL-001`：视觉产品化，commit `628420c`。
+- `P1-PRD-001`：P1 产品化 PRD，commit `613263e`。
+- `DATA-001`：数据底座方案，commit `79e2d1b`。
+- `PM-MERGE-001`：P1 PRD 与数据底座合并审计，见 `docs/pathfinder-p0/pm-merge-review-p1-prd-data.md`。
 
 待启动任务：
 
-- `P1-PRD-001`：P1 产品化 PRD。
-- `DATA-001`：数据底座方案。
+- `DATA-002`：P1-A 最小数据 fixture。
+- `FE-002`：真实用户输入与固定试航包产品化。
+- `BE-002`：P1-A TrailRecord 保存兼容。
+- `QA-002`：P1-A 产品化回归计划。
 
 ## 8. 子任务提示词必须包含的回传协议
 
@@ -196,34 +201,17 @@
 
 ## 12. 进行中任务
 
-当前并行任务：
-
-- `P1-PRD-001`
-  - 子对话名称：`产品规划A`
-  - Thread ID：`019ea085-1496-73a2-abbc-1e8552a04d21`
-  - 任务摘要：输出寻径星图 P1 产品化 PRD，回答当前 Demo 如何变成真实用户可使用的产品，并明确 P1-A / P1-B / P2 边界。
-  - 预期交付：`docs/pathfinder-p0/p1-productization-prd.md`，并回传任务状态。
-  - 权限：允许本地 commit；禁止 push、force push、创建 PR、合并 PR。
-
-- `DATA-001`
-  - 子对话名称：`数据方案A`
-  - Thread ID：`019ea085-a7f5-7711-b153-e5a698889901`
-  - 任务摘要：盘点现有数据资产，设计寻径星图产品化所需的数据底座、数据对象、获取方式、清洗标注和质量标准。
-  - 预期交付：`docs/pathfinder-p0/data-foundation-plan.md`，并回传任务状态。
-  - 权限：允许本地 commit；禁止 push、force push、创建 PR、合并 PR。
-
-并发注意：两个子任务都可能追加本文档。如遇 `main-agent-handoff.md` 并发变更或冲突，子对话不得强行覆盖，应回传状态块，由主 Agent 统一合并。
+暂无。`P1-PRD-001` 与 `DATA-001` 均已回传，主 Agent 已完成 PM merge review。
 
 ## 13. 下一步主 Agent 工作
 
-1. 等待 `产品规划A` 回传 `P1-PRD-001`。
-2. 等待 `数据方案A` 回传 `DATA-001`。
-3. 两个任务完成后做 PM merge review。
-4. 将 PRD 与数据方案合并为下一阶段开发路线：
-   - 前端产品化任务
-   - 后端记录 / 历史 / auth 任务
-   - 数据采集 / 清洗 / 标注任务
-   - QA 验收任务
+1. 等待产品负责人确认 PM merge review 中的 5 个决策点。
+2. 确认后并行发布下一轮任务：
+   - `DATA-002`：P1-A 最小数据 fixture。
+   - `FE-002`：真实用户输入与固定试航包产品化。
+   - `BE-002`：P1-A TrailRecord 保存兼容。
+   - `QA-002`：P1-A 产品化回归计划。
+3. 下一轮仍需遵守：本地 commit 默认允许，禁止 push / PR；并行完成后由主 Agent 再做 PM merge review。
 
 ## 14. 当前服务参考
 
@@ -236,21 +224,30 @@
 
 ## DATA-001 Status
 
-- 任务状态：数据方案A 已完成数据资产盘点与数据底座方案草案，等待主 Agent 做 PM merge review。
+- 任务状态：已完成；主 Agent 已纳入 PM merge review。
 - 子对话名称：`数据方案A`
 - 预期交付：`docs/pathfinder-p0/data-foundation-plan.md`
 - 实际交付：已新增 `docs/pathfinder-p0/data-foundation-plan.md`，并在本文档追加 DATA-001 状态。
-- commit 信息：待本任务完成验证后回填。
-- 验证：待本任务完成 `git diff --check` 后回填。
+- commit 信息：`79e2d1b docs: add pathfinder data foundation plan`
+- 验证：`git diff --check` 通过；文档任务未跑前后端全量测试。
 - 注意事项：当前 B 类 dirty files 不属于本任务提交范围，需继续保留并避免误提交。
 
 ## P1-PRD-001 Status
 
 - 任务 ID：`P1-PRD-001`
 - 子对话名称：`产品规划A`
-- 状态：已完成 PRD 文档草案，等待本地验证与提交。
+- 状态：已完成；主 Agent 已纳入 PM merge review。
 - 预期交付：新增 `docs/pathfinder-p0/p1-productization-prd.md`；记录 P1 产品化目标、P1-A / P1-B / P2 边界、核心 schema、LLM 接入边界、历史 / 编辑 / 导出机制、反包装机制、前端 / 后端 / 数据 / QA 拆解。
 - 已触碰文件：`docs/pathfinder-p0/p1-productization-prd.md`、`docs/pathfinder-p0/main-agent-handoff.md`。
 - Forbidden scope：未触碰 `README.md`、`docs/DEVELOPMENT_LOG.md`、`services/resume_service.py`、`docs/AI_TRANSITION_COMPASS_PRD.md`、`docs/product/*`、`data/ai_job_copilot.db`。
-- Commit 信息：待本地验证通过后提交；建议 message 为 `docs: add pathfinder p1 productization prd`。
-- 后续建议：主 Agent 在收到 `DATA-001` 后执行 PM merge review，统一收口 P1-A / P1-B / P2 边界。
+- Commit 信息：`613263e docs: add pathfinder p1 productization prd`
+- 验证：`git diff --check` 通过；必需章节与 schema 检查通过；文档任务未跑前后端全量测试。
+- 后续建议：主 Agent 已完成 PM merge review，统一收口 P1-A / P1-B / P2 边界。
+
+## PM-MERGE-001 Status
+
+- 任务状态：已完成。
+- 交付文件：`docs/pathfinder-p0/pm-merge-review-p1-prd-data.md`
+- 主结论：`P1-PRD-001` 与 `DATA-001` 无阻断级冲突，可以进入 P1-A 产品化第一轮，但需产品负责人先确认 5 个决策点。
+- 建议 P1-A 范围：允许真实用户替换背景；固定 TrialPackage / OpenDocuments / 三条路径 / 6 问；复用 `analysis_records`；不做专用表、不做自由推荐、不把 LLM 作为第一轮主链路依赖。
+- 待确认决策：用户背景替换、LLM 第一轮是否暂缓、P1-A 继续复用 `analysis_records`、JD 公司名匿名策略、OpenDocuments License fixture 维护方式。
