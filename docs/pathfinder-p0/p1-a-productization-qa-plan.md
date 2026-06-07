@@ -160,16 +160,16 @@ document.documentElement.scrollWidth <= document.documentElement.clientWidth
 
 ## 6. E2E 用例增删建议
 
-现有 `frontend/e2e/pathfinder.spec.ts` 仍以 P0 小 C Demo 为主，应在 FE-002 合并后调整为产品化基线。
+FE-002 合并后，`frontend/e2e/pathfinder.spec.ts` 已切到 P1-A 产品化基线。执行型 QA 仍应复核以下改写结果是否持续成立。
 
-建议删除或改写：
+已删除或应保持删除 / 改写：
 
 - 删除“开始小 C 试航”“填入小 C 示例作答，可继续编辑”等断言。
 - 删除入口页、小 C 背景页、小 C 示例作答作为 P1-A 主链路的正向断言。
 - 将 `xiaoc_trial_contribution` 必需章节改为 `user_trial_contribution` 或等价产品化字段。
 - 将 `trialPackageId = p0-xiaoc-opendocuments` 改为 `p1a-opendocuments-engineering-kb` 或最终 DATA-002 fixture ID。
 
-建议新增：
+已新增或应保持覆盖：
 
 - 新用户背景表单为空，不存在小 C 默认身份和一键填充。
 - 背景不足时推荐页 / 结果页显示补充提示，不使用小 C fallback。
@@ -185,7 +185,7 @@ document.documentElement.scrollWidth <= document.documentElement.clientWidth
 
 ## 7. 后端测试用例建议
 
-现有 `backend/tests/test_pathfinder.py` 覆盖 P1-A 旧契约，但仍有小 C 字段和旧 TrialPackage ID。BE-002 合并后建议补充：
+BE-002 合并后，`backend/tests/test_pathfinder.py` 已切到 P1-A 产品化契约。执行型 QA 仍应复核以下后端用例是否持续覆盖：
 
 - `POST /api/pathfinder/records` 接受 `UserProfileInput`，不要求小 C 字段。
 - 创建 payload 若包含 `defaultCandidate = xiaoc`、`prefillDemoAnswers`、`xiaocTrialContribution` 等产品化禁用字段，应拒绝或归一移除。
@@ -323,10 +323,10 @@ P1-A 产品化后参赛演示不再使用“小 C 一键 Demo”作为主产品�
 
 ## 12. 当前已知测试缺口
 
-截至本计划撰写时，现有自动化仍主要验证 P0 小 C Demo：
+FE-002 / BE-002 / DATA-002 合并后，自动化已经覆盖 P1-A 产品化主基线。当前剩余缺口为：
 
-- `frontend/e2e/pathfinder.spec.ts` 中有“小 C 背景”“填入小 C 示例作答”等正向断言。
-- `backend/tests/test_pathfinder.py` 中仍使用 `p0-xiaoc-opendocuments`、`xiaoc_trial_contribution` 和小 C 用户 fixture。
 - `docs/pathfinder-p0/p1-a-json-contract.md` 仍记录旧 P1-A 契约，后续应由主 Agent 安排产品化契约更新或兼容说明。
+- Playwright 仍需要外部 dev server；可考虑为 Pathfinder 专项补 `webServer` 或继续使用受控服务脚本。
+- legacy 小 C key 仍在兼容层保留，执行型 QA 需确认它们不作为 current P1-A 默认内容。
 
-这些缺口不阻断 QA-002 文档交付，但必须在 FE-002 / BE-002 / DATA-002 合并后进入执行型 QA 任务。
+这些缺口不阻断 P1-A 第一轮集成，但必须进入后续执行型 QA 或契约收口任务。

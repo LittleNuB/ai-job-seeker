@@ -131,6 +131,11 @@
 - `P1-PRD-001`：P1 产品化 PRD，commit `613263e`。
 - `DATA-001`：数据底座方案，commit `79e2d1b`。
 - `PM-MERGE-001`：P1 PRD 与数据底座合并审计，见 `docs/pathfinder-p0/pm-merge-review-p1-prd-data.md`。
+- `DATA-002`：P1-A 最小数据 fixture，主分支 commit `91ea465`。
+- `BE-002`：P1-A TrailRecord 保存兼容，主分支 commit `e9084d1`。
+- `FE-002`：P1-A 真实用户输入产品化，主分支 commit `3e443fd`。
+- `QA-002`：P1-A 产品化 QA 计划，主分支 commit `0385db4`。
+- `PM-MERGE-002`：P1-A 产品化第一轮实现合并审计，见 `docs/pathfinder-p0/pm-merge-review-p1a-implementation.md`。
 
 待启动任务：
 
@@ -198,40 +203,7 @@
 
 ## 12. 进行中任务
 
-当前并行任务采用独立 git worktree 隔离模式。子任务可以在各自分支本地 commit，但禁止 push / PR。完成后由主 Agent 做第二轮 PM merge review，再决定如何合并回 `codex/pathfinder-p1a-integration`。
-
-- `DATA-002`
-  - 子对话名称：`数据方案B`
-  - Thread ID：`019ea0e5-815d-70d3-9617-9be98b03c2e1`
-  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-002`
-  - 分支：`codex/pathfinder-data-002`
-  - 任务摘要：固化 P1-A 最小数据 fixture，包括 TrialPackage、OpenDocuments、EvidenceMapping、AntiPackagingRule 和数据 fixture 说明。
-  - 预期交付：`data/pathfinder/**` 与 `docs/pathfinder-p0/p1-a-data-fixtures.md`
-
-- `FE-002`
-  - 子对话名称：`前端开发B`
-  - Thread ID：`019ea0e6-23df-7442-af0c-6b6e2ac54dae`
-  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-fe-002`
-  - 分支：`codex/pathfinder-fe-002`
-  - 任务摘要：将前端从固定小 C Demo 改为真实用户输入的固定试航产品流，保留反包装、Markdown 和 fallback。
-  - 预期交付：Pathfinder 前端页面、状态、Markdown、安全测试和 E2E 更新。
-  - 当前状态：已回传初版 commit `36fb447`，但主 Agent 初审发现 current contract 仍使用 `p0-xiaoc-opendocuments` 和 `xiaoc_trial_contribution`。已要求前端开发B修正为 `p1a-opendocuments-engineering-kb` 和 `user_trial_contribution`；修正回传前不得合并。
-
-- `BE-002`
-  - 子对话名称：`后端开发A`
-  - Thread ID：`019ea0e6-bfe3-7751-bf98-e1740b7c89a5`
-  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-be-002`
-  - 分支：`codex/pathfinder-be-002`
-  - 任务摘要：兼容真实用户 TrailRecord 保存，继续复用 `analysis_records`，不新增 migration。
-  - 预期交付：Pathfinder 后端 schema、API 和测试更新。
-
-- `QA-002`
-  - 子对话名称：`QA验证A`
-  - Thread ID：`019ea0e7-5cc4-7103-9f94-09878370a01e`
-  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-qa-002`
-  - 分支：`codex/pathfinder-qa-002`
-  - 任务摘要：输出 P1-A 产品化第一轮 QA 回归计划和验收标准。
-  - 预期交付：`docs/pathfinder-p0/p1-a-productization-qa-plan.md`
+暂无。`DATA-002`、`FE-002`、`BE-002`、`QA-002` 已完成并 cherry-pick 回 `codex/pathfinder-p1a-integration`。主 Agent 已完成第二轮 PM merge review。
 
 ## 12.1 产品负责人决策记录
 
@@ -245,11 +217,10 @@
 
 ## 13. 下一步主 Agent 工作
 
-1. 等待 `DATA-002`、`FE-002`、`BE-002`、`QA-002` 回传。
-2. 核对各 worktree commit、验证结果和 Scope Guard。
-3. 执行第二轮 PM merge review，重点处理数据 fixture 与前端实现、后端 schema 的字段一致性。
-4. 决定按何种顺序 merge/cherry-pick 回 `codex/pathfinder-p1a-integration`。
-5. 合并后运行完整验证，再决定是否 push 集成分支。
+1. 产品负责人做一轮 P1-A 集成人工审查，重点检查真实用户输入、推荐页背景证据、试航页空白 6 问、结果页和 Markdown。
+2. 需要时发布执行型 QA 任务，按 `docs/pathfinder-p0/p1-a-productization-qa-plan.md` 产出浏览器截图和回归报告。
+3. 若产品审查通过，再决定是否 push `codex/pathfinder-p1a-integration` 到远端。
+4. 暂不启动 P1-B 专用表、LLM 主链路、多试航包或真实 RAG。
 
 ## 14. 当前服务参考
 
@@ -289,3 +260,18 @@
 - 主结论：`P1-PRD-001` 与 `DATA-001` 无阻断级冲突，可以进入 P1-A 产品化第一轮，但需产品负责人先确认 5 个决策点。
 - 已确认 P1-A 范围：全由真实用户输入，不保留小 C 示意；固定 TrialPackage / OpenDocuments / 三条路径 / 6 问；复用 `analysis_records`；不做专用表、不做自由推荐、不把 LLM 作为第一轮主链路依赖。
 - 已确认决策：真实用户输入、LLM 第一轮暂缓、P1-A 继续复用 `analysis_records`、JD 公司名匿名 / 弱化展示、OpenDocuments License fixture 维护方式。
+
+## PM-MERGE-002 Status
+
+- 任务状态：已完成。
+- 交付文件：`docs/pathfinder-p0/pm-merge-review-p1a-implementation.md`
+- 已合并任务：`DATA-002`、`BE-002`、`FE-002`、`QA-002`
+- 主分支 commits：
+  - `91ea465 data: add pathfinder p1a fixture baseline`
+  - `e9084d1 feat: support pathfinder p1a user trail records`
+  - `3e443fd feat: productize pathfinder user input flow`
+  - `0385db4 docs: add pathfinder p1a productization qa plan`
+- 合并后修订：QA 计划已更新为 FE / BE 合并后的事实状态。
+- Contract 结论：current contract 使用 `p1a-opendocuments-engineering-kb`、`user_trial_contribution`、`sourceProjectReference`、`userTrialContribution`；旧 `p0-xiaoc-opendocuments` 与 `xiaoc_trial_contribution` 只保留为 legacy 兼容语境。
+- 验证：backend pytest 78 passed；frontend safety / lint / build passed；Pathfinder E2E 7 passed；`.\scripts\check_all.ps1` passed。
+- 当前建议：进入产品负责人人工审查和执行型 QA，不 push main，不启动 P1-B。
