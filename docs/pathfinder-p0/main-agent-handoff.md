@@ -234,6 +234,16 @@
 
 服务 PID 会变化，启动或停止前应重新探测端口。不要假设旧 PID 仍有效。
 
+## DATA-001 Status
+
+- 任务状态：数据方案A 已完成数据资产盘点与数据底座方案草案，等待主 Agent 做 PM merge review。
+- 子对话名称：`数据方案A`
+- 预期交付：`docs/pathfinder-p0/data-foundation-plan.md`
+- 实际交付：已新增 `docs/pathfinder-p0/data-foundation-plan.md`，并在本文档追加 DATA-001 状态。
+- commit 信息：待本任务完成验证后回填。
+- 验证：待本任务完成 `git diff --check` 后回填。
+- 注意事项：当前 B 类 dirty files 不属于本任务提交范围，需继续保留并避免误提交。
+
 ## P1-PRD-001 Status
 
 - 任务 ID：`P1-PRD-001`
