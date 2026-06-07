@@ -12,7 +12,15 @@
 
 这些资产可以支撑“样本趋势参考、岗位要求信号拆解、固定试航包、用户试航记录、反包装检查、Markdown 导出追溯”，但不能支撑市场完整覆盖、录用概率、能力认证、企业筛选、简历真实性判断、自由 JD 推荐或多开源项目黑箱推荐。所有结论必须继续表述为“当前样本数据和趋势参考”，不得写成市场全量判断。
 
-P1-A 数据目标是最小闭环：固化一个只读 `TrialPackage`，保存用户授权下的一次 `TrailRecord`，让 JD 证据、小 C 背景、OpenDocuments 来源、6 问作答、作品集草稿、反包装检查和 Markdown 快照可以互相追溯。P1-B 再考虑专用表、历史记录和正式 auth；P2 才考虑多试航包、内容审核工作台和更完整的数据治理。
+P1-A 数据目标是最小闭环：固化一个只读 `TrialPackage`，保存用户授权下的一次 `TrailRecord`，让 JD 证据、用户背景、OpenDocuments 来源、6 问作答、作品集草稿、反包装检查和 Markdown 快照可以互相追溯。P1-B 再考虑专用表、历史记录和正式 auth；P2 才考虑多试航包、内容审核工作台和更完整的数据治理。
+
+产品负责人决策更新（2026-06-07）：
+
+- P1-A 全由真实用户输入，不保留小 C 示意、默认身份、一键填充或默认作答。
+- P1-A 第一轮暂不把 LLM 作为主链路依赖，先做真实输入、保存、导出、反包装。
+- P1-A 继续复用 `analysis_records`，不新增 migration；P1-B 再做专用表 PRD。
+- P1-A 默认匿名化 / 弱化 JD 公司名展示，只说样例 JD 与样本趋势参考。
+- OpenDocuments License 和来源核验做成数据 fixture，由数据任务维护核验日期和边界说明。
 
 ## 2. 当前数据资产盘点
 
@@ -28,7 +36,7 @@ P1-A 数据目标是最小闭环：固化一个只读 `TrialPackage`，保存用
 | JD 清洗聚类流水线 | `scraper/pipeline.py` | 支持加载 raw、清洗、去重、薪资解析、级别推断、关键词聚类 | 关键词聚类粗糙，不能作为强推荐依据 |
 | LLM 岗位结构化 | `scraper/structurer.py` | 支持从聚类 JD 归纳 must_have、tools、salary、面试主题等 | 包含 LLM 归纳和 fallback 行业知识，必须标注人工复核状态 |
 | 结构化岗位批次 | `scraper/structured/*.json` | 存在 41 条与 23 条结构化批次文件 | 批次之间可能重复或字段不一致，需统一版本与去重 |
-| Pathfinder 固定内容 | `frontend/src/features/pathfinder/data.ts` | 固定小 C、3 条样例 JD、OpenDocuments、3 条路径、6 问、指标、风险、合规表达 | 是 P0/P1-A Demo 内容，不是开放推荐数据 |
+| Pathfinder 固定内容 | `frontend/src/features/pathfinder/data.ts` | P0 固定小 C、3 条样例 JD、OpenDocuments、3 条路径、6 问、指标、风险、合规表达 | 小 C 只属于 P0 历史演示；P1-A 不应继续作为默认用户数据 |
 | Pathfinder 类型契约 | `frontend/src/features/pathfinder/types.ts`、`backend/app/schemas/pathfinder.py` | 前后端已有 P1-A TrailRecord 契约 | P1-A 复用 `analysis_records`，未建立专用数据生命周期 |
 | Pathfinder 保存 API | `backend/app/api/pathfinder.py` | 支持创建、读取、保存 6 问、保存结果、删除；按 `user_id + id + type` 隔离 | `X-User-Id` 仍是 Demo fallback，正式 auth 未完成 |
 | 历史分析表 | `backend/app/models/analysis.py` | `analysis_records` 可保存 JSON 字符串和 `match_score = null` 的 Pathfinder 记录 | 表结构通用，缺少 Pathfinder 专用索引、版本查询和审计字段 |
@@ -44,7 +52,7 @@ P1-A 数据目标是最小闭环：固化一个只读 `TrialPackage`，保存用
 
 ## 3. 当前数据可支撑的产品能力
 
-1. 固定试航包：可把小 C、3 条样例 JD、OpenDocuments、三条路径和固定 6 问封装为 `TrialPackage`。
+1. 固定试航包：可把 3 条样例 JD、OpenDocuments、三条路径和固定 6 问封装为 `TrialPackage`；P1-A 不封装小 C 默认身份。
 2. 样本趋势说明：可用 46 岗位 taxonomy 和 2537 条 JD 样本说明“当前样本中出现过哪些岗位要求信号”，但必须展示样本说明。
 3. 岗位要求信号抽取：可从 JD 中抽取职责、must-have、工具、经验、场景关键词、风险提示，用于解释路径证据。
 4. 试航记录保存：P1-A 已能把用户授权下的 6 问作答、反包装检查、作品集草稿和 Markdown 快照保存为 `TrailRecord`。
@@ -396,7 +404,7 @@ OpenDocuments 在 P1-A 中只能作为 `reference_only` 的公开参考项目。
 
 1. 规则库：能力认证、offer 概率、企业筛选、简历包装、多项目智能推荐、真实 RAG、复杂评分、OpenDocuments 归属、AI 替代专业审核。
 2. 命中记录：`AntiPackagingFinding` 保存 ruleId、matchedText、riskReason、suggestedRewrite、blockingPolicy、context。
-3. 导出完整性：Markdown 必须包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、原项目能力、小 C 试航贡献、不可声称内容、6 问作答、免责声明。
+3. 导出完整性：Markdown 必须包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、原项目能力、用户试航贡献、不可声称内容、6 问作答、免责声明。
 
 合规原则：
 
@@ -428,7 +436,7 @@ P1 应建立以下指标，不把它们展示为用户评分：
 
 只做最小产品化记录：
 
-- 固定 `p0-xiaoc-opendocuments@1.0.0` TrialPackage。
+- 固定 `p1a-opendocuments-engineering-kb@1.0.0` TrialPackage。
 - 继续复用 `analysis_records`，不新增专用表和 migration。
 - 保存 `TrailRecord / TrialAnswer[] / AntiPackagingCheck / MarkdownSnapshot`。
 - 使用现有 JD 与 Pathfinder 固定内容作为样本证据。
@@ -458,9 +466,9 @@ P1 应建立以下指标，不把它们展示为用户评分：
 
 1. 补 `sourceBatchId` 规范：为现有 cleaned JD、raw JD 和结构化岗位批次补一份批次说明文档。
 2. 建立 `JDRecord` 元数据最小字段清单：来源、日期、清洗版本、样本免责声明、是否可展示。
-3. 为 P1-A 固定 TrialPackage 写一份 JSON fixture，包含 sampleJdIds、sourceProjectId、fixedQuestions 和 forbiddenClaims。
+3. 为 P1-A 固定 TrialPackage 写一份 JSON fixture，包含 sampleJdIds、sourceProjectId、fixedQuestions 和 forbiddenClaims，不包含小 C 默认用户数据。
 4. 为 OpenDocuments 建立 `OpenSourceProjectRecord`，人工核验 GitHub URL 与 MIT License。
-5. 建立 `EvidenceMapping` 最小快照：三条路径分别映射 JD 证据、小 C 背景、OpenDocuments 证据、风险证据、下一步试航。
+5. 建立 `EvidenceMapping` 最小快照：三条路径分别映射 JD 证据、用户背景、OpenDocuments 证据、风险证据、下一步试航。
 6. 把反包装规则整理成可版本化 JSON：ruleId、正则 / 关键词、风险等级、建议改写、阻断策略。
 7. 对 `cleaned_jds.json` 跑一次质量报告：总数、公司分布、空字段、重复 title@company、采样日期缺失率。
 8. 明确 P1-B 是否新增专用表，若新增，先写 migration PRD，不直接实现。
@@ -478,7 +486,7 @@ P1 应建立以下指标，不把它们展示为用户评分：
 
 待产品负责人确认：
 
-1. P1-A 是否继续只支持固定小 C / OpenDocuments 试航包，还是允许替换候选人背景但不开放推荐？
+1. P1-A 已确认全由真实用户输入，不保留小 C 示意；后续需确认用户背景最小字段和授权文案。
 2. P1-B 是否要新增专用 Pathfinder 表，还是继续复用 `analysis_records` 到历史记录页完成后再迁移？
 3. JD 样本是否允许在前端展示公司名，还是只展示匿名化样本信号？
 4. 开源项目 License 核验由谁负责，核验周期和下线条件是什么？

@@ -203,6 +203,16 @@
 
 暂无。`P1-PRD-001` 与 `DATA-001` 均已回传，主 Agent 已完成 PM merge review。
 
+## 12.1 产品负责人决策记录
+
+2026-06-07，产品负责人确认 P1-A 产品化第一轮采用以下决策：
+
+- P1-A 全由真实用户输入，不保留小 C 示意、默认身份、一键填充或默认作答。
+- P1-A 第一轮暂不把 LLM 作为主链路依赖，先做真实输入、保存、导出、反包装。
+- P1-A 继续复用 `analysis_records`，不新增 migration；P1-B 再做专用表 PRD。
+- P1-A 默认匿名化 / 弱化 JD 公司名展示，只说样例 JD 与样本趋势参考。
+- OpenDocuments License 和来源核验做成数据 fixture，由数据任务维护核验日期和边界说明。
+
 ## 13. 下一步主 Agent 工作
 
 1. 等待产品负责人确认 PM merge review 中的 5 个决策点。
@@ -249,5 +259,5 @@
 - 任务状态：已完成。
 - 交付文件：`docs/pathfinder-p0/pm-merge-review-p1-prd-data.md`
 - 主结论：`P1-PRD-001` 与 `DATA-001` 无阻断级冲突，可以进入 P1-A 产品化第一轮，但需产品负责人先确认 5 个决策点。
-- 建议 P1-A 范围：允许真实用户替换背景；固定 TrialPackage / OpenDocuments / 三条路径 / 6 问；复用 `analysis_records`；不做专用表、不做自由推荐、不把 LLM 作为第一轮主链路依赖。
-- 待确认决策：用户背景替换、LLM 第一轮是否暂缓、P1-A 继续复用 `analysis_records`、JD 公司名匿名策略、OpenDocuments License fixture 维护方式。
+- 已确认 P1-A 范围：全由真实用户输入，不保留小 C 示意；固定 TrialPackage / OpenDocuments / 三条路径 / 6 问；复用 `analysis_records`；不做专用表、不做自由推荐、不把 LLM 作为第一轮主链路依赖。
+- 已确认决策：真实用户输入、LLM 第一轮暂缓、P1-A 继续复用 `analysis_records`、JD 公司名匿名 / 弱化展示、OpenDocuments License fixture 维护方式。
