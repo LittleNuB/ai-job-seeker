@@ -1,7 +1,6 @@
 import { getAntiPackagingFindings } from "./content-guard";
 import {
-  candidateProfile,
-  demoTrialAnswers,
+  emptyUserProfile,
   forbiddenClaimsNotice,
   interviewPrep,
   metricRows,
@@ -26,7 +25,9 @@ import type {
   TrialAnswer,
   TrialPackage,
   TrialQuestionId,
+  UserProfileInput,
 } from "./types";
+import { currentTrialPackageId } from "./types";
 
 export const pathfinderSchemaVersion = "p1-a.v1" as const;
 export const markdownTemplateVersion = "frontend.pathfinder.p1-a.v1";
@@ -42,10 +43,10 @@ export const requiredTrialQuestionIds = trialQuestions.map(
 ) as TrialQuestionId[];
 
 export const p1aTrialPackage: TrialPackage = {
-  id: "p0-xiaoc-opendocuments",
+  id: currentTrialPackageId,
   version: "1.0.0",
-  title: "小 C 的 OpenDocuments 工程企业知识库 AI 助手试航",
-  targetUser: "小 C",
+  title: "OpenDocuments 工程企业知识库 AI 助手试航",
+  targetUser: "真实用户输入",
   sourceProject: {
     name: openSourceProject.name,
     url: openSourceProject.sourceUrl,
@@ -68,7 +69,7 @@ export const requiredMarkdownSectionLabels: Record<
   sample_jd_note: "## 样例 JD 说明",
   opendocuments_source_license: "## OpenDocuments 来源与 License",
   opendocuments_original_capabilities: "## OpenDocuments 公开能力",
-  xiaoc_trial_contribution: "## 小 C 试航产出",
+  user_trial_contribution: "## 用户试航产出",
   forbidden_claims: "## 不可声称内容",
   six_question_answers: "## 6 问作答",
   disclaimer: "## 免责声明",
@@ -76,7 +77,7 @@ export const requiredMarkdownSectionLabels: Record<
 
 export function createInitialPathfinderState(): PathfinderState {
   return {
-    demoLoaded: false,
+    profileSubmitted: false,
     trailRecord: createTrailRecord(),
     backendSync: initialBackendSyncState,
   };
@@ -85,6 +86,7 @@ export function createInitialPathfinderState(): PathfinderState {
 export function createTrailRecord(options?: {
   selectedPathId?: string | null;
   trialAnswers?: Partial<Record<TrialQuestionId, string>>;
+  userProfileSnapshot?: Partial<UserProfileInput> | unknown;
   recordId?: string;
 }): TrailRecord {
   const trialAnswers = createTrialAnswers(options?.trialAnswers ?? {});
@@ -96,7 +98,7 @@ export function createTrailRecord(options?: {
     trialPackageId: p1aTrialPackage.id,
     trialPackageVersion: p1aTrialPackage.version,
     status: "draft",
-    userProfileSnapshot: candidateProfile,
+    userProfileSnapshot: normalizeUserProfile(options?.userProfileSnapshot),
     selectedPathId: priorityPathId,
     trialAnswers,
     antiPackagingCheck,
@@ -107,6 +109,67 @@ export function createTrailRecord(options?: {
   };
 
   return recomputeTrailRecordStatus(record);
+}
+
+export function normalizeUserProfile(value: unknown): UserProfileInput {
+  if (typeof value !== "object" || value === null) {
+    return { ...emptyUserProfile };
+  }
+
+  const input = value as Partial<Record<keyof UserProfileInput, unknown>>;
+  const legacy = value as {
+    name?: unknown;
+    identity?: unknown;
+    background?: unknown;
+    technicalBasics?: unknown;
+    weaknesses?: unknown;
+    goals?: unknown;
+  };
+  return {
+    displayName:
+      typeof input.displayName === "string"
+        ? input.displayName
+        : typeof legacy.name === "string"
+          ? legacy.name
+          : "",
+    professionalBackground:
+      typeof input.professionalBackground === "string"
+        ? input.professionalBackground
+        : Array.isArray(legacy.background)
+          ? legacy.background.join("；")
+          : typeof legacy.identity === "string"
+            ? legacy.identity
+            : "",
+    jobTarget:
+      typeof input.jobTarget === "string"
+        ? input.jobTarget
+        : Array.isArray(legacy.goals)
+          ? legacy.goals.join("；")
+          : "",
+    timeline: typeof input.timeline === "string" ? input.timeline : "",
+    projectExperience:
+      typeof input.projectExperience === "string"
+        ? input.projectExperience
+        : "",
+    aiToolExperience:
+      typeof input.aiToolExperience === "string"
+        ? input.aiToolExperience
+        : "",
+    technicalBasics:
+      typeof input.technicalBasics === "string"
+        ? input.technicalBasics
+        : Array.isArray(legacy.technicalBasics)
+          ? legacy.technicalBasics.join("；")
+          : "",
+    currentConfusion:
+      typeof input.currentConfusion === "string"
+        ? input.currentConfusion
+        : Array.isArray(legacy.weaknesses)
+          ? legacy.weaknesses.join("；")
+          : "",
+    constraints:
+      typeof input.constraints === "string" ? input.constraints : "",
+  };
 }
 
 export function createTrialAnswers(
@@ -149,8 +212,16 @@ export function missingQuestionIdsFromAnswers(
   });
 }
 
-export function isCompleteTrialAnswers(trialAnswers: TrialAnswer[]): boolean {
-  return missingQuestionIdsFromAnswers(trialAnswers).length === 0;
+export function updateTrailRecordProfile(
+  record: TrailRecord,
+  profile: UserProfileInput,
+): TrailRecord {
+  return recomputeTrailRecordStatus({
+    ...record,
+    userProfileSnapshot: normalizeUserProfile(profile),
+    markdownSnapshot: undefined,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export function updateTrailRecordAnswer(
@@ -168,18 +239,6 @@ export function updateTrailRecordAnswer(
 
   return recomputeTrailRecordStatus({
     ...record,
-    trialAnswers: nextAnswers,
-    antiPackagingCheck: evaluateTrialAnswersAntiPackaging(nextAnswers),
-    markdownSnapshot: undefined,
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-export function fillDemoTrailRecordAnswers(record: TrailRecord): TrailRecord {
-  const nextAnswers = createTrialAnswers(demoTrialAnswers, record.trialAnswers);
-  return recomputeTrailRecordStatus({
-    ...record,
-    selectedPathId: priorityPathId,
     trialAnswers: nextAnswers,
     antiPackagingCheck: evaluateTrialAnswersAntiPackaging(nextAnswers),
     markdownSnapshot: undefined,
@@ -362,6 +421,15 @@ function createPortfolioDraftContract(): PortfolioDraft {
       manifestation: row.signal,
       mitigation: row.suggestion,
     })),
+    sourceProjectReference: {
+      name: openSourceProject.name,
+      url: openSourceProject.sourceUrl,
+      license: openSourceProject.license,
+      role: "reference_only",
+      originalCapabilities: openSourceProject.originalCapabilities,
+    },
+    userTrialContribution: portfolioDraft.outputs,
+    // Legacy backend compatibility only; current P1-A contract uses the two fields above.
     opendocumentsReference: {
       name: openSourceProject.name,
       url: openSourceProject.sourceUrl,
@@ -384,7 +452,7 @@ function createInterviewPrepContract() {
         {
           sourceType: "trial_package" as const,
           sourceId: p1aTrialPackage.id,
-          note: "来自固定 P1-A TrialPackage 和 P0 内容资产。",
+          note: "来自固定 P1-A TrialPackage 和公开参考项目。",
         },
       ],
       boundaryReminder:
@@ -396,8 +464,15 @@ function createInterviewPrepContract() {
 
 export function normalizeStoredPathfinderState(value: unknown): PathfinderState {
   if (isP1APathfinderState(value)) {
+    const legacyDemoLoaded =
+      typeof (value as { demoLoaded?: unknown }).demoLoaded === "boolean"
+        ? Boolean((value as { demoLoaded?: unknown }).demoLoaded)
+        : false;
     return {
-      demoLoaded: value.demoLoaded,
+      profileSubmitted:
+        typeof value.profileSubmitted === "boolean"
+          ? value.profileSubmitted
+          : legacyDemoLoaded,
       trailRecord: normalizeTrailRecord(value.trailRecord),
       backendSync: normalizeBackendSyncState(value.backendSync),
     };
@@ -405,10 +480,11 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
 
   if (isLegacyPathfinderState(value)) {
     return {
-      demoLoaded: value.demoLoaded,
+      profileSubmitted: Boolean(value.demoLoaded),
       trailRecord: createTrailRecord({
         selectedPathId: value.selectedPathId,
         trialAnswers: value.trialAnswers,
+        userProfileSnapshot: value.userProfileSnapshot,
       }),
       backendSync: initialBackendSyncState,
     };
@@ -420,12 +496,14 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
 export function createPathfinderStateFromTrailRecord(
   record: TrailRecord,
   options?: {
+    profileSubmitted?: boolean;
     demoLoaded?: boolean;
     backendSync?: BackendSyncState;
   },
 ): PathfinderState {
   return {
-    demoLoaded: options?.demoLoaded ?? true,
+    profileSubmitted:
+      options?.profileSubmitted ?? options?.demoLoaded ?? true,
     trailRecord: normalizeTrailRecord(record),
     backendSync:
       options?.backendSync ??
@@ -444,6 +522,7 @@ function normalizeTrailRecord(record: TrailRecord): TrailRecord {
     trialPackageId: p1aTrialPackage.id,
     trialPackageVersion: p1aTrialPackage.version,
     selectedPathId: priorityPathId,
+    userProfileSnapshot: normalizeUserProfile(record.userProfileSnapshot),
     trialAnswers: createTrialAnswers(trialAnswerMapFromRecord(record)),
     antiPackagingCheck:
       record.antiPackagingCheck ?? createNotRunAntiPackagingCheck(),
@@ -489,6 +568,7 @@ function isLegacyPathfinderState(value: unknown): value is {
   demoLoaded: boolean;
   selectedPathId: string | null;
   trialAnswers: Partial<Record<TrialQuestionId, string>>;
+  userProfileSnapshot?: unknown;
 } {
   return (
     typeof value === "object" &&

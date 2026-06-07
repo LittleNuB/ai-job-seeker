@@ -109,10 +109,10 @@ const unsafePositivePatterns: Array<{
     suggestedRewrite: "改为“OpenDocuments 是公开参考项目”。",
   },
   {
-    ruleId: "xiaoc_developed_opendocuments_claim",
-    pattern: /小 C.{0,8}开发.{0,8}OpenDocuments/,
-    riskReason: "把公开项目能力写成小 C 开发成果。",
-    suggestedRewrite: "改为“小 C 做场景拆解和试航方案”。",
+    ruleId: "user_developed_opendocuments_claim",
+    pattern: /(?:用户|候选人|我|本人|小 C).{0,8}开发.{0,8}OpenDocuments/,
+    riskReason: "把公开项目能力写成用户开发成果。",
+    suggestedRewrite: "改为“基于公开项目做场景拆解和试航方案”。",
   },
   {
     ruleId: "enterprise_rag_claim",

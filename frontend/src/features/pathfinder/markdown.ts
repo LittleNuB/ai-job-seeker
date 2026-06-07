@@ -6,16 +6,18 @@ import {
   getRequiredMarkdownSections,
 } from "./contract";
 import {
+  displayNameForProfile,
   forbiddenClaimsNotice,
   markdownExportItems,
   pageCopy,
   portfolioPolishBoundary,
-  traceChain,
+  traceChainForProfile,
 } from "./data";
 import type {
   MarkdownInput,
   MarkdownResult,
   TrialQuestionId,
+  UserProfileInput,
 } from "./types";
 
 export function getMissingQuestionIds(input: {
@@ -37,7 +39,10 @@ export function generatePathfinderMarkdown(
       ok: false,
       reason: "missing_questions",
       missingQuestionIds,
-      antiPackagingCheck: createAntiPackagingCheck("", getRequiredMarkdownSections("")),
+      antiPackagingCheck: createAntiPackagingCheck(
+        "",
+        getRequiredMarkdownSections(""),
+      ),
     };
   }
 
@@ -45,12 +50,12 @@ export function generatePathfinderMarkdown(
 
   const markdown = [
     "# 寻径星图航迹表",
-    renderCandidateProfile(input),
+    renderCandidateProfile(input.userProfile),
     renderPathConclusion(input),
     renderSampleJdNotice(input),
     renderOpenSource(input),
     renderOriginalCapabilities(input),
-    renderCandidateContribution(input),
+    renderUserContribution(input),
     renderForbiddenClaims(),
     renderSixQuestions(input, answers),
     renderResultModules(input),
@@ -74,24 +79,25 @@ export function generatePathfinderMarkdown(
 
   return {
     ok: true,
-    filename: "pathfinder-xiaoc-opendocuments.md",
+    filename: `pathfinder-${slugForFilename(displayNameForProfile(input.userProfile))}-opendocuments.md`,
     markdown,
     antiPackagingCheck,
     snapshot: createMarkdownSnapshot(markdown, "full"),
   };
 }
 
-function renderCandidateProfile(input: MarkdownInput): string {
-  const { profile } = input;
-
+function renderCandidateProfile(profile: UserProfileInput): string {
   return [
     "## 候选人背景",
-    `- 候选人：${profile.name}`,
-    `- 身份：${profile.identity}`,
-    `- 背景：${profile.background.join("；")}`,
-    `- 技术基础：${profile.technicalBasics.join("；")}`,
-    `- 短板：${profile.weaknesses.join("；")}`,
-    `- 目标：${profile.goals.join("；")}`,
+    `- 候选人：${displayNameForProfile(profile)}`,
+    `- 专业 / 背景：${profile.professionalBackground}`,
+    `- 求职目标：${profile.jobTarget}`,
+    `- 求职时间线：${profile.timeline}`,
+    `- 工程 / 行业经历：${profile.projectExperience}`,
+    `- AI 工具经历：${profile.aiToolExperience}`,
+    `- 技术基础：${profile.technicalBasics}`,
+    `- 当前困惑：${profile.currentConfusion}`,
+    `- 限制条件：${profile.constraints}`,
   ].join("\n");
 }
 
@@ -139,17 +145,17 @@ function renderOpenSource(input: MarkdownInput): string {
 function renderOriginalCapabilities(input: MarkdownInput): string {
   return [
     "## OpenDocuments 公开能力",
-    "以下为公开项目信息中的能力说明，只作为小 C 试航理解的参考来源，不作为小 C 的个人产出。",
+    "以下为公开项目信息中的能力说明，只作为试航理解的参考来源，不作为用户个人产出。",
     ...input.openSourceProject.originalCapabilities.map(
       (capability) => `- ${capability}`,
     ),
   ].join("\n");
 }
 
-function renderCandidateContribution(input: MarkdownInput): string {
+function renderUserContribution(input: MarkdownInput): string {
   return [
-    "## 小 C 试航产出",
-    "小 C 的产出限定为基于公开项目信息完成产品拆解、岗位连接和试点方案草稿。",
+    "## 用户试航产出",
+    "用户产出限定为基于公开项目信息完成产品拆解、岗位连接和试点方案草稿。",
     ...input.portfolioDraft.outputs.map((output) => `- ${output}`),
   ].join("\n");
 }
@@ -163,7 +169,7 @@ function renderForbiddenClaims(): string {
     "- 不能声称有官方贡献记录。",
     "- 不能把试航记录表述为能力认证。",
     "- 不能预测录用结果。",
-    "- 不能把公开项目能力写成小 C 的个人开发成果。",
+    "- 不能把公开项目能力写成个人开发成果。",
     "- 不能把 2 周 MVP 试点设计说成企业级上线系统。",
   ].join("\n");
 }
@@ -177,7 +183,7 @@ function renderSixQuestions(
     ...input.trialQuestions.flatMap((question, index) => [
       `### ${index + 1}. ${question.title}`,
       `问题：${question.prompt}`,
-      `小 C 作答：${answers[question.id]}`,
+      `作答：${answers[question.id]}`,
       "",
     ]),
   ]
@@ -191,18 +197,17 @@ function renderResultModules(input: MarkdownInput): string {
     "- 试航对象：OpenDocuments",
     `- 推荐路径：${input.selectedPath.title}`,
     "- 试航主题：工程企业知识库 AI 助手",
-    "- 输入来源：小 C 背景 + 3 条样例 JD + OpenDocuments 公开来源",
+    `- 输入来源：样例 JD + ${displayNameForProfile(input.userProfile)}背景 + OpenDocuments 公开来源`,
     "- 输出结果：作品集一页纸草稿 + 指标表 + 风险清单",
     "",
     "## 作品集一页纸草稿",
     `- 标题：${input.portfolioDraft.title}`,
-    `- 作者：${input.portfolioDraft.author}`,
     `- 目标岗位：${input.portfolioDraft.targetRole}`,
     `- 问题背景：${input.portfolioDraft.problemBackground}`,
     `- 方案概述：${input.portfolioDraft.solutionOverview}`,
     `- MVP 范围：${input.portfolioDraft.mvpScope}`,
     `- 评估指标：${input.portfolioDraft.evaluationMetrics.join("、")}`,
-    `- 我的产出：${input.portfolioDraft.outputs.join("、")}`,
+    `- 用户产出：${input.portfolioDraft.outputs.join("、")}`,
     `- 边界说明：${portfolioPolishBoundary}`,
     "",
     "## 指标表",
@@ -241,7 +246,7 @@ function renderResultModules(input: MarkdownInput): string {
 function renderDisclaimer(input: MarkdownInput): string {
   return [
     "## 免责声明",
-    `- 追溯链：${traceChain}`,
+    `- 追溯链：${traceChainForProfile(input.userProfile)}`,
     `- ${pageCopy.resultBoundary}`,
     "- 本结果仅用于求职路径试航和作品集准备参考。",
     `- ${input.sampleJdNotice}`,
@@ -251,4 +256,13 @@ function renderDisclaimer(input: MarkdownInput): string {
     "完整 Markdown 九项：",
     ...markdownExportItems.map((item) => `- ${item}`),
   ].join("\n");
+}
+
+function slugForFilename(value: string): string {
+  const ascii = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return ascii || "candidate";
 }

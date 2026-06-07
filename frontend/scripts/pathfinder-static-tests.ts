@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import {
-  candidateProfile,
   createMarkdownInput,
-  demoTrialAnswers,
+  emptyUserProfile,
   forbiddenClaimsNotice,
+  isUserProfileReady,
   markdownExportItems,
   pageCopy,
   priorityPathId,
@@ -11,6 +11,7 @@ import {
   sampleJds,
   trialQuestionImpacts,
   trialQuestions,
+  userProfileFields,
 } from "../src/features/pathfinder/data";
 import {
   assertSafePathfinderCopy,
@@ -24,10 +25,11 @@ import {
   missingQuestionIdsFromAnswers,
   p1aTrialPackage,
   pathfinderSchemaVersion,
+  requiredMarkdownSectionLabels,
   requiredTrialQuestionIds,
 } from "../src/features/pathfinder/contract";
 import { generatePathfinderMarkdown } from "../src/features/pathfinder/markdown";
-import type { TrialQuestionId } from "../src/features/pathfinder/types";
+import type { TrialQuestionId, UserProfileInput } from "../src/features/pathfinder/types";
 
 const expectedQuestions: Array<{ id: TrialQuestionId; prompt: string }> = [
   {
@@ -57,18 +59,52 @@ const expectedQuestions: Array<{ id: TrialQuestionId; prompt: string }> = [
   },
 ];
 
+const validUserProfile: UserProfileInput = {
+  displayName: "测试候选人",
+  professionalBackground: "机械工程背景，做过设备资料整理和项目协作。",
+  jobTarget: "希望试航行业 AI 应用产品助理方向。",
+  timeline: "计划 3 个月内完成作品集并开始投递。",
+  projectExperience: "做过工艺文档整理、跨团队需求沟通和报告撰写。",
+  aiToolExperience: "使用 AI 辅助整理资料和草拟提纲，最终人工核验。",
+  technicalBasics: "了解基础 Python、数据清洗、文档系统和 RAG 概念。",
+  currentConfusion: "不确定如何把行业经验转成 AI 产品证据。",
+  constraints: "不能使用真实企业内部资料，只能用脱敏或公开样例。",
+};
+
+const validTrialAnswers: Record<TrialQuestionId, string> = {
+  project_understanding:
+    "OpenDocuments 主要解决企业资料分散、检索成本高、问答缺少来源依据的问题。",
+  role_connection:
+    "它能帮助我理解 AI 知识库、文档问答和行业 AI 产品助理的需求拆解任务。",
+  scenario_gap:
+    "放到工程企业场景中还需要权限、脱敏、术语表、引用核验和人工复核节点。",
+  application_solution:
+    "我会设计一个 2 周试点，先限定资料范围，再整理问题、导入资料、测试问答并记录风险。",
+  portfolio_extension:
+    "作品集会包含背景、目标用户、MVP 范围、流程图、指标表、风险清单和边界说明。",
+  ai_usage_explanation:
+    "AI 用于辅助整理公开信息和草拟结构，最终内容由我筛选、核验和改写。",
+};
+
 assert.deepEqual(
   trialQuestions.map((question) => ({
     id: question.id,
     prompt: question.prompt,
   })),
   expectedQuestions,
-  "trialQuestions must use the fixed P0 six questions",
+  "trialQuestions must use the fixed six questions",
 );
 
 assert.equal(pathfinderSchemaVersion, "p1-a.v1");
 assert.equal(createInitialPathfinderState().backendSync.status, "local_only");
-assert.equal(p1aTrialPackage.id, "p0-xiaoc-opendocuments");
+assert.equal(createInitialPathfinderState().profileSubmitted, false);
+assert.deepEqual(createInitialPathfinderState().trailRecord.userProfileSnapshot, emptyUserProfile);
+assert.deepEqual(
+  createInitialPathfinderState().trailRecord.trialAnswers.map((answer) => answer.answer),
+  ["", "", "", "", "", ""],
+);
+assert.equal(p1aTrialPackage.id, "p1a-opendocuments-engineering-kb");
+assert.equal(p1aTrialPackage.targetUser, "真实用户输入");
 assert.equal(p1aTrialPackage.version, "1.0.0");
 assert.equal(p1aTrialPackage.sourceProject.role, "reference_only");
 assert.deepEqual(
@@ -76,33 +112,49 @@ assert.deepEqual(
   expectedQuestions.map((question) => question.id),
 );
 assert.deepEqual(requiredTrialQuestionIds, p1aTrialPackage.questionIds);
-
-assert.deepEqual(
-  Object.keys(demoTrialAnswers).sort(),
-  expectedQuestions.map((question) => question.id).sort(),
-  "demoTrialAnswers must cover all fixed questions",
+assert.equal(
+  Object.prototype.hasOwnProperty.call(
+    requiredMarkdownSectionLabels,
+    "user_trial_contribution",
+  ),
+  true,
+);
+assert.equal(
+  Object.prototype.hasOwnProperty.call(
+    requiredMarkdownSectionLabels,
+    "xiaoc_trial_contribution",
+  ),
+  false,
 );
 
-for (const question of expectedQuestions) {
-  assert.ok(
-    demoTrialAnswers[question.id].trim().length > 0,
-    `demoTrialAnswers.${question.id} must not be empty`,
-  );
-}
+const initialPortfolioDraft =
+  createInitialPathfinderState().trailRecord.portfolioDraft;
+assert.equal(
+  initialPortfolioDraft?.sourceProjectReference.name,
+  "OpenDocuments",
+);
+assert.deepEqual(
+  initialPortfolioDraft?.userTrialContribution,
+  initialPortfolioDraft?.xiaocTrialContribution,
+  "Legacy xiaocTrialContribution is compatibility-only; userTrialContribution is the current P1-A key.",
+);
+assert.deepEqual(
+  initialPortfolioDraft?.sourceProjectReference,
+  initialPortfolioDraft?.opendocumentsReference,
+  "Legacy opendocumentsReference is compatibility-only; sourceProjectReference is the current P1-A key.",
+);
 
-assert.ok(candidateProfile.identity);
-assert.ok(candidateProfile.background.length > 0);
-assert.ok(candidateProfile.technicalBasics.length > 0);
-assert.ok(candidateProfile.weaknesses.length > 0);
-assert.ok(candidateProfile.goals.length > 0);
+assert.equal(isUserProfileReady(emptyUserProfile), false);
+assert.equal(isUserProfileReady(validUserProfile), true);
+assert.ok(userProfileFields.length >= 9);
 
 for (const jd of sampleJds) {
   assert.equal(jd.notice, sampleJdNotice);
 }
 
 const incomplete = generatePathfinderMarkdown(
-  createMarkdownInput(priorityPathId, {
-    project_understanding: demoTrialAnswers.project_understanding,
+  createMarkdownInput(priorityPathId, validUserProfile, {
+    project_understanding: validTrialAnswers.project_understanding,
   }),
 );
 assert.equal(incomplete.ok, false);
@@ -111,22 +163,12 @@ if (!incomplete.ok) {
 }
 
 const complete = generatePathfinderMarkdown(
-  createMarkdownInput(priorityPathId, demoTrialAnswers),
+  createMarkdownInput(priorityPathId, validUserProfile, validTrialAnswers),
 );
 assert.equal(complete.ok, true);
 
 if (complete.ok) {
-  for (const requiredSection of [
-    "## 候选人背景",
-    "## 星图路径结论",
-    "## 样例 JD 说明",
-    "## OpenDocuments 来源与 License",
-    "## OpenDocuments 公开能力",
-    "## 小 C 试航产出",
-    "## 不可声称内容",
-    "## 6 问作答",
-    "## 免责声明",
-  ]) {
+  for (const requiredSection of Object.values(requiredMarkdownSectionLabels)) {
     assert.ok(
       complete.markdown.includes(requiredSection),
       `Markdown missing ${requiredSection}`,
@@ -139,6 +181,8 @@ if (complete.ok) {
     ),
   );
   assert.ok(complete.markdown.includes("MIT"));
+  assert.ok(complete.markdown.includes("测试候选人"));
+  assert.ok(!complete.markdown.includes("小 C"));
   assert.equal(complete.antiPackagingCheck.status, "passed");
   assert.equal(complete.antiPackagingCheck.exportAllowed, true);
   assert.equal(complete.snapshot.templateSource, "frontend");
@@ -149,7 +193,7 @@ if (complete.ok) {
 }
 
 const answerPackage = createTrialAnswers({
-  project_understanding: demoTrialAnswers.project_understanding,
+  project_understanding: validTrialAnswers.project_understanding,
 });
 assert.deepEqual(missingQuestionIdsFromAnswers(answerPackage), [
   "role_connection",
@@ -160,7 +204,7 @@ assert.deepEqual(missingQuestionIdsFromAnswers(answerPackage), [
 ]);
 
 const blockingAnswerPackage = createTrialAnswers({
-  ...demoTrialAnswers,
+  ...validTrialAnswers,
   portfolio_extension: "我开发了 OpenDocuments，并完成了企业级 RAG 系统。",
 });
 const blockingCheck = evaluateTrialAnswersAntiPackaging(blockingAnswerPackage);
@@ -168,8 +212,8 @@ assert.equal(blockingCheck.status, "blocked");
 assert.equal(blockingCheck.exportAllowed, false);
 
 const blockedMarkdown = generatePathfinderMarkdown(
-  createMarkdownInput(priorityPathId, {
-    ...demoTrialAnswers,
+  createMarkdownInput(priorityPathId, validUserProfile, {
+    ...validTrialAnswers,
     portfolio_extension: "我开发了 OpenDocuments，并完成了企业级 RAG 系统。",
   }),
 );
@@ -184,16 +228,24 @@ assert.equal(snapshot.exportScope, "draft");
 
 assertSafePathfinderCopy(
   stringifyForCopyCheck({
-    candidateProfile,
+    emptyUserProfile,
     forbiddenClaimsNotice,
     markdownExportItems,
     sampleJds,
     trialQuestionImpacts,
     trialQuestions,
-    demoTrialAnswers,
     pageCopy,
   }),
 );
+
+const visibleDefaultCopy = stringifyForCopyCheck({
+  emptyUserProfile,
+  markdownExportItems,
+  pageCopy,
+  sampleJds,
+  trialQuestions,
+});
+assert.equal(visibleDefaultCopy.includes("小 C"), false);
 
 for (const unsafeCopy of [
   "我已经可以胜任这个岗位。",
@@ -205,7 +257,7 @@ for (const unsafeCopy of [
   "可以展示复杂评分系统。",
   "这里是算法工程速成。",
   "OpenDocuments 是我的项目。",
-  "小 C 开发了 OpenDocuments。",
+  "用户开发了 OpenDocuments。",
   "我开发了企业 RAG 系统。",
   "我有官方贡献记录。",
   "AI 可替代合同人工复核。",

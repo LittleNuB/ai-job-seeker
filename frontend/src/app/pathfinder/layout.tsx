@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "寻径星图",
-  description: "小 C 的工程企业知识库 AI 助手试航",
+  description: "OpenDocuments 工程企业知识库 AI 助手固定试航",
 };
 
 export default function PathfinderLayout({

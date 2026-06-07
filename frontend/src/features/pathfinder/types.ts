@@ -1,4 +1,9 @@
-export type DemoVersion = "p0-xiaoc-opendocuments";
+export const currentTrialPackageId =
+  "p1a-opendocuments-engineering-kb" as const;
+export const legacyTrialPackageId = "p0-xiaoc-opendocuments" as const;
+
+export type DemoVersion = typeof currentTrialPackageId;
+export type LegacyDemoVersion = typeof legacyTrialPackageId;
 
 export type PathfinderSchemaVersion = "p1-a.v1";
 
@@ -23,14 +28,16 @@ export type TrialQuestionId =
 export type SampleJdNotice =
   "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断。";
 
-export interface CandidateProfile {
-  id: "xiaoc";
-  name: "小 C";
-  identity: string;
-  background: string[];
-  technicalBasics: string[];
-  weaknesses: string[];
-  goals: string[];
+export interface UserProfileInput {
+  displayName: string;
+  professionalBackground: string;
+  jobTarget: string;
+  timeline: string;
+  projectExperience: string;
+  aiToolExperience: string;
+  technicalBasics: string;
+  currentConfusion: string;
+  constraints: string;
 }
 
 export interface SampleJd {
@@ -42,7 +49,7 @@ export interface SampleJd {
   scenario: string;
   responsibilities: string[];
   requirementSignals: string[];
-  candidateConnection: string[];
+  userConnectionPrompts: string[];
   gapOrAdvice: string[];
 }
 
@@ -52,14 +59,14 @@ export interface OpenSourceProject {
   license: "MIT";
   positioning: string;
   originalCapabilities: string[];
-  whyForCandidate: string[];
+  whyForUser: string[];
   boundaryNotice: string;
 }
 
 export interface EvidenceItem {
   title:
-    | "JD 证据"
-    | "小 C 背景证据"
+    | "JD 样本证据"
+    | "用户背景证据"
     | "OpenDocuments 证据"
     | "风险证据"
     | "下一步试航";
@@ -79,11 +86,11 @@ export interface TrialQuestion {
   id: TrialQuestionId;
   title: string;
   prompt: string;
+  helper: string;
 }
 
 export interface PortfolioOnePagerDraft {
   title: string;
-  author: string;
   targetRole: string;
   problemBackground: string;
   solutionOverview: string;
@@ -174,7 +181,7 @@ export type RequiredMarkdownSection =
   | "sample_jd_note"
   | "opendocuments_source_license"
   | "opendocuments_original_capabilities"
-  | "xiaoc_trial_contribution"
+  | "user_trial_contribution"
   | "forbidden_claims"
   | "six_question_answers"
   | "disclaimer";
@@ -207,14 +214,23 @@ export interface PortfolioDraft {
     manifestation: string;
     mitigation: string;
   }>;
-  opendocumentsReference: {
+  sourceProjectReference: {
     name: "OpenDocuments";
     url: string;
     license: string;
     role: "reference_only";
     originalCapabilities: string[];
   };
-  xiaocTrialContribution: string[];
+  userTrialContribution: string[];
+  // Legacy backend compatibility only; current P1-A keys are sourceProjectReference/userTrialContribution.
+  opendocumentsReference?: {
+    name: "OpenDocuments";
+    url: string;
+    license: string;
+    role: "reference_only";
+    originalCapabilities: string[];
+  };
+  xiaocTrialContribution?: string[];
   notClaimed: string[];
   disclaimer: string;
   updatedAt?: string;
@@ -254,7 +270,7 @@ export interface TrailRecord {
   trialPackageId: string;
   trialPackageVersion: string;
   status: PathfinderRecordStatus;
-  userProfileSnapshot: unknown;
+  userProfileSnapshot: UserProfileInput;
   selectedPathId: string;
   trialAnswers: TrialAnswer[];
   antiPackagingCheck: AntiPackagingCheck;
@@ -279,14 +295,14 @@ export interface BackendSyncState {
 }
 
 export interface PathfinderState {
-  demoLoaded: boolean;
+  profileSubmitted: boolean;
   trailRecord: TrailRecord;
   backendSync: BackendSyncState;
 }
 
 export interface MarkdownInput {
   demoVersion: DemoVersion;
-  profile: CandidateProfile;
+  userProfile: UserProfileInput;
   sampleJdNotice: SampleJdNotice;
   sampleJds: SampleJd[];
   openSourceProject: OpenSourceProject;

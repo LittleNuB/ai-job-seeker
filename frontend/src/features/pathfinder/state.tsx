@@ -19,15 +19,15 @@ import {
   updatePathfinderTrialAnswers,
 } from "./api";
 import {
-  createPathfinderStateFromTrailRecord,
   createInitialPathfinderState,
+  createPathfinderStateFromTrailRecord,
   ensurePriorityTrailRecordPath,
-  fillDemoTrailRecordAnswers,
   legacyPathfinderStateStorageKey,
   normalizeStoredPathfinderState,
   pathfinderStateStorageKey,
   trialAnswerMapFromRecord,
   updateTrailRecordAnswer,
+  updateTrailRecordProfile,
   withMarkdownSnapshot,
 } from "./contract";
 import type {
@@ -37,12 +37,13 @@ import type {
   PathfinderState,
   TrailRecord,
   TrialQuestionId,
+  UserProfileInput,
 } from "./types";
 
 type PathfinderAction =
-  | { type: "load_demo" }
+  | { type: "submit_profile" }
+  | { type: "update_profile"; profile: UserProfileInput }
   | { type: "answer_question"; questionId: TrialQuestionId; value: string }
-  | { type: "fill_demo_answers" }
   | {
       type: "save_markdown_snapshot";
       snapshot: MarkdownSnapshot;
@@ -50,23 +51,24 @@ type PathfinderAction =
     }
   | { type: "attach_record_identity"; record: TrailRecord }
   | { type: "set_backend_sync"; backendSync: BackendSyncState }
-  | { type: "reset_demo" }
+  | { type: "reset" }
   | { type: "hydrate"; state: PathfinderState };
 
 const initialState = createInitialPathfinderState();
 
 interface PathfinderContextValue {
   state: PathfinderState;
+  userProfile: UserProfileInput;
   trialAnswerMap: Partial<Record<TrialQuestionId, string>>;
-  loadDemo: () => void;
+  updateUserProfile: (profile: UserProfileInput) => void;
+  submitUserProfile: () => void;
   ensurePriorityPath: () => void;
   answerQuestion: (questionId: TrialQuestionId, value: string) => void;
-  fillDemoAnswers: () => void;
   saveMarkdownSnapshot: (
     snapshot: MarkdownSnapshot,
     antiPackagingCheck: AntiPackagingCheck,
   ) => void;
-  resetDemo: () => void;
+  reset: () => void;
 }
 
 const PathfinderContext = createContext<PathfinderContextValue | null>(null);
@@ -78,11 +80,19 @@ function reducer(
   switch (action.type) {
     case "hydrate":
       return action.state;
-    case "load_demo":
+    case "submit_profile":
       return {
         ...state,
-        demoLoaded: true,
+        profileSubmitted: true,
         trailRecord: ensurePriorityTrailRecordPath(state.trailRecord),
+      };
+    case "update_profile":
+      return {
+        ...state,
+        trailRecord: updateTrailRecordProfile(
+          state.trailRecord,
+          action.profile,
+        ),
       };
     case "answer_question":
       return {
@@ -92,12 +102,6 @@ function reducer(
           action.questionId,
           action.value,
         ),
-      };
-    case "fill_demo_answers":
-      return {
-        ...state,
-        demoLoaded: true,
-        trailRecord: fillDemoTrailRecordAnswers(state.trailRecord),
       };
     case "save_markdown_snapshot":
       return {
@@ -123,7 +127,7 @@ function reducer(
         ...state,
         backendSync: action.backendSync,
       };
-    case "reset_demo":
+    case "reset":
       return createInitialPathfinderState();
     default:
       return state;
@@ -170,7 +174,7 @@ export function PathfinderProvider({
             const remoteState = createPathfinderStateFromTrailRecord(
               remoteRecord,
               {
-                demoLoaded: restoredState.demoLoaded,
+                profileSubmitted: restoredState.profileSubmitted,
               },
             );
             lastSyncedSignatureRef.current = createTrailRecordSyncSignature(
@@ -281,12 +285,15 @@ export function PathfinderProvider({
   );
 
   useEffect(() => {
-    if (!hydrated || !state.demoLoaded || !isPathfinderApiEnabled()) return;
+    if (!hydrated || !state.profileSubmitted || !isPathfinderApiEnabled()) {
+      return;
+    }
     if (remoteHydrationPendingRef.current) return;
 
     const signature = createTrailRecordSyncSignature(state.trailRecord);
     if (skipAutoSyncAfterRemoteHydrationRef.current) {
       lastSyncedSignatureRef.current = signature;
+      skipAutoSyncAfterRemoteHydrationRef.current = false;
       return;
     }
     if (signature === lastSyncedSignatureRef.current) return;
@@ -304,15 +311,19 @@ export function PathfinderProvider({
     }, 350);
 
     return () => window.clearTimeout(timeoutId);
-  }, [hydrated, state.demoLoaded, state.trailRecord, syncTrailRecord]);
+  }, [hydrated, state.profileSubmitted, state.trailRecord, syncTrailRecord]);
 
-  const loadDemo = useCallback(() => {
+  const updateUserProfile = useCallback((profile: UserProfileInput) => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
-    dispatch({ type: "load_demo" });
+    dispatch({ type: "update_profile", profile });
+  }, []);
+  const submitUserProfile = useCallback(() => {
+    skipAutoSyncAfterRemoteHydrationRef.current = false;
+    dispatch({ type: "submit_profile" });
   }, []);
   const ensurePriorityPath = useCallback(() => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
-    dispatch({ type: "load_demo" });
+    dispatch({ type: "submit_profile" });
   }, []);
   const answerQuestion = useCallback(
     (questionId: TrialQuestionId, value: string) => {
@@ -321,10 +332,6 @@ export function PathfinderProvider({
     },
     [],
   );
-  const fillDemoAnswers = useCallback(() => {
-    skipAutoSyncAfterRemoteHydrationRef.current = false;
-    dispatch({ type: "fill_demo_answers" });
-  }, []);
   const saveMarkdownSnapshot = useCallback(
     (snapshot: MarkdownSnapshot, antiPackagingCheck: AntiPackagingCheck) => {
       skipAutoSyncAfterRemoteHydrationRef.current = false;
@@ -336,39 +343,42 @@ export function PathfinderProvider({
     },
     [],
   );
-  const resetDemo = useCallback(() => {
+  const reset = useCallback(() => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
     const recordId = state.trailRecord.recordId;
     if (recordId && isPathfinderApiEnabled()) {
       void deletePathfinderRecord(recordId).catch(() => undefined);
     }
-    dispatch({ type: "reset_demo" });
+    dispatch({ type: "reset" });
   }, [state.trailRecord.recordId]);
   const trialAnswerMap = useMemo(
     () => trialAnswerMapFromRecord(state.trailRecord),
     [state.trailRecord],
   );
+  const userProfile = state.trailRecord.userProfileSnapshot;
 
   const value = useMemo(
     () => ({
       state,
+      userProfile,
       trialAnswerMap,
-      loadDemo,
+      updateUserProfile,
+      submitUserProfile,
       ensurePriorityPath,
       answerQuestion,
-      fillDemoAnswers,
       saveMarkdownSnapshot,
-      resetDemo,
+      reset,
     }),
     [
       state,
+      userProfile,
       trialAnswerMap,
-      loadDemo,
+      updateUserProfile,
+      submitUserProfile,
       ensurePriorityPath,
       answerQuestion,
-      fillDemoAnswers,
       saveMarkdownSnapshot,
-      resetDemo,
+      reset,
     ],
   );
 
@@ -390,6 +400,7 @@ export function usePathfinder() {
 function createTrailRecordSyncSignature(record: TrailRecord) {
   return JSON.stringify({
     recordId: record.recordId,
+    userProfileSnapshot: record.userProfileSnapshot,
     trialAnswers: record.trialAnswers,
     antiPackagingCheck: record.antiPackagingCheck,
     portfolioDraft: record.portfolioDraft,
