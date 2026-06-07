@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "opendocuments",
+  "name": "OpenDocuments",
+  "sourceUrl": "https://github.com/joungminsung/OpenDocuments",
+  "host": "github",
+  "license": "MIT",
+  "licenseSpdxId": "MIT",
+  "licenseFileUrl": "https://github.com/joungminsung/OpenDocuments/blob/main/LICENSE",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-07",
+  "licenseVerificationStatus": "verified",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-07",
+  "sourceSnapshot": {
+    "defaultBranch": "main",
+    "repositoryVisibility": "public",
+    "manualCheckNotes": [
+      "GitHub repository page showed the project as public on 2026-06-07.",
+      "GitHub repository navigation showed an MIT license file on 2026-06-07.",
+      "GitHub LICENSE file page showed MIT License text on 2026-06-07.",
+      "GitHub unauthenticated REST API was rate-limited during this task, so stars/forks/latest commit metadata are not treated as canonical fixture inputs."
+    ],
+    "nonCanonicalMetadata": {
+      "starsObservedOnGitHubPage": 74,
+      "forksObservedOnGitHubPage": 13,
+      "commitsObservedOnGitHubPage": 173
+    }
+  },
+  "publicCapabilities": [
+    "self-hosted RAG platform",
+    "AI document search with citations",
+    "connectors for sources such as GitHub, Notion, Google Drive, Confluence, S3, local files, and web pages",
+    "hybrid vector and keyword retrieval",
+    "web UI, CLI, HTTP API, SDK, plugin system, and embeddable widget",
+    "MCP server support for AI coding assistant workflows"
+  ],
+  "referenceUseInPathfinder": [
+    "用于理解企业知识库问答、文档接入、检索、引用展示和反馈流程。",
+    "用于设计工程企业知识库 AI 助手的 2 周 MVP 试点方案。",
+    "用于提醒用户区分公开项目能力与本人试航产出。"
+  ],
+  "notClaimed": [
+    "不声明用户参与 OpenDocuments 原仓库开发。",
+    "不声明用户是 OpenDocuments 官方贡献者、维护者或原项目团队成员。",
+    "不声明本试航复现了 OpenDocuments 完整系统。",
+    "不声明本试航交付企业级生产系统。",
+    "不声明 OpenDocuments 能替代合同、规范、施工方案等专业复核。",
+    "不把 GitHub stars、forks、commit 数等元数据作为推荐评分、岗位胜任或录用判断。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或从 MIT 变更为其他 License。",
+    "README 明显移除 self-hosted RAG / AI document search / citation 等核心定位。",
+    "仓库删除、转私有或迁移到无法核验的新地址。",
+    "项目声明停止维护且公开能力与试航包不再匹配。",
+    "产品计划把 reference_only 用途升级为多项目库或公开推荐入口。"
+  ],
+  "downstreamPolicy": {
+    "trialPackageStatusOnMajorChange": "needs_review",
+    "allowRuntimeFetching": false,
+    "allowRagOverRepository": false,
+    "allowUserContributionClaim": false,
+    "allowRecommendationScoring": false
+  }
+}

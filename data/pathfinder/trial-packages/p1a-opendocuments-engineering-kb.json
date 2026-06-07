@@ -1,0 +1,213 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "TrialPackageRecord",
+  "trialPackageId": "p1a-opendocuments-engineering-kb",
+  "version": "1.0.0",
+  "title": "OpenDocuments 工程企业知识库 AI 助手试航",
+  "status": "active",
+  "publishStatus": "readonly_demo",
+  "createdAt": "2026-06-07",
+  "updatedAt": "2026-06-07",
+  "targetUserSegment": "传统工科、运营、实施、咨询、方案或产品助理等非 AI / 非 CS 背景的转岗用户",
+  "defaultUserDataPolicy": {
+    "containsDefaultUserProfile": false,
+    "containsDefaultIdentity": false,
+    "containsDefaultAnswers": false,
+    "containsDefaultPortfolioSubject": false,
+    "userProfileSource": "real_user_authorized_input_only"
+  },
+  "sampleJdNotice": "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断；默认弱化或匿名化公司名展示。",
+  "sampleJds": [
+    {
+      "sampleJdId": "p1a-jd-industry-ai-product-assistant",
+      "title": "行业 AI 应用产品助理",
+      "targetPathId": "industry-ai-product-assistant",
+      "companyDisplayScope": "hidden",
+      "displayLabel": "样例 JD / 当前样本趋势参考",
+      "scenario": "面向制造、工程、能源或设备企业，参与 AI 知识库、文档问答、内部助手或智能客服类产品。",
+      "requirementSignals": [
+        "业务资料和用户问题梳理",
+        "PRD、用户故事、问答样例和验收口径整理",
+        "知识库范围、检索逻辑、引用展示、失败兜底和反馈流程确认",
+        "Demo 测试和用户反馈整理"
+      ],
+      "boundaryNotice": "该样例只用于试航任务设计，不代表任何具体公司岗位、录用判断或市场全量覆盖。"
+    },
+    {
+      "sampleJdId": "p1a-jd-industry-ai-solution-assistant",
+      "title": "行业 AI 解决方案助理",
+      "targetPathId": "industry-ai-solution-assistant",
+      "companyDisplayScope": "hidden",
+      "displayLabel": "样例 JD / 当前样本趋势参考",
+      "scenario": "面向企业客户做 AI 应用售前、PoC、方案材料和场景调研。",
+      "requirementSignals": [
+        "客户访谈纪要整理",
+        "行业痛点和业务流程梳理",
+        "方案 PPT、Demo 脚本、测试用例和交付清单辅助制作",
+        "产品、研发和客户侧反馈协调"
+      ],
+      "boundaryNotice": "该样例只用于解释试航方向，不代表企业筛选、岗位胜任或项目交付能力判断。"
+    },
+    {
+      "sampleJdId": "p1a-jd-algorithm-llm-engineer",
+      "title": "算法工程 / 大模型研发",
+      "targetPathId": "algorithm-llm-engineer",
+      "companyDisplayScope": "hidden",
+      "displayLabel": "样例 JD / 当前样本趋势参考",
+      "scenario": "参与模型训练、检索优化、向量数据库、Embedding、Rerank、微调或评测平台开发。",
+      "requirementSignals": [
+        "扎实编程能力",
+        "机器学习 / 深度学习基础",
+        "向量检索、模型评估和工程代码经验",
+        "可运行项目或实验记录"
+      ],
+      "boundaryNotice": "该样例用于提示短期证据缺口，不构成能力认证、路径否定或求职结果预测。"
+    }
+  ],
+  "sourceProjectIds": [
+    "opendocuments"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant",
+    "algorithm-llm-engineer"
+  ],
+  "pathRecommendations": [
+    {
+      "pathId": "industry-ai-product-assistant",
+      "title": "行业 AI 应用产品助理",
+      "verdict": "priority_trial",
+      "statusLabel": "优先试航",
+      "summary": "优先围绕工程企业知识库 AI 助手完成一次产品试航，重点输出场景拆解、MVP 范围、指标和风险边界。",
+      "forbiddenInterpretations": [
+        "不得解释为岗位胜任认证。",
+        "不得解释为录用概率或投递建议。",
+        "不得解释为用户参与 OpenDocuments 原仓库开发。"
+      ]
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "title": "行业 AI 解决方案助理",
+      "verdict": "explore",
+      "statusLabel": "适合探索",
+      "summary": "可用同一个公开参考项目补充 PoC 范围、方案结构、交付边界和客户沟通材料。",
+      "forbiddenInterpretations": [
+        "不得承诺客户交付效果、周期或成本。",
+        "不得把公开项目能力写成用户个人交付能力。"
+      ]
+    },
+    {
+      "pathId": "algorithm-llm-engineer",
+      "title": "算法工程 / 大模型研发",
+      "verdict": "not_recommended_short_term",
+      "statusLabel": "短期不建议",
+      "summary": "保留为长期学习参照；P1-A 不把该路径包装成短期主投方向。",
+      "forbiddenInterpretations": [
+        "不得把公开项目拆解等同于算法研发经验。",
+        "不得输出胜任分、匹配分或能力分。"
+      ]
+    }
+  ],
+  "task": {
+    "taskId": "engineering-enterprise-knowledge-base-ai-assistant",
+    "title": "工程企业知识库 AI 助手试航",
+    "scope": "基于 OpenDocuments 公开信息，设计一个面向工程企业资料的 2 周知识库问答助手 MVP 试点方案。",
+    "outputAssets": [
+      "用户问题清单",
+      "MVP 范围说明",
+      "流程草图",
+      "指标表",
+      "风险清单",
+      "作品集一页纸草稿",
+      "面试解释材料",
+      "Markdown 导出快照"
+    ]
+  },
+  "fixedQuestions": [
+    {
+      "questionId": "project_understanding",
+      "title": "项目理解",
+      "prompt": "这个开源项目主要解决什么问题？输入和输出是什么？",
+      "required": true,
+      "impactModuleIds": [
+        "opendocuments_source_license",
+        "opendocuments_original_capabilities",
+        "forbidden_claims"
+      ]
+    },
+    {
+      "questionId": "role_connection",
+      "title": "岗位连接",
+      "prompt": "它能帮助你理解哪些 AI 产品或行业解决方案岗位工作？",
+      "required": true,
+      "impactModuleIds": [
+        "path_conclusion",
+        "sample_jd_note",
+        "candidate_background"
+      ]
+    },
+    {
+      "questionId": "scenario_gap",
+      "title": "场景缺口",
+      "prompt": "如果放到工程企业资料、规范、合同或施工方案管理场景中，还缺什么？",
+      "required": true,
+      "impactModuleIds": [
+        "risk_boundary",
+        "disclaimer"
+      ]
+    },
+    {
+      "questionId": "application_solution",
+      "title": "应用方案",
+      "prompt": "你会如何设计一个面向工程企业的 2 周试点 MVP？",
+      "required": true,
+      "impactModuleIds": [
+        "portfolio_draft",
+        "interview_prep"
+      ]
+    },
+    {
+      "questionId": "portfolio_extension",
+      "title": "作品延展",
+      "prompt": "如果把这次试航做成作品集草稿，你会包含哪些部分？",
+      "required": true,
+      "impactModuleIds": [
+        "portfolio_draft",
+        "user_trial_contribution"
+      ]
+    },
+    {
+      "questionId": "ai_usage_explanation",
+      "title": "AI 使用说明",
+      "prompt": "你是否使用 AI 辅助？AI 帮你做了什么？你如何筛选和修改？",
+      "required": true,
+      "impactModuleIds": [
+        "anti_packaging_check",
+        "disclaimer"
+      ]
+    }
+  ],
+  "requiredMarkdownSections": [
+    "candidate_background",
+    "path_conclusion",
+    "sample_jd_note",
+    "opendocuments_source_license",
+    "opendocuments_original_capabilities",
+    "user_trial_contribution",
+    "forbidden_claims",
+    "six_question_answers",
+    "disclaimer"
+  ],
+  "forbiddenClaims": [
+    "声称系统提供能力认证、岗位胜任认证或通过评估。",
+    "表达 offer 概率、录用概率、上岸概率或就业保证。",
+    "声称系统可筛选候选人、推荐企业或提供精准内推。",
+    "声称系统可生成、优化或包装简历。",
+    "声称当前版本执行真实 RAG 检索、实时仓库抓取或自动仓库分析。",
+    "声称多开源项目智能推荐。",
+    "输出匹配分、胜任分、综合分或排行榜。",
+    "暗示用户开发了 OpenDocuments、参与官方贡献或代表原项目团队。",
+    "暗示 AI 可替代合同、规范、施工方案等专业复核。"
+  ],
+  "disclaimer": "本试航包只用于求职准备中的场景拆解、产品试航和作品集草稿整理；不构成能力认证、录用判断、企业筛选、简历包装或专业复核结论。"
+}

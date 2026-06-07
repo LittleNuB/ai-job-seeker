@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "EvidenceMappingSet",
+  "mappingSetId": "p1a-opendocuments-engineering-kb",
+  "trialPackageId": "p1a-opendocuments-engineering-kb",
+  "trialPackageVersion": "1.0.0",
+  "createdAt": "2026-06-07",
+  "updatedAt": "2026-06-07",
+  "defaultUserDataPolicy": {
+    "bindsSpecificUser": false,
+    "containsDefaultProfile": false,
+    "containsDefaultAnswers": false,
+    "userProfileEvidenceMode": "placeholder_for_real_user_authorized_input"
+  },
+  "evidenceNodes": [
+    {
+      "evidenceId": "evidence-jd-product-assistant",
+      "sourceType": "sample_jd",
+      "sourceId": "p1a-jd-industry-ai-product-assistant",
+      "title": "JD 证据：行业 AI 应用产品助理",
+      "summary": "样例 JD 趋势显示，该路径关注业务资料梳理、AI 知识库需求拆解、问答样例、引用展示、验收指标和 Demo 测试。",
+      "sourceScope": "sample_trend_reference_only",
+      "supports": [
+        "industry-ai-product-assistant",
+        "trial-question-role-connection",
+        "portfolio-section-problem-context"
+      ],
+      "riskNotes": [
+        "不得表述为具体公司岗位要求。",
+        "不得表述为录用判断或岗位胜任认证。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-jd-solution-assistant",
+      "sourceType": "sample_jd",
+      "sourceId": "p1a-jd-industry-ai-solution-assistant",
+      "title": "JD 证据：行业 AI 解决方案助理",
+      "summary": "样例 JD 趋势显示，该路径关注客户需求记录、行业场景调研、PoC 材料、Demo 脚本和交付边界说明。",
+      "sourceScope": "sample_trend_reference_only",
+      "supports": [
+        "industry-ai-solution-assistant",
+        "trial-question-application-solution",
+        "interview-prep-boundary"
+      ],
+      "riskNotes": [
+        "不得承诺客户交付效果、周期或成本。",
+        "不得把试航材料写成完整解决方案交付。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-jd-algorithm-gap",
+      "sourceType": "sample_jd",
+      "sourceId": "p1a-jd-algorithm-llm-engineer",
+      "title": "JD 证据：算法工程 / 大模型研发",
+      "summary": "样例 JD 趋势显示，该方向通常要求编程、机器学习、模型评估和工程代码证据；P1-A 将其作为短期风险边界，而非能力判断。",
+      "sourceScope": "sample_trend_reference_only",
+      "supports": [
+        "algorithm-llm-engineer",
+        "risk-boundary-technical-depth"
+      ],
+      "riskNotes": [
+        "不得把开源项目拆解等同于算法研发经验。",
+        "不得输出胜任分或能力分。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-user-background-placeholder",
+      "sourceType": "user_profile_signal",
+      "sourceId": "user-authorized-input-placeholder",
+      "title": "用户背景证据占位",
+      "summary": "P1-A 只接受真实用户授权输入，记录教育背景、行业经验、文档研究经验、AI 工具使用、目标方向和限制条件；fixture 不预置任何用户身份或作答。",
+      "sourceScope": "runtime_user_input_only",
+      "supports": [
+        "candidate_background",
+        "path_conclusion",
+        "trial-answer-role-connection",
+        "portfolio-section-user-scenario"
+      ],
+      "riskNotes": [
+        "用户自述不是第三方认证。",
+        "缺少附件或核验时应标记为 self_reported / not_verified。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-opendocuments-reference",
+      "sourceType": "open_source_project",
+      "sourceId": "opendocuments",
+      "title": "OpenDocuments 证据",
+      "summary": "OpenDocuments 是公开 GitHub 项目，可作为 self-hosted RAG、AI document search、文档接入、检索、引用展示和 MCP 场景的 reference_only 参照。",
+      "sourceScope": "public_project_reference_only",
+      "supports": [
+        "trial-task-engineering-enterprise-knowledge-base-ai-assistant",
+        "trial-question-project-understanding",
+        "opendocuments_source_license",
+        "opendocuments_original_capabilities"
+      ],
+      "riskNotes": [
+        "不得暗示用户参与原项目官方开发。",
+        "不得把公开项目能力改写为用户个人贡献。",
+        "不得在 P1-A 中做真实 RAG 或实时仓库抓取。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-risk-boundary",
+      "sourceType": "risk_boundary",
+      "sourceId": "p1a-scope-guard",
+      "title": "风险证据",
+      "summary": "P1-A 需持续阻断能力认证、offer 概率、企业筛选、简历包装、多项目推荐、真实 RAG、复杂评分和 OpenDocuments 官方贡献暗示。",
+      "sourceScope": "product_scope_guard",
+      "supports": [
+        "anti_packaging_check",
+        "forbidden_claims",
+        "disclaimer",
+        "markdown-export-blocking"
+      ],
+      "riskNotes": [
+        "禁用词出现在否定语境中不应误阻断。",
+        "同一段既有否定说明又有正向承诺时按阻断处理。"
+      ]
+    },
+    {
+      "evidenceId": "evidence-next-trial",
+      "sourceType": "trial_package",
+      "sourceId": "p1a-opendocuments-engineering-kb",
+      "title": "下一步试航",
+      "summary": "用户完成 6 问后，应输出 2 周 MVP 范围、问题清单、流程草图、指标表、风险清单、作品集一页纸草稿和面试解释材料。",
+      "sourceScope": "fixed_trial_package_design",
+      "supports": [
+        "trial-question-application-solution",
+        "trial-question-portfolio-extension",
+        "portfolio_draft",
+        "interview_prep",
+        "markdown_snapshot"
+      ],
+      "riskNotes": [
+        "下一步试航不是多项目推荐。",
+        "输出是求职准备材料，不是简历包装或岗位认证。"
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "mappingId": "map-jd-product-to-priority-path",
+      "sourceId": "evidence-jd-product-assistant",
+      "targetType": "role_path",
+      "targetId": "industry-ai-product-assistant",
+      "relation": "supports",
+      "evidenceText": "样例 JD 趋势支持把行业 AI 应用产品助理作为本固定试航包的优先试航路径。"
+    },
+    {
+      "mappingId": "map-user-placeholder-to-background",
+      "sourceId": "evidence-user-background-placeholder",
+      "targetType": "markdown_section",
+      "targetId": "candidate_background",
+      "relation": "requires_review",
+      "evidenceText": "候选人背景必须来自真实用户授权输入，fixture 只提供字段占位和证据状态边界。"
+    },
+    {
+      "mappingId": "map-opendocuments-to-source-license",
+      "sourceId": "evidence-opendocuments-reference",
+      "targetType": "markdown_section",
+      "targetId": "opendocuments_source_license",
+      "relation": "must_be_disclaimed",
+      "evidenceText": "OpenDocuments 只能作为公开 reference_only 项目展示来源、License 和原项目能力。"
+    },
+    {
+      "mappingId": "map-risk-to-anti-packaging",
+      "sourceId": "evidence-risk-boundary",
+      "targetType": "risk_boundary",
+      "targetId": "anti_packaging_check",
+      "relation": "blocks_claim",
+      "evidenceText": "越界表达必须进入 AntiPackagingCheck，阻断完整 Markdown 导出。"
+    },
+    {
+      "mappingId": "map-next-trial-to-portfolio",
+      "sourceId": "evidence-next-trial",
+      "targetType": "portfolio_section",
+      "targetId": "portfolio_draft",
+      "relation": "explains",
+      "evidenceText": "作品集草稿应解释本次试航产出、来源边界和用户可说明的真实贡献。"
+    }
+  ]
+}

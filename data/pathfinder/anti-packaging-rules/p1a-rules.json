@@ -1,0 +1,234 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "AntiPackagingRuleSet",
+  "rulesVersion": "p1a-rules.v1",
+  "trialPackageId": "p1a-opendocuments-engineering-kb",
+  "createdAt": "2026-06-07",
+  "updatedAt": "2026-06-07",
+  "scope": [
+    "user_profile_summary",
+    "trial_answers",
+    "portfolio_draft",
+    "interview_prep",
+    "markdown_snapshot"
+  ],
+  "defaultBlockingPolicy": "block_full_markdown_export",
+  "rules": [
+    {
+      "ruleId": "p1a-capability-certification",
+      "category": "capability_certification",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "能力认证",
+        "岗位胜任认证",
+        "证明我胜任",
+        "通过评估",
+        "达到岗位要求"
+      ],
+      "allowedContexts": [
+        "不做能力认证",
+        "不构成能力认证",
+        "不是岗位胜任认证",
+        "不能证明我胜任",
+        "不代表达到岗位要求"
+      ],
+      "riskReason": "P1-A 只能整理试航证据和边界，不能输出能力或岗位胜任认证。",
+      "suggestedRewrite": "改为：本次试航用于整理场景理解、方案草稿和可追溯证据，不代表岗位胜任认证。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-offer-probability",
+      "category": "job_outcome_prediction",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "offer 概率",
+        "录用概率",
+        "上岸概率",
+        "保证就业",
+        "提高录用率",
+        "拿到 offer"
+      ],
+      "allowedContexts": [
+        "不做 offer 概率预测",
+        "不代表录用判断",
+        "不能保证就业",
+        "不承诺求职结果"
+      ],
+      "riskReason": "P1-A 不预测求职结果，也不承诺录用、上岸或就业。",
+      "suggestedRewrite": "改为：结果仅作为求职准备参考，帮助用户整理试航材料和边界表达。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-company-screening",
+      "category": "company_or_candidate_screening",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "筛选候选人",
+        "企业筛选",
+        "推荐企业",
+        "精准内推",
+        "候选人排序",
+        "企业匹配"
+      ],
+      "allowedContexts": [
+        "不做企业筛选",
+        "不推荐企业",
+        "不提供精准内推",
+        "不对候选人排序"
+      ],
+      "riskReason": "P1-A 不做企业端筛选、企业推荐、内推或候选人排序。",
+      "suggestedRewrite": "改为：本试航仅围绕固定样例 JD 和固定公开项目整理用户准备材料。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-resume-packaging",
+      "category": "resume_packaging",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "简历包装",
+        "包装成",
+        "简历优化",
+        "自动投递",
+        "改写成项目经历",
+        "美化经历"
+      ],
+      "allowedContexts": [
+        "不是简历包装",
+        "不做简历优化",
+        "不可包装成项目经历",
+        "不自动投递",
+        "不美化经历"
+      ],
+      "riskReason": "P1-A 只能产出试航记录和作品集草稿，不能包装简历或虚构项目经历。",
+      "suggestedRewrite": "改为：本材料用于说明试航过程、个人输入和公开参考边界，不替代简历真实性核验。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-real-rag-runtime",
+      "category": "real_rag_or_runtime_claim",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "真实 RAG 检索",
+        "实时仓库抓取",
+        "自动分析仓库",
+        "已接入 OpenDocuments",
+        "运行了 OpenDocuments",
+        "基于实时检索结果"
+      ],
+      "allowedContexts": [
+        "不做真实 RAG",
+        "不做实时仓库抓取",
+        "未接入 OpenDocuments 运行时",
+        "仅参考公开项目信息",
+        "不是实时检索结果"
+      ],
+      "riskReason": "DATA-002 只提供 fixture，P1-A 第一轮不做真实 RAG、抓取或运行时代码。",
+      "suggestedRewrite": "改为：本试航基于 OpenDocuments 公开信息和固定试航包做产品拆解。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-multi-project-recommendation",
+      "category": "multi_project_recommendation",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "多开源项目智能推荐",
+        "推荐更多开源项目",
+        "项目排行榜",
+        "最佳项目匹配",
+        "黑箱推荐"
+      ],
+      "allowedContexts": [
+        "不做多开源项目推荐",
+        "不提供项目排行榜",
+        "只使用固定公开参考项目",
+        "不是黑箱推荐"
+      ],
+      "riskReason": "P1-A 只有固定 OpenDocuments reference_only 项目，不做多项目推荐或排序。",
+      "suggestedRewrite": "改为：当前固定试航包只引用 OpenDocuments 一个公开参考项目。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-scoring-ranking",
+      "category": "scoring_or_ranking",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "匹配分",
+        "胜任分",
+        "综合分",
+        "评分",
+        "排行榜",
+        "排名"
+      ],
+      "allowedContexts": [
+        "不做评分",
+        "不输出匹配分",
+        "不输出胜任分",
+        "不提供排行榜",
+        "不做排名"
+      ],
+      "riskReason": "P1-A 不输出复杂评分、匹配分、胜任分或排行榜。",
+      "suggestedRewrite": "改为：使用状态和证据链说明是否可继续导出，不使用分数表达。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-opendocuments-attribution",
+      "category": "open_source_attribution",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "我开发了 OpenDocuments",
+        "参与 OpenDocuments 官方贡献",
+        "OpenDocuments 是我的项目",
+        "我维护 OpenDocuments",
+        "我复现了完整 OpenDocuments"
+      ],
+      "allowedContexts": [
+        "不声明参与 OpenDocuments 官方贡献",
+        "不把 OpenDocuments 说成自己的项目",
+        "不声明复现完整 OpenDocuments",
+        "OpenDocuments 仅作为公开参考项目"
+      ],
+      "riskReason": "必须区分公开项目原能力和用户本次试航产出，避免开源项目归属误导。",
+      "suggestedRewrite": "改为：我基于 OpenDocuments 公开信息做了场景拆解、MVP 范围和风险边界整理。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1a-ai-professional-review",
+      "category": "professional_review_substitution",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "AI 替代合同复核",
+        "AI 替代规范复核",
+        "AI 替代施工方案复核",
+        "自动审核合同",
+        "自动审核施工方案"
+      ],
+      "allowedContexts": [
+        "AI 不替代合同复核",
+        "AI 不替代规范复核",
+        "AI 不替代施工方案复核",
+        "需要人工复核",
+        "仅作辅助检索"
+      ],
+      "riskReason": "工程、合同、规范和施工方案等高风险内容必须保留人工和专业复核边界。",
+      "suggestedRewrite": "改为：AI 仅作资料检索和引用辅助，高风险结论需人工或专业人员复核。",
+      "blockingPolicy": "block_full_markdown_export"
+    }
+  ],
+  "contextPolicy": {
+    "positive_claim": "命中 forbidden 且语义为正向承诺、归属或能力声明时，应阻断完整 Markdown 导出。",
+    "negated_context": "命中 forbidden 但处于不做、不可声称、不代表、不是、不能等否定语境中，不应自动阻断，应记录供 QA 复核。",
+    "allowed_context": "命中 allowedContexts 时不阻断，但可记录为边界说明命中。",
+    "mixed_context": "同一段既有否定说明又有正向承诺时，按 positive_claim 阻断。"
+  },
+  "requiredMarkdownSections": [
+    "candidate_background",
+    "path_conclusion",
+    "sample_jd_note",
+    "opendocuments_source_license",
+    "opendocuments_original_capabilities",
+    "user_trial_contribution",
+    "forbidden_claims",
+    "six_question_answers",
+    "disclaimer"
+  ]
+}
