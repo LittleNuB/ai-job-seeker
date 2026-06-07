@@ -233,3 +233,14 @@
 - 后端：`http://127.0.0.1:8010`
 
 服务 PID 会变化，启动或停止前应重新探测端口。不要假设旧 PID 仍有效。
+
+## P1-PRD-001 Status
+
+- 任务 ID：`P1-PRD-001`
+- 子对话名称：`产品规划A`
+- 状态：已完成 PRD 文档草案，等待本地验证与提交。
+- 预期交付：新增 `docs/pathfinder-p0/p1-productization-prd.md`；记录 P1 产品化目标、P1-A / P1-B / P2 边界、核心 schema、LLM 接入边界、历史 / 编辑 / 导出机制、反包装机制、前端 / 后端 / 数据 / QA 拆解。
+- 已触碰文件：`docs/pathfinder-p0/p1-productization-prd.md`、`docs/pathfinder-p0/main-agent-handoff.md`。
+- Forbidden scope：未触碰 `README.md`、`docs/DEVELOPMENT_LOG.md`、`services/resume_service.py`、`docs/AI_TRANSITION_COMPASS_PRD.md`、`docs/product/*`、`data/ai_job_copilot.db`。
+- Commit 信息：待本地验证通过后提交；建议 message 为 `docs: add pathfinder p1 productization prd`。
+- 后续建议：主 Agent 在收到 `DATA-001` 后执行 PM merge review，统一收口 P1-A / P1-B / P2 边界。
