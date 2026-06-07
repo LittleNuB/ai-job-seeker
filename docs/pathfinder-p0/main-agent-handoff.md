@@ -134,10 +134,7 @@
 
 待启动任务：
 
-- `DATA-002`：P1-A 最小数据 fixture。
-- `FE-002`：真实用户输入与固定试航包产品化。
-- `BE-002`：P1-A TrailRecord 保存兼容。
-- `QA-002`：P1-A 产品化回归计划。
+- 暂无。`DATA-002`、`FE-002`、`BE-002`、`QA-002` 已并行启动。
 
 ## 8. 子任务提示词必须包含的回传协议
 
@@ -201,7 +198,39 @@
 
 ## 12. 进行中任务
 
-暂无。`P1-PRD-001` 与 `DATA-001` 均已回传，主 Agent 已完成 PM merge review。
+当前并行任务采用独立 git worktree 隔离模式。子任务可以在各自分支本地 commit，但禁止 push / PR。完成后由主 Agent 做第二轮 PM merge review，再决定如何合并回 `codex/pathfinder-p1a-integration`。
+
+- `DATA-002`
+  - 子对话名称：`数据方案B`
+  - Thread ID：`019ea0e5-815d-70d3-9617-9be98b03c2e1`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-002`
+  - 分支：`codex/pathfinder-data-002`
+  - 任务摘要：固化 P1-A 最小数据 fixture，包括 TrialPackage、OpenDocuments、EvidenceMapping、AntiPackagingRule 和数据 fixture 说明。
+  - 预期交付：`data/pathfinder/**` 与 `docs/pathfinder-p0/p1-a-data-fixtures.md`
+
+- `FE-002`
+  - 子对话名称：`前端开发B`
+  - Thread ID：`019ea0e6-23df-7442-af0c-6b6e2ac54dae`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-fe-002`
+  - 分支：`codex/pathfinder-fe-002`
+  - 任务摘要：将前端从固定小 C Demo 改为真实用户输入的固定试航产品流，保留反包装、Markdown 和 fallback。
+  - 预期交付：Pathfinder 前端页面、状态、Markdown、安全测试和 E2E 更新。
+
+- `BE-002`
+  - 子对话名称：`后端开发A`
+  - Thread ID：`019ea0e6-bfe3-7751-bf98-e1740b7c89a5`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-be-002`
+  - 分支：`codex/pathfinder-be-002`
+  - 任务摘要：兼容真实用户 TrailRecord 保存，继续复用 `analysis_records`，不新增 migration。
+  - 预期交付：Pathfinder 后端 schema、API 和测试更新。
+
+- `QA-002`
+  - 子对话名称：`QA验证A`
+  - Thread ID：`019ea0e7-5cc4-7103-9f94-09878370a01e`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-qa-002`
+  - 分支：`codex/pathfinder-qa-002`
+  - 任务摘要：输出 P1-A 产品化第一轮 QA 回归计划和验收标准。
+  - 预期交付：`docs/pathfinder-p0/p1-a-productization-qa-plan.md`
 
 ## 12.1 产品负责人决策记录
 
@@ -215,13 +244,11 @@
 
 ## 13. 下一步主 Agent 工作
 
-1. 等待产品负责人确认 PM merge review 中的 5 个决策点。
-2. 确认后并行发布下一轮任务：
-   - `DATA-002`：P1-A 最小数据 fixture。
-   - `FE-002`：真实用户输入与固定试航包产品化。
-   - `BE-002`：P1-A TrailRecord 保存兼容。
-   - `QA-002`：P1-A 产品化回归计划。
-3. 下一轮仍需遵守：本地 commit 默认允许，禁止 push / PR；并行完成后由主 Agent 再做 PM merge review。
+1. 等待 `DATA-002`、`FE-002`、`BE-002`、`QA-002` 回传。
+2. 核对各 worktree commit、验证结果和 Scope Guard。
+3. 执行第二轮 PM merge review，重点处理数据 fixture 与前端实现、后端 schema 的字段一致性。
+4. 决定按何种顺序 merge/cherry-pick 回 `codex/pathfinder-p1a-integration`。
+5. 合并后运行完整验证，再决定是否 push 集成分支。
 
 ## 14. 当前服务参考
 
