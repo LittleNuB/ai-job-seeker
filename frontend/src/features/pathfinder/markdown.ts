@@ -138,8 +138,8 @@ function renderOpenSource(input: MarkdownInput): string {
 
 function renderOriginalCapabilities(input: MarkdownInput): string {
   return [
-    "## OpenDocuments 原项目能力",
-    "以下为公开项目信息中的原项目能力，只作为小 C 试航理解的参考来源，不作为小 C 的个人产出。",
+    "## OpenDocuments 公开能力",
+    "以下为公开项目信息中的能力说明，只作为小 C 试航理解的参考来源，不作为小 C 的个人产出。",
     ...input.openSourceProject.originalCapabilities.map(
       (capability) => `- ${capability}`,
     ),
@@ -148,8 +148,8 @@ function renderOriginalCapabilities(input: MarkdownInput): string {
 
 function renderCandidateContribution(input: MarkdownInput): string {
   return [
-    "## 小 C 试航贡献",
-    "小 C 的贡献限定为基于公开项目信息完成产品拆解、岗位连接和试点方案草稿。",
+    "## 小 C 试航产出",
+    "小 C 的产出限定为基于公开项目信息完成产品拆解、岗位连接和试点方案草稿。",
     ...input.portfolioDraft.outputs.map((output) => `- ${output}`),
   ].join("\n");
 }
@@ -173,7 +173,7 @@ function renderSixQuestions(
   answers: Record<TrialQuestionId, string>,
 ): string {
   return [
-    "## 固定 6 问作答",
+    "## 6 问作答",
     ...input.trialQuestions.flatMap((question, index) => [
       `### ${index + 1}. ${question.title}`,
       `问题：${question.prompt}`,
@@ -191,7 +191,7 @@ function renderResultModules(input: MarkdownInput): string {
     "- 试航对象：OpenDocuments",
     `- 推荐路径：${input.selectedPath.title}`,
     "- 试航主题：工程企业知识库 AI 助手",
-    "- 输入来源：小 C 背景 + 3 条样例 JD + OpenDocuments 原项目能力",
+    "- 输入来源：小 C 背景 + 3 条样例 JD + OpenDocuments 公开来源",
     "- 输出结果：作品集一页纸草稿 + 指标表 + 风险清单",
     "",
     "## 作品集一页纸草稿",
@@ -243,7 +243,7 @@ function renderDisclaimer(input: MarkdownInput): string {
     "## 免责声明",
     `- 追溯链：${traceChain}`,
     `- ${pageCopy.resultBoundary}`,
-    "- 本结果仅用于寻径星图 P0 Demo 和求职准备参考。",
+    "- 本结果仅用于求职路径试航和作品集准备参考。",
     `- ${input.sampleJdNotice}`,
     `- ${input.openSourceProject.boundaryNotice}`,
     "- 本航迹表不是能力认证，不是官方参与记录，也不用于预测录用结果。",

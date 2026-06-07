@@ -22,7 +22,7 @@ export const priorityPathId =
   "industry-ai-product-assistant" satisfies PathId;
 
 export const sampleJdNotice =
-  "样例 JD，用于 P0 Demo 和当前样本趋势参考，不代表具体公司岗位要求或录用判断。" satisfies SampleJdNotice;
+  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断。" satisfies SampleJdNotice;
 
 export const candidateProfile: CandidateProfile = {
   id: "xiaoc",
@@ -318,7 +318,7 @@ export const trialQuestions: TrialQuestion[] = [
 
 export const trialQuestionImpacts: Record<TrialQuestionId, string> = {
   project_understanding:
-    "影响 OpenDocuments 来源说明、原项目能力理解、项目归属边界。",
+    "影响 OpenDocuments 来源说明、公开能力理解、项目归属边界。",
   role_connection: "影响路径结论、JD 证据、小 C 背景证据。",
   scenario_gap: "影响风险清单、工程企业场景边界、不可声称内容。",
   application_solution: "影响 2 周 MVP、用户流程草图、指标表。",
@@ -472,10 +472,10 @@ export const markdownExportItems = [
   "路径结论",
   "样例 JD 说明",
   "OpenDocuments 来源与 License",
-  "OpenDocuments 原项目能力",
-  "小 C 试航贡献",
+  "OpenDocuments 公开能力",
+  "小 C 试航产出",
   "不可声称内容",
-  "固定 6 问作答",
+  "6 问作答",
   "免责声明",
 ];
 
@@ -483,7 +483,7 @@ export const forbiddenClaimsNotice =
   "不可声称：小 C 开发了 OpenDocuments、完成了企业级 RAG 系统、具备算法研发能力、获得岗位认证、提升录用概率，或 AI 可替代合同 / 规范 / 施工方案的人工复核。";
 
 export const traceChain =
-  "样例 JD + 小 C 背景 + OpenDocuments 原项目能力 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown";
+  "样例 JD + 小 C 背景 + OpenDocuments 公开来源 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown";
 
 export const interviewPrep: InterviewPrepItem[] = [
   {
@@ -510,11 +510,11 @@ export const interviewPrep: InterviewPrepItem[] = [
 
 export const pageCopy = {
   fixedDemoNotice:
-    "先查看固定 Demo 背景。本页只展示小 C 和 3 条样例 JD，不开放 JD 粘贴。",
+    "先查看小 C 的背景和 3 条样例 JD。当前版本聚焦固定样例，确保路径判断和结果材料可追溯。",
   entrySubtitle:
     "基于小 C 背景、样例 JD 和 OpenDocuments 公开参考项目，完成一次可追溯的 AI 求职路径试航。",
   entryScope:
-    "本 Demo 只包含 1 个用户、3 条路径、1 个开源项目、1 个试航任务和 1 种导出格式。",
+    "当前试航聚焦 1 位候选人、3 条路径、1 个开源项目、1 个试航任务和 1 种导出格式。",
   entryBoundaryNotice:
     "这不是简历包装工具，也不做能力认证、企业推荐或录用预测。它只帮助小 C 把路径判断、试航作答和边界说明整理成可追溯材料。",
   entryBoundary: [
@@ -526,15 +526,15 @@ export const pageCopy = {
   recommendationConclusion:
     "小 C 优先试航“行业 AI 应用产品助理”。这一路径能同时连接样例 JD 任务、小 C 工程背景和 OpenDocuments 的企业知识库问答场景。",
   trialBoundary:
-    "OpenDocuments 是公开参考项目。原项目能力包括多来源文档接入、AI 文档搜索、RAG 问答、引用来源展示，以及 Web UI / CLI / MCP 等公开能力。小 C 的贡献只包括：场景拆解、2 周 MVP 方案、指标、风险、演示材料和作品集表达草稿。不得写成 OpenDocuments 官方贡献或个人开发成果。",
+    "OpenDocuments 提供公开来源参照；小 C 需要完成的是把它放进工程企业知识库场景，形成试点方案、指标、风险和作品集表达。结果页会区分开源项目能力与个人试航产出，避免把公开项目写成个人开发成果。",
   missingQuestions:
     "还有试航问题未完成。缺项会使结果页缺少对应追溯链，暂不能导出完整 Markdown。",
   aiUsageBlocker:
     "请先补充“AI 使用说明”。这是反包装检查的必要项，未说明 AI 如何辅助和如何人工筛选时，不能导出完整 Markdown。",
   resultBoundary:
-    "本结果仅为 P0 Demo 的试航记录和求职准备样例，不构成能力认证、录用判断、职业承诺或开源项目贡献声明。",
+    "本结果是一次求职路径试航记录和作品集起点，不构成能力认证、录用判断、职业承诺或开源项目贡献声明。",
   markdownExportDescription:
-    "完整 Markdown 仅在固定 6 问全部完成后生成。导出内容包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、OpenDocuments 原项目能力、小 C 试航贡献、不可声称内容、固定 6 问作答和免责声明。",
+    "完整 Markdown 仅在 6 问全部完成后生成。导出内容包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、OpenDocuments 公开能力、小 C 试航产出、不可声称内容、6 问作答和免责声明。",
 };
 
 export function getRecommendationPath(pathId: PathId): RecommendationPath {

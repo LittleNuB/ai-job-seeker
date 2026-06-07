@@ -111,7 +111,7 @@ const unsafePositivePatterns: Array<{
   {
     ruleId: "xiaoc_developed_opendocuments_claim",
     pattern: /小 C.{0,8}开发.{0,8}OpenDocuments/,
-    riskReason: "把原项目能力写成小 C 开发成果。",
+    riskReason: "把公开项目能力写成小 C 开发成果。",
     suggestedRewrite: "改为“小 C 做场景拆解和试航方案”。",
   },
   {

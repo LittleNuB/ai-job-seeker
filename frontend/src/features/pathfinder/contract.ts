@@ -67,10 +67,10 @@ export const requiredMarkdownSectionLabels: Record<
   path_conclusion: "## 星图路径结论",
   sample_jd_note: "## 样例 JD 说明",
   opendocuments_source_license: "## OpenDocuments 来源与 License",
-  opendocuments_original_capabilities: "## OpenDocuments 原项目能力",
-  xiaoc_trial_contribution: "## 小 C 试航贡献",
+  opendocuments_original_capabilities: "## OpenDocuments 公开能力",
+  xiaoc_trial_contribution: "## 小 C 试航产出",
   forbidden_claims: "## 不可声称内容",
-  six_question_answers: "## 固定 6 问作答",
+  six_question_answers: "## 6 问作答",
   disclaimer: "## 免责声明",
 };
 
@@ -256,7 +256,7 @@ export function createAntiPackagingCheck(
       riskLevel: "blocking" as const,
       matchedText: requiredMarkdownSectionLabels[section as RequiredMarkdownSection],
       riskReason: "完整 Markdown 快照缺少必需章节。",
-      suggestedRewrite: "补齐 P1-A 契约要求的 Markdown 九项内容。",
+      suggestedRewrite: "补齐完整 Markdown 所需的九项内容。",
       blockingPolicy: "block_full_markdown_export" as const,
       context: "positive_claim" as const,
     }));

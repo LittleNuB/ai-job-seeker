@@ -187,17 +187,17 @@ async function mockPathfinderRecordGet(
   );
 }
 
-test("guards recommendation when fixed demo is not loaded", async ({ page }) => {
+test("guards recommendation when trial materials are not loaded", async ({ page }) => {
   await page.goto("/pathfinder/recommendation");
 
   await expect(page.getByRole("heading", { name: "需要先加载小 C 背景和样例 JD" })).toBeVisible();
-  await expect(page.getByText("未加载 Demo 时不展示岗位路径判断")).toBeVisible();
+  await expect(page.getByText("载入背景、样例 JD 和开源来源后")).toBeVisible();
 });
 
 test("runs static P0 pathfinder loop and exports markdown", async ({ page }) => {
   await page.goto("/pathfinder");
   await expect(page.getByRole("heading", { name: "寻径星图：小 C 的工程企业知识库 AI 助手试航" })).toBeVisible();
-  await expect(page.getByText("独立参赛 Demo / 产品原型")).toBeVisible();
+  await expect(page.getByText("实岗试航 · 作品集起点")).toBeVisible();
   await expect(page.getByRole("link", { name: "寻径星图" })).toBeVisible();
   await expect(page.getByRole("link", { name: "AI Job Copilot" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "岗位雷达" })).toHaveCount(0);
@@ -207,7 +207,7 @@ test("runs static P0 pathfinder loop and exports markdown", async ({ page }) => 
   await expect(page.getByRole("link", { name: "隐私政策" })).toHaveCount(0);
   await expect(page.getByText("这不是简历包装工具，也不做能力认证、企业推荐或录用预测")).toBeVisible();
 
-  await page.getByRole("link", { name: "进入小 C Demo" }).click();
+  await page.getByRole("link", { name: "开始小 C 试航" }).click();
   await expect(page).toHaveURL(/\/pathfinder\/background$/);
   await expect(page.getByRole("heading", { name: "小 C 背景与 3 条样例 JD" })).toBeVisible();
   await expect(page.getByText("基础 Python / 数据处理", { exact: true })).toBeVisible();
@@ -230,22 +230,22 @@ test("runs static P0 pathfinder loop and exports markdown", async ({ page }) => 
   await page.getByRole("link", { name: "开始 OpenDocuments 试航" }).click();
   await expect(page).toHaveURL(/\/pathfinder\/trial$/);
   await expect(page.getByRole("heading", { name: "OpenDocuments 6 问试航" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "OpenDocuments 原项目能力" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "小 C 本次试航贡献 / 固定 6 问作答" })).toBeVisible();
-  await expect(page.getByText("p0-xiaoc-opendocuments@1.0.0")).toBeVisible();
-  await expect(page.getByText(/影响结果模块：.*OpenDocuments 来源说明/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "OpenDocuments 来源参照" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "小 C 试航工单" })).toBeVisible();
+  await expect(page.getByText("试航包 v1")).toBeVisible();
+  await expect(page.getByText(/生成档案模块：.*OpenDocuments 来源说明/)).toBeVisible();
   await expect(page.getByText("请先补充“AI 使用说明”。这是反包装检查的必要项").first()).toBeVisible();
   await expect(page.locator("textarea")).toHaveCount(6);
 
-  await page.getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" }).click();
+  await page.getByRole("button", { name: "填入小 C 示例作答，可继续编辑" }).click();
   await expect(page.locator("textarea").first()).toHaveValue(/OpenDocuments 主要解决企业资料分散/);
   await expect(page.getByText("完整可导出").first()).toBeVisible();
   await page.getByRole("link", { name: "进入结果页" }).click();
 
   await expect(page).toHaveURL(/\/pathfinder\/result$/);
-  await expect(page.locator("p").filter({ hasText: "样例 JD + 小 C 背景 + OpenDocuments 原项目能力 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "P1-A 反包装检查摘要" })).toBeVisible();
-  await expect(page.getByText("frontend / frontend.pathfinder.p1-a.v1")).toBeVisible();
+  await expect(page.locator("p").filter({ hasText: "样例 JD + 小 C 背景 + OpenDocuments 公开来源 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "反包装检查摘要" })).toBeVisible();
+  await expect(page.getByText("完整档案已就绪")).toBeVisible();
   for (const heading of [
     "1. 航迹表摘要",
     "2. 作品集一页纸草稿",
@@ -260,9 +260,9 @@ test("runs static P0 pathfinder loop and exports markdown", async ({ page }) => 
   }
 
   const markdownPreview = page.locator("textarea").last();
-  await expect(markdownPreview).toHaveValue(/## OpenDocuments 原项目能力/);
-  await expect(markdownPreview).toHaveValue(/## 固定 6 问作答/);
-  await expect(page.getByText("完整 Markdown 仅在固定 6 问全部完成后生成")).toBeVisible();
+  await expect(markdownPreview).toHaveValue(/## OpenDocuments 公开能力/);
+  await expect(markdownPreview).toHaveValue(/## 6 问作答/);
+  await expect(page.getByText("完整 Markdown 仅在 6 问全部完成后生成")).toBeVisible();
   await expect(page.getByText("不可声称：小 C 开发了 OpenDocuments").first()).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
@@ -283,7 +283,7 @@ test("does not generate full markdown when trial answers are incomplete", async 
 
 test("blocks full markdown export when AI usage explanation is missing", async ({ page }) => {
   await page.goto("/pathfinder/trial");
-  await page.getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" }).click();
+  await page.getByRole("button", { name: "填入小 C 示例作答，可继续编辑" }).click();
   await page.locator("textarea").nth(5).fill("");
 
   await expect(page.getByText("6 问缺项").first()).toBeVisible();
@@ -342,7 +342,7 @@ test("restores complete trial answers from session storage on direct result load
   await expect(page.getByText("6 问尚未完成")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "复制 Markdown" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "下载 Markdown" })).toBeEnabled();
-  await expect(page.locator("textarea").last()).toHaveValue(/## 固定 6 问作答/);
+  await expect(page.locator("textarea").last()).toHaveValue(/## 6 问作答/);
 });
 
 test("restores legacy P0 trial answers from session storage", async ({ page }) => {
@@ -366,9 +366,9 @@ test("restores legacy P0 trial answers from session storage", async ({ page }) =
 
   await page.goto("/pathfinder/result");
 
-  await expect(page.getByText("p0-xiaoc-opendocuments@1.0.0").first()).toBeVisible();
+  await expect(page.getByText("试航包 v1").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "复制 Markdown" })).toBeEnabled();
-  await expect(page.locator("textarea").last()).toHaveValue(/## 固定 6 问作答/);
+  await expect(page.locator("textarea").last()).toHaveValue(/## 6 问作答/);
 });
 
 test("shows backend sync local saving and failed states without blocking local draft", async ({ page }) => {
@@ -393,7 +393,7 @@ test("shows backend sync local saving and failed states without blocking local d
   await expect(page.getByText("本地草稿").first()).toBeVisible();
 
   await page
-    .getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" })
+    .getByRole("button", { name: "填入小 C 示例作答，可继续编辑" })
     .click();
 
   await expect(page.getByText("正在保存").first()).toBeVisible();
@@ -409,7 +409,7 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
   await mockPathfinderApi(page, apiRequests);
 
   await page.goto("/pathfinder/trial");
-  await page.getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" }).click();
+  await page.getByRole("button", { name: "填入小 C 示例作答，可继续编辑" }).click();
 
   await expect
     .poll(() =>
@@ -471,7 +471,7 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
           request.url.endsWith(`/${apiRecordId}/result`) &&
           snapshot?.templateSource === "frontend" &&
           snapshot.exportScope === "full" &&
-          Boolean(snapshot.content?.includes("## 固定 6 问作答"))
+          Boolean(snapshot.content?.includes("## 6 问作答"))
         );
       }),
     )
@@ -546,12 +546,12 @@ test("restores TrailRecord from backend when session storage contains recordId",
 
 test("blocks full markdown export when anti-packaging check finds risky answer", async ({ page }) => {
   await page.goto("/pathfinder/trial");
-  await page.getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" }).click();
+  await page.getByRole("button", { name: "填入小 C 示例作答，可继续编辑" }).click();
   await page.locator("textarea").nth(4).fill("我开发了 OpenDocuments，并完成了企业级 RAG 系统。");
   await expect(page.getByText("反包装检查命中阻断项")).toBeVisible();
   await page.getByRole("link", { name: "进入结果页" }).click();
 
-  await expect(page.getByRole("heading", { name: "P1-A 反包装检查摘要" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "反包装检查摘要" })).toBeVisible();
   await expect(page.getByText("反包装检查命中阻断项，可保存草稿快照，但不能导出完整 Markdown。")).toBeVisible();
   await expect(page.getByRole("button", { name: "复制 Markdown" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "下载 Markdown" })).toBeDisabled();
@@ -560,7 +560,7 @@ test("blocks full markdown export when anti-packaging check finds risky answer",
 test("keeps trial page within 390px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/pathfinder/trial");
-  await page.getByRole("button", { name: "填入演示用小 C 作答，可继续编辑" }).click();
+  await page.getByRole("button", { name: "填入小 C 示例作答，可继续编辑" }).click();
 
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(390);

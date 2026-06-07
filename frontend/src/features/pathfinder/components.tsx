@@ -43,7 +43,7 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
             </span>
             <div>
               <div className="text-sm font-semibold text-teal-200">
-                独立参赛 Demo / 产品原型
+                实岗试航 · 作品集起点
               </div>
               <div className="text-xl font-semibold tracking-normal text-white">
                 寻径星图

@@ -21,7 +21,7 @@ export type TrialQuestionId =
   | "ai_usage_explanation";
 
 export type SampleJdNotice =
-  "样例 JD，用于 P0 Demo 和当前样本趋势参考，不代表具体公司岗位要求或录用判断。";
+  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断。";
 
 export interface CandidateProfile {
   id: "xiaoc";

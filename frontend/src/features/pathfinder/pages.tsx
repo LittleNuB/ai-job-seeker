@@ -50,10 +50,7 @@ import {
   trialQuestionImpacts,
   trialQuestions,
 } from "./data";
-import {
-  p1aTrialPackage,
-  requiredMarkdownSectionLabels,
-} from "./contract";
+import { requiredMarkdownSectionLabels } from "./contract";
 import { generatePathfinderMarkdown, getMissingQuestionIds } from "./markdown";
 import { usePathfinder } from "./state";
 import type {
@@ -213,10 +210,10 @@ export function PathfinderEntryPage() {
             }}
           >
             <div className="inline-flex rounded-md border border-teal-300/50 px-3 py-1 text-sm font-semibold text-teal-100">
-              固定 Demo
+              试航起点
             </div>
             <h2 className="mt-5 text-2xl font-semibold text-white">
-              小 C Demo 起点
+              小 C 的试航起点
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               {pageCopy.entryScope}
@@ -237,8 +234,8 @@ export function PathfinderEntryPage() {
               )}
             </div>
             <p className="mt-6 text-sm leading-6 text-slate-300">
-              本次 Demo 只围绕 OpenDocuments 和工程企业知识库 AI 助手试航展开，
-              不扩展真实检索、多项目推荐或动态岗位生成。
+              当前版本聚焦 OpenDocuments 和工程企业知识库 AI 助手试航，
+              帮助体验者清楚看到路径判断、证据来源和输出边界。
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <ButtonLink
@@ -246,11 +243,11 @@ export function PathfinderEntryPage() {
                 onClick={loadDemo}
                 variant="primary"
               >
-                进入小 C Demo
+                开始小 C 试航
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </ButtonLink>
               <ButtonLink href="/pathfinder/background" variant="secondary">
-                查看固定样例
+                查看试航材料
               </ButtonLink>
             </div>
           </div>
@@ -262,10 +259,10 @@ export function PathfinderEntryPage() {
               <MapIcon className="mt-1 h-5 w-5 shrink-0 text-teal-700" aria-hidden="true" />
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">
-                  固定输入 / 输出
+                  可追溯输入 / 输出
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  输入到输出保持固定链路，便于演示和反包装复核。
+                  从背景、JD、开源来源到结果档案保持同一条链路，便于复核来源和边界。
                 </p>
               </div>
             </div>
@@ -303,11 +300,11 @@ export function PathfinderBackgroundPage() {
       <PageHeader
         title="小 C 背景与 3 条样例 JD"
         description={pageCopy.fixedDemoNotice}
-        eyebrow={state.demoLoaded ? "Demo 已加载" : "固定样例预览"}
+        eyebrow={state.demoLoaded ? "试航材料已载入" : "固定样例预览"}
       />
 
       <div className="mb-8 flex flex-wrap gap-3">
-        <ActionButton onClick={loadDemo}>一键加载 Demo</ActionButton>
+        <ActionButton onClick={loadDemo}>载入试航材料</ActionButton>
         <ButtonLink
           href="/pathfinder/recommendation"
           onClick={loadDemo}
@@ -412,10 +409,10 @@ export function PathfinderRecommendationPage() {
       <div>
         <PageHeader
           title="需要先加载小 C 背景和样例 JD"
-          description="推荐页依赖固定 Demo 数据。请回到背景页加载小 C 背景与 3 条样例 JD。"
+          description="请先载入小 C 的背景和 3 条样例 JD，再查看路径星图。"
         />
-        <Notice title="Demo 数据尚未加载" tone="amber">
-          未加载 Demo 时不展示岗位路径判断，避免把静态样例误读为开放推荐器。
+        <Notice title="试航材料尚未载入" tone="amber">
+          载入背景、样例 JD 和开源来源后，系统才会展示可追溯的路径判断。
         </Notice>
         <div className="mt-6">
           <ButtonLink href="/pathfinder/background">返回背景页</ButtonLink>
@@ -445,7 +442,7 @@ export function PathfinderRecommendationPage() {
                 路径星图工作台
               </div>
               <p className="mt-1 text-sm text-slate-400">
-                中心节点为小 C 当前背景；航线只表达本次固定 Demo 的试航判断。
+                从小 C 当前背景出发，沿三条岗位航线查看证据、风险和下一步试航。
               </p>
             </div>
             <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">
@@ -745,7 +742,7 @@ export function PathfinderTrialPage() {
     <div>
       <PageHeader
         title="OpenDocuments 6 问试航"
-        description="左侧是 OpenDocuments 原项目能力，右侧是小 C 本次试航贡献 / 固定 6 问作答。"
+        description="先确认公开来源和使用边界，再完成 6 个问题，把工程企业知识库 AI 助手试航整理成可追溯的作品集起点。"
         eyebrow={`当前路径：${selectedPath.title} / ${selectedPath.statusLabel} / ${labelForRecordStatus(state.trailRecord.status)}`}
       />
 
@@ -754,7 +751,7 @@ export function PathfinderTrialPage() {
           <div className="flex items-start gap-3">
             <CircleAlert className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
             <div>
-              <div className="font-semibold">左侧是来源，右侧是作答</div>
+              <div className="font-semibold">先标清来源，再记录自己的试航产出</div>
               <div className="mt-1">{pageCopy.trialBoundary}</div>
             </div>
           </div>
@@ -763,7 +760,7 @@ export function PathfinderTrialPage() {
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.4fr]">
         <div className="space-y-6">
-          <Section title="OpenDocuments 原项目能力">
+          <Section title="OpenDocuments 来源参照">
             <div
               className="rounded-lg border border-sky-200 bg-sky-50 p-5 shadow-sm"
               style={{
@@ -779,10 +776,10 @@ export function PathfinderTrialPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-slate-950">
-                      OpenDocuments 是公开参考项目
+                      公开项目能力，仅作为试航参照
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-700">
-                      原项目能力包括多来源文档接入、AI 文档搜索、RAG 问答、引用来源展示，以及 Web UI / CLI / MCP 等公开能力。
+                      可用于理解企业知识库问答中的文档接入、AI 搜索、RAG 问答、引用来源和工具界面，不代表小 C 参与该项目开发。
                     </p>
                   </div>
                 </div>
@@ -815,12 +812,12 @@ export function PathfinderTrialPage() {
             </div>
           </Section>
 
-          <Section title="小 C 本次试航贡献">
+          <Section title="本次可写入作品集的内容">
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <PenLine className="mt-1 h-5 w-5 shrink-0 text-teal-700" aria-hidden="true" />
                 <p className="text-sm leading-6 text-slate-700">
-                  小 C 的贡献只包括：场景拆解、2 周 MVP 方案、指标、风险、演示材料和作品集表达草稿。不得写成 OpenDocuments 官方贡献或个人开发成果。
+                  小 C 可以表达的是场景理解、2 周试点方案、指标设计、风险识别和作品集表达草稿；不能写成 OpenDocuments 官方贡献或个人开发成果。
                 </p>
               </div>
             </div>
@@ -838,7 +835,7 @@ export function PathfinderTrialPage() {
                   tone={toneForRecordStatus(state.trailRecord.status)}
                 />
                 <StatusPill
-                  label={`${p1aTrialPackage.id}@${p1aTrialPackage.version}`}
+                  label="试航包 v1"
                   tone="slate"
                 />
                 <StatusPill
@@ -878,7 +875,7 @@ export function PathfinderTrialPage() {
               ) : null}
               <div className="mt-4 flex flex-wrap gap-3">
                 <ActionButton onClick={fillDemoAnswers} variant="secondary">
-                  填入演示用小 C 作答，可继续编辑
+                  填入小 C 示例作答，可继续编辑
                 </ActionButton>
                 {canOpenResult ? (
                   <ButtonLink href="/pathfinder/result">进入结果页</ButtonLink>
@@ -895,7 +892,7 @@ export function PathfinderTrialPage() {
           </Section>
         </div>
 
-        <Section title="小 C 本次试航贡献 / 固定 6 问作答">
+        <Section title="小 C 试航工单">
           <div
             className="rounded-lg border border-slate-300 bg-white p-4 shadow-sm sm:p-5"
             style={{
@@ -912,7 +909,7 @@ export function PathfinderTrialPage() {
                     试航工单
                   </div>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    固定 6 问可编辑，影响结果模块保持可追溯。
+                    6 个问题会生成航迹档案中的对应模块，请用自己能解释清楚的表达填写。
                   </p>
                 </div>
               </div>
@@ -958,7 +955,7 @@ export function PathfinderTrialPage() {
                     {question.prompt}
                   </p>
                   <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
-                    影响结果模块：{trialQuestionImpacts[question.id]}
+                    生成档案模块：{trialQuestionImpacts[question.id]}
                   </p>
                   <textarea
                     id={question.id}
@@ -974,7 +971,7 @@ export function PathfinderTrialPage() {
                     <p className="mt-2 text-xs text-amber-700">
                       {question.id === "ai_usage_explanation"
                         ? pageCopy.aiUsageBlocker
-                        : "这一问会影响结果页对应模块。"}
+                        : "这一问会生成结果页中的对应档案内容。"}
                     </p>
                   ) : null}
                 </div>
@@ -1069,7 +1066,7 @@ export function PathfinderResultPage() {
               tone={toneForRecordStatus(state.trailRecord.status)}
             />
             <StatusPill
-              label={`${p1aTrialPackage.id}@${p1aTrialPackage.version}`}
+              label="试航包 v1"
               tone="slate"
             />
             <StatusPill
@@ -1089,13 +1086,13 @@ export function PathfinderResultPage() {
             <TraceNode
               icon={<FileText className="h-5 w-5" aria-hidden="true" />}
               title="输入"
-              body="样例 JD、小 C 背景、OpenDocuments 原项目能力"
+              body="样例 JD、小 C 背景、OpenDocuments 公开来源"
             />
             <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
             <TraceNode
               icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
               title="过程"
-              body="固定 6 问试航作答"
+              body="6 问试航作答与边界说明"
             />
             <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
             <TraceNode
@@ -1138,7 +1135,7 @@ export function PathfinderResultPage() {
         </div>
       </div>
 
-      <Section title="P1-A 反包装检查摘要">
+      <Section title="反包装检查摘要">
         <Panel tone={antiPackagingCheck.exportAllowed ? "teal" : "rose"}>
           <div className="grid gap-3 md:grid-cols-3">
             <InfoBlock
@@ -1159,8 +1156,8 @@ export function PathfinderResultPage() {
               ]}
             />
             <InfoBlock
-              title="模板源"
-              items={[`frontend / ${markdownResult.ok ? markdownResult.snapshot.templateVersion : "等待完整快照"}`]}
+              title="导出状态"
+              items={[markdownResult.ok ? "完整档案已就绪" : "等待补齐后生成完整档案"]}
             />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -1207,7 +1204,7 @@ export function PathfinderResultPage() {
             缺少：{missing.map(labelForMissing).join("、")}。
             <div className="mt-3">
               <ActionButton onClick={fillDemoAnswers} variant="secondary">
-                填入演示用小 C 作答，可继续编辑
+                填入小 C 示例作答，可继续编辑
               </ActionButton>
             </div>
           </Notice>
@@ -1224,7 +1221,7 @@ export function PathfinderResultPage() {
               ["试航主题", "工程企业知识库 AI 助手"],
               [
                 "输入来源",
-                "小 C 背景 + 3 条样例 JD + OpenDocuments 原项目能力",
+                "小 C 背景 + 3 条样例 JD + OpenDocuments 公开来源",
               ],
               ["输出结果", "作品集一页纸草稿 + 指标表 + 风险清单"],
             ]}

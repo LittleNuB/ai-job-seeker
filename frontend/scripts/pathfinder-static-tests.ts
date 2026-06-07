@@ -121,10 +121,10 @@ if (complete.ok) {
     "## 星图路径结论",
     "## 样例 JD 说明",
     "## OpenDocuments 来源与 License",
-    "## OpenDocuments 原项目能力",
-    "## 小 C 试航贡献",
+    "## OpenDocuments 公开能力",
+    "## 小 C 试航产出",
     "## 不可声称内容",
-    "## 固定 6 问作答",
+    "## 6 问作答",
     "## 免责声明",
   ]) {
     assert.ok(
