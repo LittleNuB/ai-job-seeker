@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "TrialTaskTemplate",
+  "templateId": "opendocuments-solution-assistant",
+  "version": "p1b.v1",
+  "title": "OpenDocuments solution assistant trial: knowledge-base PoC brief",
+  "targetRolePathIds": [
+    "industry-ai-solution-assistant"
+  ],
+  "sourceProjectIds": [
+    "opendocuments"
+  ],
+  "status": "approved",
+  "taskScope": "Use OpenDocuments as a public reference to draft a controlled solution-assistant PoC brief for a document Q&A or knowledge-base assistant scenario. The output is a trial artifact, not a production delivery claim.",
+  "assumedUserInputs": [
+    "background",
+    "target_path",
+    "domain_context",
+    "available_time",
+    "tool_familiarity"
+  ],
+  "fixedQuestions": [
+    {
+      "questionId": "project_understanding",
+      "title": "Reference project understanding",
+      "prompt": "Summarize the public reference capabilities of OpenDocuments that matter for a customer-facing knowledge-base assistant scenario.",
+      "required": true,
+      "expectedOutputType": "project_understanding"
+    },
+    {
+      "questionId": "role_connection",
+      "title": "Solution-role connection",
+      "prompt": "Explain which solution-assistant tasks this reference can help you practice, such as scenario discovery, PoC scoping, demo scripting, and handoff documentation.",
+      "required": true,
+      "expectedOutputType": "role_connection"
+    },
+    {
+      "questionId": "scenario_gap",
+      "title": "Customer scenario gap",
+      "prompt": "List the customer information, source access rules, stakeholder review steps, and unresolved risks that would be needed before a real PoC.",
+      "required": true,
+      "expectedOutputType": "scenario_gap"
+    },
+    {
+      "questionId": "poc_plan",
+      "title": "PoC brief",
+      "prompt": "Draft a PoC brief covering customer context, document scope, demo flow, success indicators, handoff checklist, and review boundaries.",
+      "required": true,
+      "expectedOutputType": "mvp_plan"
+    },
+    {
+      "questionId": "ops_plan",
+      "title": "Handoff and feedback plan",
+      "prompt": "Write a lightweight handoff and feedback plan for implementation, support, user training, and issue triage without claiming production delivery.",
+      "required": true,
+      "expectedOutputType": "ops_plan"
+    },
+    {
+      "questionId": "portfolio_boundary",
+      "title": "Portfolio boundary",
+      "prompt": "Write a portfolio-safe summary that separates public reference capabilities, your scenario analysis, and the limits of the PoC brief.",
+      "required": true,
+      "expectedOutputType": "portfolio_boundary"
+    }
+  ],
+  "outputAssets": [
+    "customer scenario assumption note",
+    "PoC scope brief",
+    "demo script outline",
+    "handoff checklist",
+    "feedback and issue triage flow",
+    "boundary and disclaimer note",
+    "Markdown export snapshot"
+  ],
+  "requiredMarkdownSections": [
+    "candidate_background",
+    "path_conclusion",
+    "sample_jd_note",
+    "opendocuments_source_license",
+    "opendocuments_original_capabilities",
+    "user_trial_contribution",
+    "forbidden_claims",
+    "six_question_answers",
+    "disclaimer"
+  ],
+  "forbiddenClaims": [
+    "Do not state or imply that the user delivered an enterprise implementation.",
+    "Do not state or imply customer delivery results, timeline reductions, cost savings, sales conversion, or production readiness.",
+    "Do not state or imply official OpenDocuments contribution.",
+    "Do not state or imply a complete system replication.",
+    "Do not state or imply capability certification, employment outcome prediction, company screening, resume packaging, real repository RAG, live repository search, multi-project intelligent recommendation, or score-based ranking.",
+    "Do not state or imply that AI replaces contract, specification, construction, security, compliance, or domain review."
+  ],
+  "disclaimer": "This template is for Pathfinder P1-B.1 trial preparation. OpenDocuments is used only as a public reference project. Outputs are scenario analysis and PoC-planning artifacts, not customer delivery proof, employment judgments, official project contribution, live repository analysis, or professional review.",
+  "evidenceMappingSetId": "p1a-opendocuments-engineering-kb",
+  "sourceRuleIds": [
+    "rule-solution-poc-reference"
+  ],
+  "sampleJdDisclaimer": "Sample JD signals are trend references only and do not represent any specific company requirement or employment decision."
+}

@@ -1,0 +1,438 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "ProjectMatchRuleSet",
+  "rulesVersion": "p1b-rules.v1",
+  "effectiveAt": "2026-06-09",
+  "status": "active",
+  "ruleBoundary": "Rules produce explainable eligibility states only. They do not produce public scores, percentages, rankings, employment predictions, company screening, resume packaging, live GitHub search, or real RAG.",
+  "tagTaxonomy": {
+    "projectTags": [
+      "document_qa",
+      "knowledge_base",
+      "customer_support_assistant",
+      "workflow_automation",
+      "data_annotation",
+      "model_evaluation",
+      "dashboard_analytics",
+      "prompt_ops",
+      "internal_tooling",
+      "implementation_playbook"
+    ],
+    "capabilityTags": [
+      "requirement_breakdown",
+      "scenario_mapping",
+      "mvp_scope_design",
+      "qa_pair_design",
+      "retrieval_boundary_design",
+      "citation_and_source_display",
+      "evaluation_metric_design",
+      "error_analysis",
+      "feedback_loop_design",
+      "user_training_material",
+      "handoff_checklist",
+      "risk_boundary_documentation"
+    ],
+    "riskTags": [
+      "license_pending",
+      "readme_pending",
+      "attribution_risk",
+      "full_system_replication_risk",
+      "professional_review_substitution_risk",
+      "real_runtime_claim_risk",
+      "multi_project_recommendation_risk",
+      "scoring_or_ranking_risk",
+      "resume_packaging_risk",
+      "sample_overgeneralization_risk",
+      "sensitive_data_risk"
+    ]
+  },
+  "approvedProjectIds": [
+    "opendocuments"
+  ],
+  "projectMatchRules": [
+    {
+      "ruleId": "rule-product-doc-qa-reference",
+      "version": "p1b-rules.v1",
+      "targetRolePathId": "industry-ai-product-assistant",
+      "projectEligibility": {
+        "projectStatus": "approved_for_trial_package",
+        "licenseVerificationStatus": "verified",
+        "referenceRole": "reference_only",
+        "requiredProjectTagsAny": [
+          "document_qa",
+          "knowledge_base"
+        ],
+        "requiredCapabilityTagsAny": [
+          "requirement_breakdown",
+          "mvp_scope_design",
+          "qa_pair_design",
+          "citation_and_source_display",
+          "risk_boundary_documentation"
+        ],
+        "blockedRiskTags": [
+          "license_pending",
+          "readme_pending",
+          "multi_project_recommendation_risk",
+          "scoring_or_ranking_risk",
+          "resume_packaging_risk"
+        ]
+      },
+      "userSignalRequirements": [
+        {
+          "signalType": "domain_experience",
+          "evidenceMode": "self_reported",
+          "required": true
+        },
+        {
+          "signalType": "document_or_content_experience",
+          "evidenceMode": "self_reported",
+          "required": false
+        },
+        {
+          "signalType": "tool_experience",
+          "evidenceMode": "self_reported",
+          "required": false
+        }
+      ],
+      "jdSignalRequirements": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "requirement breakdown",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "MVP scope, QA pairs, acceptance criteria",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "citation display and review boundary",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "trialTaskTemplateIds": [
+        "opendocuments-product-assistant"
+      ],
+      "explanationTemplate": "OpenDocuments can be used as a reviewed public reference for a product-assistant trial that asks the user to write scenario assumptions, MVP scope, QA examples, metrics, and boundary notes.",
+      "forbiddenInterpretations": [
+        "Do not interpret this as product manager qualification.",
+        "Do not interpret this as user contribution to OpenDocuments.",
+        "Do not expose any numeric ranking or score."
+      ]
+    },
+    {
+      "ruleId": "rule-solution-poc-reference",
+      "version": "p1b-rules.v1",
+      "targetRolePathId": "industry-ai-solution-assistant",
+      "projectEligibility": {
+        "projectStatus": "approved_for_trial_package",
+        "licenseVerificationStatus": "verified",
+        "referenceRole": "reference_only",
+        "requiredProjectTagsAny": [
+          "document_qa",
+          "knowledge_base",
+          "internal_tooling"
+        ],
+        "requiredCapabilityTagsAny": [
+          "scenario_mapping",
+          "retrieval_boundary_design",
+          "citation_and_source_display",
+          "handoff_checklist",
+          "risk_boundary_documentation"
+        ],
+        "blockedRiskTags": [
+          "license_pending",
+          "readme_pending",
+          "multi_project_recommendation_risk",
+          "scoring_or_ranking_risk",
+          "resume_packaging_risk"
+        ]
+      },
+      "userSignalRequirements": [
+        {
+          "signalType": "communication_experience",
+          "evidenceMode": "self_reported",
+          "required": true
+        },
+        {
+          "signalType": "implementation_or_ops_experience",
+          "evidenceMode": "self_reported",
+          "required": false
+        },
+        {
+          "signalType": "domain_experience",
+          "evidenceMode": "self_reported",
+          "required": false
+        }
+      ],
+      "jdSignalRequirements": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "customer scenario discovery",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "PoC scope, demo script, handoff checklist",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "delivery and professional review boundary",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "trialTaskTemplateIds": [
+        "opendocuments-solution-assistant"
+      ],
+      "explanationTemplate": "OpenDocuments can be used as a reviewed public reference for a solution-assistant trial that asks the user to write customer scenario assumptions, PoC scope, demo flow, handoff checklist, and delivery boundaries.",
+      "forbiddenInterpretations": [
+        "Do not promise customer delivery impact.",
+        "Do not turn the trial output into enterprise implementation proof.",
+        "Do not expose any numeric ranking or score."
+      ]
+    },
+    {
+      "ruleId": "rule-data-eval-candidate-type",
+      "version": "p1b-rules.v1",
+      "targetRolePathId": "ai-data-evaluation-assistant",
+      "projectEligibility": {
+        "projectStatus": "candidate",
+        "licenseVerificationStatus": "pending",
+        "referenceRole": "reference_only",
+        "requiredProjectTagsAny": [
+          "data_annotation",
+          "model_evaluation",
+          "dashboard_analytics",
+          "prompt_ops"
+        ],
+        "requiredCapabilityTagsAny": [
+          "evaluation_metric_design",
+          "error_analysis",
+          "risk_boundary_documentation"
+        ],
+        "blockedRiskTags": [
+          "license_pending",
+          "readme_pending"
+        ]
+      },
+      "userSignalRequirements": [
+        {
+          "signalType": "data_or_evaluation_experience",
+          "evidenceMode": "self_reported",
+          "required": true
+        }
+      ],
+      "jdSignalRequirements": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "annotation guideline and QA process",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "error analysis table and quality checklist",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "result": "needs_manual_review",
+      "trialTaskTemplateIds": [],
+      "explanationTemplate": "P1-B.1 keeps this as a path-level recommendation only until a manually checked project record is approved.",
+      "forbiddenInterpretations": [
+        "Do not generate a full trial package from a pending candidate type.",
+        "Do not state model-quality conclusions as professional evaluation."
+      ]
+    },
+    {
+      "ruleId": "rule-ops-implementation-candidate-type",
+      "version": "p1b-rules.v1",
+      "targetRolePathId": "ai-application-ops-implementation-assistant",
+      "projectEligibility": {
+        "projectStatus": "candidate",
+        "licenseVerificationStatus": "pending",
+        "referenceRole": "reference_only",
+        "requiredProjectTagsAny": [
+          "knowledge_base",
+          "workflow_automation",
+          "customer_support_assistant",
+          "implementation_playbook"
+        ],
+        "requiredCapabilityTagsAny": [
+          "feedback_loop_design",
+          "user_training_material",
+          "handoff_checklist",
+          "risk_boundary_documentation"
+        ],
+        "blockedRiskTags": [
+          "license_pending",
+          "readme_pending"
+        ]
+      },
+      "userSignalRequirements": [
+        {
+          "signalType": "implementation_or_ops_experience",
+          "evidenceMode": "self_reported",
+          "required": true
+        }
+      ],
+      "jdSignalRequirements": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "launch configuration and SOP maintenance",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "training material, feedback workflow, support checklist",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "result": "needs_manual_review",
+      "trialTaskTemplateIds": [],
+      "explanationTemplate": "P1-B.1 keeps this as a path-level recommendation only until a manually checked implementation or operations project record is approved.",
+      "forbiddenInterpretations": [
+        "Do not generate a full trial package from a pending candidate type.",
+        "Do not present the trial as enterprise production implementation."
+      ]
+    }
+  ],
+  "candidateProjectTypes": [
+    {
+      "candidateTypeId": "candidate-document-qa-kb",
+      "name": "Document Q&A / knowledge-base project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "industry-ai-product-assistant",
+        "industry-ai-solution-assistant",
+        "ai-application-ops-implementation-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    },
+    {
+      "candidateTypeId": "candidate-customer-support-assistant",
+      "name": "Customer support / ticket assistant project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "industry-ai-product-assistant",
+        "ai-application-ops-implementation-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    },
+    {
+      "candidateTypeId": "candidate-data-annotation-eval",
+      "name": "Data annotation / evaluation management project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "ai-data-evaluation-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    },
+    {
+      "candidateTypeId": "candidate-llm-eval-playground",
+      "name": "LLM evaluation / prompt evaluation project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "ai-data-evaluation-assistant",
+        "industry-ai-product-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    },
+    {
+      "candidateTypeId": "candidate-workflow-automation",
+      "name": "Workflow automation / low-code orchestration project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "industry-ai-solution-assistant",
+        "ai-application-ops-implementation-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    },
+    {
+      "candidateTypeId": "candidate-knowledge-ops-dashboard",
+      "name": "Knowledge operations / dashboard project type",
+      "status": "candidate",
+      "licenseVerificationStatus": "pending",
+      "targetRolePathIds": [
+        "ai-application-ops-implementation-assistant",
+        "ai-data-evaluation-assistant"
+      ],
+      "verificationRequiredBeforeApproval": [
+        "public repository URL",
+        "license file URL and SPDX ID",
+        "README summary",
+        "manual checker",
+        "manual check date",
+        "notClaimed",
+        "allowedContexts",
+        "reviewTriggers"
+      ],
+      "trialPackageGeneration": "disabled_until_approved"
+    }
+  ],
+  "excludedPaths": [
+    {
+      "pathId": "algorithm-llm-engineer",
+      "decision": "not_recommended_short_term",
+      "trialPackageGeneration": "disabled",
+      "reason": "Kept only as a risk path for users without strong programming, ML, model-training, or engineering evidence."
+    }
+  ]
+}

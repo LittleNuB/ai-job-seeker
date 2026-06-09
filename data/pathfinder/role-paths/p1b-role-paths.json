@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "RolePathTaxonomySet",
+  "taxonomyVersion": "p1b-role-paths.v1",
+  "effectiveAt": "2026-06-09",
+  "status": "active",
+  "dataBoundary": "P1-B.1 role paths are controlled trial directions, not employment judgments. They are used with rule hits, evidence links, and manual project records.",
+  "rolePaths": [
+    {
+      "pathId": "industry-ai-product-assistant",
+      "title": "Industry AI product assistant",
+      "decisionPolicy": {
+        "allowedDecisions": [
+          "priority_trial",
+          "explore",
+          "insufficient_information"
+        ],
+        "defaultDecision": "priority_trial"
+      },
+      "targetUserSignals": [
+        "domain materials or workflow familiarity",
+        "product requirement writing or user story experience",
+        "research, operations, or cross-functional coordination",
+        "AI tool usage for drafting, search, or structured analysis"
+      ],
+      "jdSignalReferences": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "requirement breakdown",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "MVP scope, user stories, QA pairs, acceptance criteria",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "citation display, failure cases, review boundary",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "matchedProjectTypes": [
+        "document_qa",
+        "knowledge_base",
+        "customer_support_assistant",
+        "internal_tooling"
+      ],
+      "trialTemplateTypes": [
+        "product_document_qa_mvp"
+      ],
+      "riskBoundaries": [
+        "Does not certify product manager readiness.",
+        "Does not convert public project capabilities into user-owned project experience.",
+        "Requires source, license, and boundary notes in exported material."
+      ],
+      "evidenceRequirements": [
+        "At least one user-authorized background signal.",
+        "At least one sample JD trend reference.",
+        "At least one manually checked open-source project record.",
+        "At least one anti-packaging boundary."
+      ]
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "title": "Industry AI solution assistant",
+      "decisionPolicy": {
+        "allowedDecisions": [
+          "priority_trial",
+          "explore",
+          "insufficient_information"
+        ],
+        "defaultDecision": "explore"
+      },
+      "targetUserSignals": [
+        "customer communication, consulting, sales support, or delivery coordination",
+        "scenario research and solution material drafting",
+        "PoC planning, demo script writing, or handoff checklist experience",
+        "ability to explain boundaries to business stakeholders"
+      ],
+      "jdSignalReferences": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "customer scenario discovery",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "PoC scope, demo script, handoff checklist",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "delivery boundary and professional review boundary",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "matchedProjectTypes": [
+        "document_qa",
+        "knowledge_base",
+        "workflow_automation",
+        "implementation_playbook"
+      ],
+      "trialTemplateTypes": [
+        "solution_poc_brief"
+      ],
+      "riskBoundaries": [
+        "Does not promise customer delivery results, timelines, cost savings, or sales outcomes.",
+        "Does not replace domain expert, contract, or implementation review.",
+        "Requires clear separation between public reference capability and user trial output."
+      ],
+      "evidenceRequirements": [
+        "At least one user-authorized communication or scenario signal.",
+        "At least one sample JD trend reference.",
+        "At least one manually checked open-source project record.",
+        "At least one anti-packaging boundary."
+      ]
+    },
+    {
+      "pathId": "ai-data-evaluation-assistant",
+      "title": "AI data evaluation assistant",
+      "decisionPolicy": {
+        "allowedDecisions": [
+          "priority_trial",
+          "explore",
+          "insufficient_information"
+        ],
+        "defaultDecision": "explore"
+      },
+      "targetUserSignals": [
+        "annotation, QA, content review, testing, spreadsheet, or data-cleaning work",
+        "ability to define label criteria, quality checks, and error categories",
+        "basic metric interpretation without replacing professional model evaluation"
+      ],
+      "jdSignalReferences": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "annotation guideline and QA process",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "evaluation set, error analysis table, quality checklist",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "no model quality conclusion without expert review",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "matchedProjectTypes": [
+        "data_annotation",
+        "model_evaluation",
+        "dashboard_analytics",
+        "prompt_ops"
+      ],
+      "trialTemplateTypes": [],
+      "riskBoundaries": [
+        "P1-B.1 has no approved project record for a full data evaluation trial package.",
+        "Does not state model quality conclusions as professional evaluation.",
+        "Candidate project types must remain pending until license and README checks are complete."
+      ],
+      "evidenceRequirements": [
+        "At least one user-authorized data or QA signal.",
+        "At least one sample JD trend reference.",
+        "A manually checked project record is required before full trial-package generation.",
+        "At least one anti-packaging boundary."
+      ]
+    },
+    {
+      "pathId": "ai-application-ops-implementation-assistant",
+      "title": "AI application operations and implementation assistant",
+      "decisionPolicy": {
+        "allowedDecisions": [
+          "priority_trial",
+          "explore",
+          "insufficient_information"
+        ],
+        "defaultDecision": "explore"
+      },
+      "targetUserSignals": [
+        "operations, implementation, customer support, training, SOP, or knowledge-base maintenance",
+        "ability to write launch checklists, feedback loops, and support materials",
+        "experience translating user feedback into maintainable process changes"
+      ],
+      "jdSignalReferences": [
+        {
+          "signalType": "task",
+          "normalizedLabel": "launch configuration and SOP maintenance",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "deliverable",
+          "normalizedLabel": "training material, feedback workflow, support checklist",
+          "sourceScope": "sample_trend_reference_only"
+        },
+        {
+          "signalType": "risk_boundary",
+          "normalizedLabel": "no production delivery or compliance substitute",
+          "sourceScope": "sample_trend_reference_only"
+        }
+      ],
+      "matchedProjectTypes": [
+        "knowledge_base",
+        "workflow_automation",
+        "customer_support_assistant",
+        "implementation_playbook"
+      ],
+      "trialTemplateTypes": [],
+      "riskBoundaries": [
+        "P1-B.1 has no separate approved implementation project record for a full trial package.",
+        "Does not state enterprise production implementation delivery.",
+        "Does not replace security, compliance, operations, or domain review."
+      ],
+      "evidenceRequirements": [
+        "At least one user-authorized operations or implementation signal.",
+        "At least one sample JD trend reference.",
+        "A manually checked project record is required before full trial-package generation.",
+        "At least one anti-packaging boundary."
+      ]
+    }
+  ],
+  "excludedPaths": [
+    {
+      "pathId": "algorithm-llm-engineer",
+      "title": "Algorithm and LLM engineer",
+      "decision": "not_recommended_short_term",
+      "reason": "P1-B.1 does not use this as a short-term main trial path for non-CS users unless the user supplies strong programming, machine-learning, model-training, and engineering evidence.",
+      "trialPackageGeneration": "disabled",
+      "riskBoundaries": [
+        "Do not turn OpenDocuments analysis into algorithm engineering experience.",
+        "Do not create a trial package for this path in DATA-004."
+      ]
+    }
+  ]
+}

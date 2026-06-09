@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "pathfinder-data-fixture.v1",
+  "recordType": "TrialTaskTemplate",
+  "templateId": "opendocuments-product-assistant",
+  "version": "p1b.v1",
+  "title": "OpenDocuments product assistant trial: document Q&A MVP",
+  "targetRolePathIds": [
+    "industry-ai-product-assistant"
+  ],
+  "sourceProjectIds": [
+    "opendocuments"
+  ],
+  "status": "approved",
+  "taskScope": "Use OpenDocuments as a public reference to design a two-week document Q&A MVP trial for an enterprise knowledge-base scenario. The output is a controlled trial artifact, not a claim of repository contribution or production delivery.",
+  "assumedUserInputs": [
+    "background",
+    "target_path",
+    "domain_context",
+    "available_time",
+    "tool_familiarity"
+  ],
+  "fixedQuestions": [
+    {
+      "questionId": "project_understanding",
+      "title": "Reference project understanding",
+      "prompt": "Describe what OpenDocuments appears to solve as a public reference project, including its inputs, outputs, citation or source-display behavior, and visible boundaries.",
+      "required": true,
+      "expectedOutputType": "project_understanding"
+    },
+    {
+      "questionId": "role_connection",
+      "title": "Product-role connection",
+      "prompt": "Explain which product-assistant tasks this reference can help you practice, such as requirement breakdown, user stories, QA-pair design, MVP scope, and acceptance criteria.",
+      "required": true,
+      "expectedOutputType": "role_connection"
+    },
+    {
+      "questionId": "scenario_gap",
+      "title": "Scenario gap",
+      "prompt": "For your chosen domain context, list the missing business materials, source policies, user groups, and review steps that would be needed before a real product trial.",
+      "required": true,
+      "expectedOutputType": "scenario_gap"
+    },
+    {
+      "questionId": "mvp_plan",
+      "title": "Two-week MVP plan",
+      "prompt": "Draft a two-week MVP plan covering target users, document scope, core Q&A flows, failure handling, metrics, and review boundaries.",
+      "required": true,
+      "expectedOutputType": "mvp_plan"
+    },
+    {
+      "questionId": "portfolio_boundary",
+      "title": "Portfolio boundary",
+      "prompt": "Write a portfolio-safe summary that separates public reference capabilities from your own trial output and makes source, license, and attribution boundaries visible.",
+      "required": true,
+      "expectedOutputType": "portfolio_boundary"
+    },
+    {
+      "questionId": "ai_usage_explanation",
+      "title": "AI usage explanation",
+      "prompt": "If you used AI assistance, explain which parts it helped draft or structure and which parts you checked, revised, or rejected.",
+      "required": true,
+      "expectedOutputType": "ai_usage_explanation"
+    }
+  ],
+  "outputAssets": [
+    "problem and user scenario note",
+    "MVP scope table",
+    "Q&A flow sketch",
+    "acceptance metric table",
+    "risk and review boundary list",
+    "portfolio-safe one-page draft",
+    "Markdown export snapshot"
+  ],
+  "requiredMarkdownSections": [
+    "candidate_background",
+    "path_conclusion",
+    "sample_jd_note",
+    "opendocuments_source_license",
+    "opendocuments_original_capabilities",
+    "user_trial_contribution",
+    "forbidden_claims",
+    "six_question_answers",
+    "disclaimer"
+  ],
+  "forbiddenClaims": [
+    "Do not state or imply that the user developed OpenDocuments.",
+    "Do not state or imply official OpenDocuments contribution.",
+    "Do not state or imply a complete system replication.",
+    "Do not state or imply enterprise production delivery.",
+    "Do not state or imply capability certification, employment outcome prediction, company screening, resume packaging, real repository RAG, live repository search, multi-project intelligent recommendation, or score-based ranking.",
+    "Do not state or imply that AI replaces contract, specification, construction, security, compliance, or domain review."
+  ],
+  "disclaimer": "This template is for Pathfinder P1-B.1 trial preparation. OpenDocuments is used only as a public reference project. Outputs are scenario analysis and product-planning artifacts, not employment judgments, official project contribution, production delivery, live repository analysis, or professional review.",
+  "evidenceMappingSetId": "p1a-opendocuments-engineering-kb",
+  "sourceRuleIds": [
+    "rule-product-doc-qa-reference"
+  ],
+  "sampleJdDisclaimer": "Sample JD signals are trend references only and do not represent any specific company requirement or employment decision."
+}

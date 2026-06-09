@@ -5,6 +5,9 @@
   "name": "OpenDocuments",
   "sourceUrl": "https://github.com/joungminsung/OpenDocuments",
   "host": "github",
+  "repositoryVisibility": "public",
+  "homepageUrl": "https://github.com/joungminsung/OpenDocuments",
+  "description": "Public reference project for self-hosted document Q&A, knowledge-base search, citation display, and assistant workflows. Pathfinder uses it only as a reviewed reference project for trial task design.",
   "license": "MIT",
   "licenseSpdxId": "MIT",
   "licenseFileUrl": "https://github.com/joungminsung/OpenDocuments/blob/main/LICENSE",
@@ -15,9 +18,44 @@
   "referenceRole": "reference_only",
   "status": "approved_for_trial_package",
   "lastManualCheckAt": "2026-06-07",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant"
+  ],
+  "projectTags": [
+    "document_qa",
+    "knowledge_base",
+    "customer_support_assistant",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "requirement_breakdown",
+    "scenario_mapping",
+    "mvp_scope_design",
+    "qa_pair_design",
+    "retrieval_boundary_design",
+    "citation_and_source_display",
+    "handoff_checklist",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "full_system_replication_risk",
+    "professional_review_substitution_risk",
+    "real_runtime_claim_risk",
+    "sample_overgeneralization_risk"
+  ],
   "sourceSnapshot": {
     "defaultBranch": "main",
+    "checkedBranch": "main",
     "repositoryVisibility": "public",
+    "readmeSummary": "Manual fixture summary: OpenDocuments is treated as a public reference for document search, knowledge-base assistant, citation display, connectors, API, CLI, and related workflow concepts.",
+    "licenseSummary": "Manual fixture summary: MIT license file was observed on 2026-06-07 and recorded as verified for P1-A/P1-B fixture use.",
     "manualCheckNotes": [
       "GitHub repository page showed the project as public on 2026-06-07.",
       "GitHub repository navigation showed an MIT license file on 2026-06-07.",
@@ -27,7 +65,10 @@
     "nonCanonicalMetadata": {
       "starsObservedOnGitHubPage": 74,
       "forksObservedOnGitHubPage": 13,
-      "commitsObservedOnGitHubPage": 173
+      "commitsObservedOnGitHubPage": 173,
+      "starsObserved": 74,
+      "forksObserved": 13,
+      "note": "background_only_not_used_for_scoring"
     }
   },
   "publicCapabilities": [
@@ -50,6 +91,23 @@
     "不声明本试航交付企业级生产系统。",
     "不声明 OpenDocuments 能替代合同、规范、施工方案等专业复核。",
     "不把 GitHub stars、forks、commit 数等元数据作为推荐评分、岗位胜任或录用判断。"
+  ],
+  "forbiddenClaims": [
+    "Do not state or imply that Pathfinder certifies user capability.",
+    "Do not state or imply that OpenDocuments improves employment outcomes.",
+    "Do not state or imply that Pathfinder screens companies or candidates.",
+    "Do not package the user's profile as official OpenDocuments contribution experience.",
+    "Do not state that P1-B.1 performs real RAG over this repository.",
+    "Do not state that P1-B.1 performs live repository search or automated repository analysis.",
+    "Do not use stars, forks, commits, score, rank, or popularity as a recommendation basis.",
+    "Do not state that AI replaces contract, specification, or delivery review."
+  ],
+  "allowedContexts": [
+    "Use as a public reference project for trial task design.",
+    "Use as a source for explaining document Q&A, knowledge-base assistant, citation display, connector, and workflow concepts.",
+    "Use as a manually checked project record for product assistant and solution assistant templates.",
+    "Use only with visible source, license, attribution, and boundary notes.",
+    "Use without runtime repository fetching or repository-level RAG in P1-B.1."
   ],
   "reviewTriggers": [
     "License 文件缺失或从 MIT 变更为其他 License。",
