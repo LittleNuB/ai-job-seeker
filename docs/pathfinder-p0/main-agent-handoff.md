@@ -370,3 +370,26 @@
 2. 若 `FE-003` 先返回且使用 fallback，应在 PM merge review 中标记 fallback 边界。
 3. `QA-003` 可先文档合并，执行型回归需等 DATA / BE / FE 合并后再跑。
 4. 合并前必须确认所有子任务都没有触碰 B 类 dirty files、没有 push、没有新增 migration。
+
+## PM-MERGE-004 Status
+
+- 任务状态：已完成。
+- 交付文件：`docs/pathfinder-p0/pm-merge-review-p1b-implementation.md`
+- 审查对象：`DATA-004`、`BE-003`、`FE-003`、`QA-003`
+- 主结论：P1-B.1 第一轮实施已完成主干合并，可作为产品负责人下一轮人工审查和执行型 QA 的基线。
+- 已合入主分支 commits：
+  - `3dcde45 docs: add pathfinder p1b qa plan`
+  - `95e8114 data: add pathfinder p1b fixture set`
+  - `5789e51 feat: add pathfinder p1b recommendation APIs`
+  - `d5bb867 feat: add pathfinder p1b recommendation flow`
+- 已完成能力：真实用户背景输入、规则优先路径推荐、人工审核项目匹配、OpenDocuments approved 试航包生成、P1-A 6 问 / 保存 / 导出 / 反包装保留。
+- 验证结果：
+  - `python -m pytest`：82 passed。
+  - `npm run test:safety`：通过。
+  - `npm run lint`：通过。
+  - `npm run build`：通过。
+  - `npm run test:e2e -- e2e/pathfinder.spec.ts`：7 passed。
+  - `.\scripts\check_all.ps1`：通过。
+  - 完整 E2E：17 passed / 11 failed；Pathfinder 专项全部通过，失败集中在既有 auth / fixture / protected route 环境。
+- Scope Guard：未新增 LLM 主链路、真实 GitHub 搜索、真实 RAG、认证、概率、企业筛选、履历包装、评分系统或 migration。
+- 当前建议：进入产品负责人 P1-B.1 人工审查和 QA 执行型回归；完整 E2E 的非 Pathfinder 失败单独治理，不混入 Pathfinder 功能提交。
