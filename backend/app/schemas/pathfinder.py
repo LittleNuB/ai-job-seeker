@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 PATHFINDER_TYPE = "pathfinder"
 SCHEMA_VERSION = "p1-a.v1"
+P1B_SCHEMA_VERSION = "p1b.v1"
 TRIAL_PACKAGE_ID = "p1a-opendocuments-engineering-kb"
 TRIAL_PACKAGE_VERSION = "1.0.0"
 LEGACY_TRIAL_PACKAGE_ID = "p0-xiaoc-opendocuments"
@@ -171,6 +172,175 @@ class UserProfileInput(BaseModel):
     availableTimeWindow: str | None = None
     createdAt: str | None = None
     updatedAt: str | None = None
+
+
+class PathfinderRuleVersion(P1ABaseModel):
+    version: str
+    effectiveAt: str
+    rolePathTaxonomyVersion: str
+    projectLibraryVersion: str
+    antiPackagingRuleVersion: str
+    notes: list[str] = Field(default_factory=list)
+
+
+class UserProfileSignal(P1ABaseModel):
+    signalId: str
+    category: Literal[
+        "industry_background",
+        "domain_material",
+        "communication",
+        "data_handling",
+        "ai_tool_usage",
+        "technical_foundation",
+        "career_constraint",
+        "risk",
+    ]
+    label: str
+    sourceField: str
+    evidenceText: str
+    confidence: Literal["rule_high", "rule_medium", "needs_user_clarification"]
+
+
+class RecommendationEvidence(P1ABaseModel):
+    evidenceId: str
+    type: Literal["jd_sample", "user_profile", "open_source_project", "risk", "next_trial"]
+    title: str
+    detail: str
+    sourceRef: str
+
+
+class RolePathRecommendation(P1ABaseModel):
+    pathId: str
+    title: str
+    decision: Literal["priority_trial", "explore", "not_recommended_short_term", "insufficient_information"]
+    rationale: str
+    evidence: list[RecommendationEvidence] = Field(default_factory=list)
+    riskNotes: list[str] = Field(default_factory=list)
+    suggestedProjectTypes: list[str] = Field(default_factory=list)
+    nextTrialAction: str
+
+
+class OpenSourceProjectRecord(P1ABaseModel):
+    projectId: str
+    name: str
+    sourceUrl: str
+    host: Literal["github", "gitlab", "other_public_source"]
+    description: str = ""
+    license: str
+    licenseSpdxId: str | None = None
+    licenseFileUrl: str | None = None
+    licenseVerificationStatus: Literal["verified", "pending", "failed", "not_applicable"]
+    lastManualCheckAt: str | None = None
+    referenceRole: Literal["reference_only"]
+    status: Literal["candidate", "approved_for_trial_package", "needs_review", "retired"]
+    rolePathIds: list[str] = Field(default_factory=list)
+    projectTags: list[str] = Field(default_factory=list)
+    capabilityTags: list[str] = Field(default_factory=list)
+    riskTags: list[str] = Field(default_factory=list)
+    publicCapabilities: list[str] = Field(default_factory=list)
+    notClaimed: list[str] = Field(default_factory=list)
+    forbiddenClaims: list[str] = Field(default_factory=list)
+    allowedContexts: list[str] = Field(default_factory=list)
+    needsReview: bool = False
+    generateEligible: bool = False
+
+
+class ProjectMatch(P1ABaseModel):
+    projectId: str
+    rolePathId: str
+    decision: Literal["matched_for_trial", "candidate_needs_review", "not_matched"]
+    matchedRules: list[str] = Field(default_factory=list)
+    evidence: list[RecommendationEvidence] = Field(default_factory=list)
+    boundaryNotes: list[str] = Field(default_factory=list)
+
+
+class TrialQuestionCandidate(P1ABaseModel):
+    questionId: str
+    title: str
+    prompt: str
+    required: bool = True
+
+
+class TrialPackageGeneratedFrom(P1ABaseModel):
+    recommendationRunId: str
+    selectedPathId: str
+    selectedProjectId: str
+    ruleVersion: str
+
+
+class TrialPackageCandidate(P1ABaseModel):
+    trialPackageId: str
+    trialPackageVersion: str
+    generatedFrom: TrialPackageGeneratedFrom
+    title: str
+    targetRolePath: RolePathRecommendation
+    sourceProject: OpenSourceProjectRecord
+    trialQuestions: list[TrialQuestionCandidate]
+    requiredMarkdownSections: list[str] = Field(default_factory=list)
+    forbiddenClaims: list[str] = Field(default_factory=list)
+    sampleJdDisclaimer: str
+
+
+class RecommendationRun(P1ABaseModel):
+    recommendationRunId: str
+    schemaVersion: Literal["p1b.v1"] = P1B_SCHEMA_VERSION
+    createdAt: str
+    ruleVersion: PathfinderRuleVersion
+    userProfileSnapshot: UserProfileInput
+    profileSignals: list[UserProfileSignal]
+    paths: list[RolePathRecommendation]
+    projectMatches: list[ProjectMatch]
+    selectedPathId: str | None = None
+    selectedProjectId: str | None = None
+
+
+class PathfinderRecommendationRequest(P1ABaseModel):
+    userProfile: UserProfileInput
+    preferredRolePathIds: list[str] = Field(default_factory=list)
+    constraints: list[dict[str, Any]] = Field(default_factory=list)
+    ruleVersion: str | None = None
+
+    @model_validator(mode="after")
+    def reject_forbidden_recommendation_fields(self) -> "PathfinderRecommendationRequest":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-B recommendation input", forbidden))
+        return self
+
+
+class PathfinderRecommendationResponse(P1ABaseModel):
+    schemaVersion: Literal["p1b.v1"] = P1B_SCHEMA_VERSION
+    recommendationRun: RecommendationRun
+    profileSignals: list[UserProfileSignal]
+    paths: list[RolePathRecommendation]
+    projectMatches: list[ProjectMatch]
+    scopeDisclaimer: str
+
+
+class PathfinderProjectsResponse(P1ABaseModel):
+    schemaVersion: Literal["p1b.v1"] = P1B_SCHEMA_VERSION
+    projects: list[OpenSourceProjectRecord]
+    dataBoundary: str
+
+
+class GenerateTrialPackageRequest(P1ABaseModel):
+    recommendationRunId: str
+    userProfileSnapshot: UserProfileInput
+    selectedPathId: str
+    selectedProjectId: str
+
+    @model_validator(mode="after")
+    def reject_forbidden_generation_fields(self) -> "GenerateTrialPackageRequest":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-B generation input", forbidden))
+        return self
+
+
+class GenerateTrialPackageResponse(P1ABaseModel):
+    schemaVersion: Literal["p1b.v1"] = P1B_SCHEMA_VERSION
+    trialPackageCandidate: TrialPackageCandidate
+    antiPackagingDefaults: AntiPackagingCheck
 
 
 class SourceProject(P1ABaseModel):

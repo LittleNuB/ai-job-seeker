@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -18,20 +18,27 @@ from app.models.analysis import AnalysisRecord
 from app.schemas.pathfinder import (
     PATHFINDER_TYPE,
     P1A_TRIAL_PACKAGE,
+    P1B_SCHEMA_VERSION,
     SCHEMA_VERSION,
     TRIAL_PACKAGE_ID,
     TRIAL_PACKAGE_VERSION,
     AntiPackagingCheck,
     AntiPackagingCheckStatus,
+    GenerateTrialPackageRequest,
+    GenerateTrialPackageResponse,
     MarkdownExportScope,
     MarkdownSnapshot,
     PathfinderCreateRequest,
     PathfinderCreateResponse,
+    PathfinderProjectsResponse,
     PathfinderRecordResponse,
     PathfinderRecordStatus,
+    PathfinderRecommendationRequest,
+    PathfinderRecommendationResponse,
     PathfinderResultRequest,
     PathfinderResultResponse,
     PathfinderTrialAnswersResponse,
+    RecommendationRun,
     TrailRecord,
     TrialAnswersRequest,
     all_required_markdown_sections_present,
@@ -42,6 +49,9 @@ from app.schemas.pathfinder import (
     normalize_trial_answers,
     pydantic_to_json,
 )
+from app.services.pathfinder_project_service import list_approved_projects
+from app.services.pathfinder_recommendation_service import SCOPE_DISCLAIMER, build_recommendation_run
+from app.services.pathfinder_trial_package_service import generate_trial_package_candidate
 
 router = APIRouter(prefix="/api/pathfinder", tags=["pathfinder"])
 
@@ -64,6 +74,135 @@ async def get_pathfinder_user_id(
 
 
 UserIdDep = Annotated[str, Depends(get_pathfinder_user_id)]
+
+
+@router.post("/recommendations", response_model=PathfinderRecommendationResponse)
+async def create_pathfinder_recommendations(
+    payload: PathfinderRecommendationRequest,
+    session: SessionDep,
+    user_id: UserIdDep,
+) -> PathfinderRecommendationResponse:
+    recommendation_run = build_recommendation_run(
+        payload.userProfile,
+        preferred_role_path_ids=payload.preferredRolePathIds,
+        rule_version_override=payload.ruleVersion,
+    )
+    record = AnalysisRecord(
+        id=recommendation_run.recommendationRunId,
+        user_id=user_id,
+        type=PATHFINDER_TYPE,
+        input_text=_dump_json(
+            {
+                "schemaVersion": P1B_SCHEMA_VERSION,
+                "recordKind": "recommendation_run",
+                "userProfileSnapshot": _jsonable(payload.userProfile),
+                "preferredRolePathIds": payload.preferredRolePathIds,
+                "constraints": payload.constraints,
+            }
+        ),
+        input_file_url=None,
+        result=_dump_json(
+            {
+                "schemaVersion": P1B_SCHEMA_VERSION,
+                "recordKind": "recommendation_run",
+                "recommendationRun": _jsonable(recommendation_run),
+                "scopeDisclaimer": SCOPE_DISCLAIMER,
+                "updatedAt": _now_iso(),
+            }
+        ),
+        match_score=None,
+    )
+    session.add(record)
+    await session.commit()
+
+    return PathfinderRecommendationResponse(
+        recommendationRun=recommendation_run,
+        profileSignals=recommendation_run.profileSignals,
+        paths=recommendation_run.paths,
+        projectMatches=recommendation_run.projectMatches,
+        scopeDisclaimer=SCOPE_DISCLAIMER,
+    )
+
+
+@router.get("/projects", response_model=PathfinderProjectsResponse)
+async def list_pathfinder_projects(
+    user_id: UserIdDep,
+    rolePathId: str | None = Query(default=None),
+    capabilityTag: str | None = Query(default=None),
+    statusFilter: str | None = Query(default=None, alias="status"),
+) -> PathfinderProjectsResponse:
+    _ = user_id
+    projects = list_approved_projects(
+        role_path_id=rolePathId,
+        capability_tag=capabilityTag,
+        status_filter=statusFilter,
+    )
+    return PathfinderProjectsResponse(
+        projects=projects,
+        dataBoundary=(
+            "Only manually reviewed approved_for_trial_package projects are returned to users. "
+            "Candidate, pending, and needs_review records are excluded from generation."
+        ),
+    )
+
+
+@router.post("/trial-packages/generate", response_model=GenerateTrialPackageResponse)
+async def generate_pathfinder_trial_package(
+    payload: GenerateTrialPackageRequest,
+    session: SessionDep,
+    user_id: UserIdDep,
+) -> GenerateTrialPackageResponse:
+    record = await _get_owned_recommendation_record(session, user_id, payload.recommendationRunId)
+    result_payload = _load_result(record)
+    raw_run = result_payload.get("recommendationRun")
+    if not isinstance(raw_run, dict):
+        raise HTTPException(status_code=404, detail="Recommendation run not found")
+    try:
+        recommendation_run = RecommendationRun.model_validate(raw_run)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="Invalid recommendation run snapshot") from exc
+
+    recommendation_run = recommendation_run.model_copy(
+        update={
+            "selectedPathId": payload.selectedPathId,
+            "selectedProjectId": payload.selectedProjectId,
+        }
+    )
+    try:
+        trial_package = generate_trial_package_candidate(
+            recommendation_run=recommendation_run,
+            selected_path_id=payload.selectedPathId,
+            selected_project_id=payload.selectedProjectId,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    anti_packaging = default_anti_packaging_check()
+    record.input_text = _dump_json(
+        {
+            **_load_input(record),
+            "selectedPathId": payload.selectedPathId,
+            "selectedProjectId": payload.selectedProjectId,
+            "trialPackageSnapshot": _jsonable(trial_package),
+        }
+    )
+    record.result = _dump_json(
+        {
+            "schemaVersion": P1B_SCHEMA_VERSION,
+            "recordKind": "trial_package_candidate",
+            "recommendationRun": _jsonable(recommendation_run),
+            "trialPackageCandidate": _jsonable(trial_package),
+            "antiPackagingDefaults": _jsonable(anti_packaging),
+            "scopeDisclaimer": SCOPE_DISCLAIMER,
+            "updatedAt": _now_iso(),
+        }
+    )
+    await session.commit()
+
+    return GenerateTrialPackageResponse(
+        trialPackageCandidate=trial_package,
+        antiPackagingDefaults=anti_packaging,
+    )
 
 
 @router.post(
@@ -240,6 +379,24 @@ async def _get_owned_pathfinder_record(
     record = result.scalar_one_or_none()
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pathfinder record not found")
+    return record
+
+
+async def _get_owned_recommendation_record(
+    session: AsyncSession,
+    user_id: str,
+    recommendation_run_id: str,
+) -> AnalysisRecord:
+    result = await session.execute(
+        select(AnalysisRecord).where(
+            AnalysisRecord.id == recommendation_run_id,
+            AnalysisRecord.user_id == user_id,
+            AnalysisRecord.type == PATHFINDER_TYPE,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recommendation run not found")
     return record
 
 
