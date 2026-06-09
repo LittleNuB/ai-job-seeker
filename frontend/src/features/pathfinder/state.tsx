@@ -13,37 +13,50 @@ import {
 import {
   createPathfinderRecord,
   deletePathfinderRecord,
+  generatePathfinderTrialPackage,
   getPathfinderRecord,
   isPathfinderApiEnabled,
+  requestPathfinderRecommendations,
   savePathfinderResult,
   updatePathfinderTrialAnswers,
 } from "./api";
 import {
   createInitialPathfinderState,
   createPathfinderStateFromTrailRecord,
-  ensurePriorityTrailRecordPath,
   legacyPathfinderStateStorageKey,
   normalizeStoredPathfinderState,
   pathfinderStateStorageKey,
   trialAnswerMapFromRecord,
   updateTrailRecordAnswer,
   updateTrailRecordProfile,
+  withP1BRecommendation,
+  withTrialPackageCandidate,
   withMarkdownSnapshot,
 } from "./contract";
 import type {
   AntiPackagingCheck,
   BackendSyncState,
+  GenerateTrialPackageResponse,
   MarkdownSnapshot,
+  PathfinderRecommendationResponse,
   PathfinderState,
+  PathId,
   TrailRecord,
   TrialQuestionId,
   UserProfileInput,
 } from "./types";
 
 type PathfinderAction =
-  | { type: "submit_profile" }
+  | {
+      type: "submit_profile";
+      recommendationResponse?: PathfinderRecommendationResponse;
+    }
   | { type: "update_profile"; profile: UserProfileInput }
   | { type: "answer_question"; questionId: TrialQuestionId; value: string }
+  | {
+      type: "attach_trial_package";
+      response: GenerateTrialPackageResponse;
+    }
   | {
       type: "save_markdown_snapshot";
       snapshot: MarkdownSnapshot;
@@ -62,6 +75,10 @@ interface PathfinderContextValue {
   trialAnswerMap: Partial<Record<TrialQuestionId, string>>;
   updateUserProfile: (profile: UserProfileInput) => void;
   submitUserProfile: () => void;
+  generateTrialPackage: (params: {
+    selectedPathId: PathId;
+    selectedProjectId: string;
+  }) => Promise<void>;
   ensurePriorityPath: () => void;
   answerQuestion: (questionId: TrialQuestionId, value: string) => void;
   saveMarkdownSnapshot: (
@@ -81,11 +98,7 @@ function reducer(
     case "hydrate":
       return action.state;
     case "submit_profile":
-      return {
-        ...state,
-        profileSubmitted: true,
-        trailRecord: ensurePriorityTrailRecordPath(state.trailRecord),
-      };
+      return withP1BRecommendation(state, action.recommendationResponse);
     case "update_profile":
       return {
         ...state,
@@ -103,6 +116,8 @@ function reducer(
           action.value,
         ),
       };
+    case "attach_trial_package":
+      return withTrialPackageCandidate(state, action.response);
     case "save_markdown_snapshot":
       return {
         ...state,
@@ -319,12 +334,39 @@ export function PathfinderProvider({
   }, []);
   const submitUserProfile = useCallback(() => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
-    dispatch({ type: "submit_profile" });
-  }, []);
+    const userProfileSnapshot = state.trailRecord.userProfileSnapshot;
+    void requestPathfinderRecommendations({
+      userProfile: userProfileSnapshot,
+    }).then((recommendationResponse) => {
+      dispatch({ type: "submit_profile", recommendationResponse });
+    });
+  }, [state.trailRecord.userProfileSnapshot]);
+  const generateTrialPackage = useCallback(
+    async (params: { selectedPathId: PathId; selectedProjectId: string }) => {
+      skipAutoSyncAfterRemoteHydrationRef.current = false;
+      const recommendationResponse =
+        state.recommendationResponse ??
+        (await requestPathfinderRecommendations({
+          userProfile: state.trailRecord.userProfileSnapshot,
+        }));
+      dispatch({ type: "submit_profile", recommendationResponse });
+      const response = await generatePathfinderTrialPackage({
+        recommendationResponse,
+        userProfile: state.trailRecord.userProfileSnapshot,
+        selectedPathId: params.selectedPathId,
+        selectedProjectId: params.selectedProjectId,
+      });
+      dispatch({ type: "attach_trial_package", response });
+    },
+    [state.recommendationResponse, state.trailRecord.userProfileSnapshot],
+  );
   const ensurePriorityPath = useCallback(() => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
-    dispatch({ type: "submit_profile" });
-  }, []);
+    dispatch({
+      type: "submit_profile",
+      recommendationResponse: state.recommendationResponse,
+    });
+  }, [state.recommendationResponse]);
   const answerQuestion = useCallback(
     (questionId: TrialQuestionId, value: string) => {
       skipAutoSyncAfterRemoteHydrationRef.current = false;
@@ -364,6 +406,7 @@ export function PathfinderProvider({
       trialAnswerMap,
       updateUserProfile,
       submitUserProfile,
+      generateTrialPackage,
       ensurePriorityPath,
       answerQuestion,
       saveMarkdownSnapshot,
@@ -375,6 +418,7 @@ export function PathfinderProvider({
       trialAnswerMap,
       updateUserProfile,
       submitUserProfile,
+      generateTrialPackage,
       ensurePriorityPath,
       answerQuestion,
       saveMarkdownSnapshot,

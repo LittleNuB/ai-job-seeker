@@ -5,11 +5,12 @@ export const legacyTrialPackageId = "p0-xiaoc-opendocuments" as const;
 export type DemoVersion = typeof currentTrialPackageId;
 export type LegacyDemoVersion = typeof legacyTrialPackageId;
 
-export type PathfinderSchemaVersion = "p1-a.v1";
+export type PathfinderSchemaVersion = "p1-a.v1" | "p1b.v1";
 
 export type PathId =
   | "industry-ai-product-assistant"
   | "industry-ai-solution-assistant"
+  | "ai-data-evaluation-assistant"
   | "algorithm-llm-engineer";
 
 export type PathVerdict =
@@ -26,7 +27,7 @@ export type TrialQuestionId =
   | "ai_usage_explanation";
 
 export type SampleJdNotice =
-  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断。";
+  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或求职结果判断。";
 
 export interface UserProfileInput {
   displayName: string;
@@ -38,6 +39,156 @@ export interface UserProfileInput {
   technicalBasics: string;
   currentConfusion: string;
   constraints: string;
+}
+
+export type PathfinderApiSource = "api" | "fallback_mock";
+
+export type RecommendationDecision =
+  | "priority_trial"
+  | "explore"
+  | "not_recommended_short_term"
+  | "insufficient_information";
+
+export interface UserProfileSignal {
+  signalId: string;
+  category:
+    | "industry_background"
+    | "domain_material"
+    | "communication"
+    | "data_handling"
+    | "ai_tool_usage"
+    | "technical_foundation"
+    | "career_constraint"
+    | "risk";
+  label: string;
+  sourceField: keyof UserProfileInput | string;
+  evidenceText: string;
+  confidence: "rule_high" | "rule_medium" | "needs_user_clarification";
+}
+
+export interface RecommendationEvidence {
+  evidenceId: string;
+  type:
+    | "jd_sample"
+    | "user_profile"
+    | "open_source_project"
+    | "risk"
+    | "next_trial";
+  title: string;
+  detail: string;
+  sourceRef: string;
+}
+
+export interface RolePathRecommendation {
+  pathId: PathId;
+  title: string;
+  decision: RecommendationDecision;
+  rationale: string;
+  evidence: RecommendationEvidence[];
+  riskNotes: string[];
+  suggestedProjectTypes: string[];
+  nextTrialAction: string;
+}
+
+export interface OpenSourceProjectRecord {
+  projectId: string;
+  name: string;
+  sourceUrl: string;
+  host: "github" | "gitlab" | "other_public_source";
+  description: string;
+  license: string;
+  licenseSpdxId?: string;
+  licenseFileUrl?: string;
+  licenseVerificationStatus: "verified" | "pending" | "failed";
+  lastManualCheckAt?: string;
+  referenceRole: "reference_only";
+  status: "candidate" | "approved_for_trial_package" | "needs_review" | "retired";
+  rolePathIds: PathId[];
+  projectTags: string[];
+  capabilityTags: string[];
+  riskTags: string[];
+  publicCapabilities: string[];
+  notClaimed: string[];
+  forbiddenClaims: string[];
+  allowedContexts: string[];
+}
+
+export interface ProjectMatch {
+  projectId: string;
+  rolePathId: PathId;
+  decision: "matched_for_trial" | "candidate_needs_review" | "not_matched";
+  matchedRules: string[];
+  evidence: RecommendationEvidence[];
+  boundaryNotes: string[];
+}
+
+export interface PathfinderRuleVersion {
+  version: string;
+  effectiveAt: string;
+  rolePathTaxonomyVersion: string;
+  projectLibraryVersion: string;
+  antiPackagingRuleVersion: string;
+  notes: string[];
+}
+
+export interface RecommendationRun {
+  recommendationRunId: string;
+  schemaVersion: "p1b.v1";
+  createdAt: string;
+  ruleVersion: PathfinderRuleVersion;
+  userProfileSnapshot: UserProfileInput;
+  profileSignals: UserProfileSignal[];
+  paths: RolePathRecommendation[];
+  projectMatches: ProjectMatch[];
+  selectedPathId?: PathId;
+  selectedProjectId?: string;
+}
+
+export interface TrialPackageCandidate {
+  trialPackageId: string;
+  trialPackageVersion: string;
+  generatedFrom: {
+    recommendationRunId: string;
+    selectedPathId: PathId;
+    selectedProjectId: string;
+    ruleVersion: string;
+  };
+  title: string;
+  targetRolePath: RolePathRecommendation;
+  sourceProject: OpenSourceProjectRecord;
+  trialQuestions: Array<{
+    questionId: TrialQuestionId;
+    title: string;
+    prompt: string;
+    required: boolean;
+  }>;
+  requiredMarkdownSections: string[];
+  forbiddenClaims: string[];
+  sampleJdDisclaimer: string;
+}
+
+export interface PathfinderRecommendationResponse {
+  schemaVersion: "p1b.v1";
+  recommendationRun: RecommendationRun;
+  profileSignals: UserProfileSignal[];
+  paths: RolePathRecommendation[];
+  projectMatches: ProjectMatch[];
+  scopeDisclaimer: string;
+  source: PathfinderApiSource;
+}
+
+export interface PathfinderProjectsResponse {
+  schemaVersion: "p1b.v1";
+  projects: OpenSourceProjectRecord[];
+  dataBoundary: string;
+  source: PathfinderApiSource;
+}
+
+export interface GenerateTrialPackageResponse {
+  schemaVersion: "p1b.v1";
+  trialPackageCandidate: TrialPackageCandidate;
+  antiPackagingDefaults: AntiPackagingCheck;
+  source: PathfinderApiSource;
 }
 
 export interface SampleJd {
@@ -272,6 +423,9 @@ export interface TrailRecord {
   status: PathfinderRecordStatus;
   userProfileSnapshot: UserProfileInput;
   selectedPathId: string;
+  recommendationRunId?: string;
+  selectedProjectId?: string;
+  trialPackageCandidate?: TrialPackageCandidate;
   trialAnswers: TrialAnswer[];
   antiPackagingCheck: AntiPackagingCheck;
   portfolioDraft?: PortfolioDraft;
@@ -296,6 +450,8 @@ export interface BackendSyncState {
 
 export interface PathfinderState {
   profileSubmitted: boolean;
+  recommendationResponse?: PathfinderRecommendationResponse;
+  trialPackageResponse?: GenerateTrialPackageResponse;
   trailRecord: TrailRecord;
   backendSync: BackendSyncState;
 }

@@ -10,7 +10,6 @@ import {
   FileText,
   GitBranch,
   Map as MapIcon,
-  Navigation,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -33,9 +32,12 @@ import {
   displayNameForProfile,
   flowSketchSteps,
   forbiddenClaimsNotice,
+  getApprovedProjectMatches,
+  getP1BRolePath,
   getRecommendationPath,
   isUserProfileReady,
   markdownExportItems,
+  openDocumentsProjectRecord,
   metricRows,
   openSourceProject,
   pageCopy,
@@ -56,15 +58,25 @@ import type {
   BackendSyncStatus,
   PathfinderRecordStatus,
   PathId,
-  PathVerdict,
+  RecommendationDecision,
   RequiredMarkdownSection,
   UserProfileInput,
 } from "./types";
 
-function toneForVerdict(verdict: PathVerdict) {
-  if (verdict === "priority_trial") return "teal";
-  if (verdict === "explore") return "amber";
+function toneForDecision(decision: RecommendationDecision) {
+  if (decision === "priority_trial") return "teal";
+  if (decision === "explore") return "amber";
   return "rose";
+}
+
+function labelForDecision(decision: RecommendationDecision) {
+  const labels: Record<RecommendationDecision, string> = {
+    priority_trial: "优先试航",
+    explore: "可探索",
+    not_recommended_short_term: "暂缓主攻",
+    insufficient_information: "信息不足",
+  };
+  return labels[decision];
 }
 
 function labelForMissing(questionId: string) {
@@ -123,19 +135,16 @@ const pathVisualMeta: Record<
     shortLabel: "探索线",
     panelClass: "border-sky-200 bg-sky-50",
   },
-  "algorithm-llm-engineer": {
+  "ai-data-evaluation-assistant": {
     index: "03",
+    shortLabel: "评测线",
+    panelClass: "border-violet-200 bg-violet-50",
+  },
+  "algorithm-llm-engineer": {
+    index: "04",
     shortLabel: "长期线",
     panelClass: "border-amber-200 bg-amber-50",
   },
-};
-
-const evidenceIconMap = {
-  "JD 样本证据": FileText,
-  用户背景证据: UserRound,
-  "OpenDocuments 证据": Database,
-  风险证据: ShieldCheck,
-  下一步试航: Navigation,
 };
 
 export function PathfinderEntryPage() {
@@ -319,10 +328,32 @@ export function PathfinderBackgroundPage() {
 }
 
 export function PathfinderRecommendationPage() {
-  const { state, userProfile, ensurePriorityPath } = usePathfinder();
+  const { state, userProfile, generateTrialPackage } = usePathfinder();
+  const router = useRouter();
   const [selectedPathId, setSelectedPathId] = useState<PathId>(priorityPathId);
-  const paths = useMemo(() => buildRecommendationPaths(userProfile), [userProfile]);
-  const selectedPath = getRecommendationPath(selectedPathId, userProfile);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const fallbackPaths = useMemo(() => buildRecommendationPaths(userProfile), [userProfile]);
+  const recommendation = state.recommendationResponse;
+  const p1bPaths = recommendation?.paths ?? [];
+  const selectedPath = getP1BRolePath(selectedPathId, recommendation);
+  const approvedMatches = getApprovedProjectMatches(selectedPathId, recommendation);
+  const canGeneratePackage = approvedMatches.some(
+    (match) => match.projectId === openDocumentsProjectRecord.projectId,
+  );
+
+  async function onGenerateTrialPackage() {
+    if (!canGeneratePackage || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      await generateTrialPackage({
+        selectedPathId,
+        selectedProjectId: openDocumentsProjectRecord.projectId,
+      });
+      router.push("/pathfinder/trial");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   if (!state.profileSubmitted || !isUserProfileReady(userProfile)) {
     return (
@@ -349,8 +380,14 @@ export function PathfinderRecommendationPage() {
       />
 
       <div className="mb-6">
-        <Notice title="固定路径说明" tone="teal">
+        <Notice title="P1-B.1 推荐来源" tone={recommendation?.source === "fallback_mock" ? "amber" : "teal"}>
           {pageCopy.recommendationConclusion}
+          {recommendation?.source === "fallback_mock" ? (
+            <>
+              <br />
+              当前显示 fallback_mock：后端 P1-B API 不可用或尚未合并，不接 LLM。
+            </>
+          ) : null}
         </Notice>
       </div>
 
@@ -362,22 +399,31 @@ export function PathfinderRecommendationPage() {
                 路径星图工作台
               </div>
               <p className="mt-1 text-sm text-slate-400">
-                沿三条固定航线查看样例 JD、用户背景、OpenDocuments 和风险边界。
+                沿四条 P1-B 路径查看用户信号、样例 JD、项目候选和风险边界。
               </p>
             </div>
             <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">
-              不做评分，不做录用预测
+              不做评分，不接 LLM
             </div>
           </div>
           <div className="grid gap-3">
-            {paths.map((path) => {
-              const selected = selectedPathId === path.id;
-              const meta = pathVisualMeta[path.id];
+            {(p1bPaths.length ? p1bPaths : fallbackPaths.map((path) => ({
+              pathId: path.id,
+              title: path.title,
+              decision: path.verdict,
+              rationale: path.summary,
+              evidence: [],
+              riskNotes: [],
+              suggestedProjectTypes: [],
+              nextTrialAction: "",
+            }))).map((path) => {
+              const selected = selectedPathId === path.pathId;
+              const meta = pathVisualMeta[path.pathId];
               return (
                 <button
                   type="button"
-                  key={path.id}
-                  onClick={() => setSelectedPathId(path.id)}
+                  key={path.pathId}
+                  onClick={() => setSelectedPathId(path.pathId)}
                   className={`rounded-md border p-4 text-left transition ${
                     selected
                       ? "border-teal-300 bg-teal-300/10"
@@ -392,12 +438,12 @@ export function PathfinderRecommendationPage() {
                       {path.title}
                     </span>
                     <StatusPill
-                      label={path.statusLabel}
-                      tone={toneForVerdict(path.verdict)}
+                      label={labelForDecision(path.decision)}
+                      tone={toneForDecision(path.decision)}
                     />
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">
-                    {path.summary}
+                    {path.rationale}
                   </p>
                 </button>
               );
@@ -411,41 +457,86 @@ export function PathfinderRecommendationPage() {
               {selectedPath.title}
             </h2>
             <StatusPill
-              label={selectedPath.statusLabel}
-              tone={toneForVerdict(selectedPath.verdict)}
+              label={labelForDecision(selectedPath.decision)}
+              tone={toneForDecision(selectedPath.decision)}
             />
           </div>
           <p className="text-sm leading-6 text-slate-700">
-            {selectedPath.summary}
+            {selectedPath.rationale}
           </p>
           <div className="mt-5 space-y-3">
-            {selectedPath.evidence.map((evidence) => {
-              const Icon = evidenceIconMap[evidence.title];
-              return (
-                <div
-                  key={evidence.title}
-                  className="rounded-md border border-slate-200 bg-slate-50 p-3"
-                >
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                    <Icon className="h-4 w-4 text-teal-700" aria-hidden="true" />
-                    {evidence.title}
-                  </div>
-                  <div className="mt-2">
-                    <BulletList items={evidence.points} />
-                  </div>
+            {recommendation?.profileSignals.length ? (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                  <UserRound className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                  UserProfileSignal
                 </div>
-              );
-            })}
+                <div className="mt-2">
+                  <BulletList
+                    items={recommendation.profileSignals.map(
+                      (signal) => `${signal.label}：${signal.evidenceText}`,
+                    )}
+                  />
+                </div>
+              </div>
+            ) : null}
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                <FileText className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                RolePathRecommendation 证据链
+              </div>
+              <div className="mt-2">
+                <BulletList
+                  items={selectedPath.evidence.map(
+                    (item) => `${item.title}：${item.detail}`,
+                  )}
+                />
+              </div>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                <Database className="h-4 w-4 text-teal-700" aria-hidden="true" />
+                ProjectMatch / OpenDocuments approved
+              </div>
+              <div className="mt-2">
+                {canGeneratePackage ? (
+                  <BulletList
+                    items={[
+                      `${openDocumentsProjectRecord.name}：${openDocumentsProjectRecord.status}，License ${openDocumentsProjectRecord.licenseVerificationStatus}。`,
+                      "仅作 reference_only 公开参考，可进入 TrialPackageCandidate 生成链路。",
+                    ]}
+                  />
+                ) : (
+                  <BulletList
+                    items={[
+                      "该路径当前没有 OpenDocuments approved 匹配。",
+                      "待核验候选项目不进入完整试航包生成链路。",
+                    ]}
+                  />
+                )}
+              </div>
+            </div>
+            {selectedPath.riskNotes.length ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                  <ShieldCheck className="h-4 w-4 text-amber-700" aria-hidden="true" />
+                  风险边界
+                </div>
+                <div className="mt-2">
+                  <BulletList items={selectedPath.riskNotes} />
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="mt-5">
-            <ButtonLink
-              href="/pathfinder/trial"
-              onClick={ensurePriorityPath}
-              variant="primary"
-            >
-              开始 OpenDocuments 试航
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </ButtonLink>
+            {canGeneratePackage ? (
+              <ActionButton onClick={onGenerateTrialPackage} disabled={isGenerating}>
+                {isGenerating ? "正在生成试航包" : "生成 TrialPackageCandidate"}
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </ActionButton>
+            ) : (
+              <ActionButton disabled>该路径暂不生成试航包</ActionButton>
+            )}
           </div>
         </Panel>
       </div>
@@ -454,14 +545,8 @@ export function PathfinderRecommendationPage() {
 }
 
 export function PathfinderTrialPage() {
-  const { state, userProfile, trialAnswerMap, ensurePriorityPath, answerQuestion } =
+  const { state, userProfile, trialAnswerMap, answerQuestion } =
     usePathfinder();
-
-  useEffect(() => {
-    if (state.profileSubmitted && state.trailRecord.selectedPathId !== priorityPathId) {
-      ensurePriorityPath();
-    }
-  }, [ensurePriorityPath, state.profileSubmitted, state.trailRecord.selectedPathId]);
 
   const missing = trialQuestions.filter(
     (question) => !trialAnswerMap[question.id]?.trim(),
@@ -601,7 +686,7 @@ export function PathfinderResultPage() {
   const { state, userProfile, trialAnswerMap, saveMarkdownSnapshot } =
     usePathfinder();
   const [copyStatus, setCopyStatus] = useState<string>("");
-  const selectedPathId = priorityPathId;
+  const selectedPathId = state.trailRecord.selectedPathId as PathId;
   const selectedPath = getRecommendationPath(selectedPathId, userProfile);
   const markdownInput = useMemo(
     () => createMarkdownInput(selectedPathId, userProfile, trialAnswerMap),

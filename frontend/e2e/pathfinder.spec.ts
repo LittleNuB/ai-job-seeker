@@ -184,7 +184,7 @@ test("runs P1-A real input pathfinder loop and exports markdown", async ({ page 
   await expect(page.getByRole("heading", { name: "寻径星图：OpenDocuments 固定试航" })).toBeVisible();
   await expect(page.getByText("实岗试航 · 作品集起点")).toBeVisible();
   await expect(page.getByRole("link", { name: "AI Job Copilot" })).toHaveCount(0);
-  await expect(page.getByText("这不是简历包装工具，也不做能力认证、企业推荐或录用预测")).toBeVisible();
+  await expect(page.getByText("这不是履历美化工具，也不做岗位背书、企业侧动作或求职结果判断")).toBeVisible();
   await expect(page.getByText("小 C")).toHaveCount(0);
 
   await page.getByRole("link", { name: "填写背景" }).click();
@@ -195,13 +195,16 @@ test("runs P1-A real input pathfinder loop and exports markdown", async ({ page 
 
   await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
   await expect(page.getByRole("heading", { name: "tester的 AI 转岗试航星图" })).toBeVisible();
-  await expect(page.getByText("用户背景证据")).toHaveCount(1);
-  await expect(page.getByText(profile.professionalBackground)).toBeVisible();
+  await expect(page.getByText("fallback_mock")).toBeVisible();
+  await expect(page.getByText("UserProfileSignal")).toBeVisible();
+  await expect(page.getByText(profile.professionalBackground).first()).toBeVisible();
   await expect(page.getByText("行业 AI 应用产品助理").first()).toBeVisible();
   await expect(page.getByText("行业 AI 解决方案助理").first()).toBeVisible();
+  await expect(page.getByText("AI 数据评测助理").first()).toBeVisible();
   await expect(page.getByText("算法工程 / 大模型研发").first()).toBeVisible();
+  await expect(page.getByText("OpenDocuments approved")).toBeVisible();
 
-  await page.getByRole("link", { name: "开始 OpenDocuments 试航" }).click();
+  await page.getByRole("button", { name: /生成 TrialPackageCandidate/ }).click();
   await expect(page).toHaveURL(/\/pathfinder\/trial$/);
   await expect(page.getByRole("heading", { name: "OpenDocuments 6 问试航" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "OpenDocuments 来源参照" })).toBeVisible();

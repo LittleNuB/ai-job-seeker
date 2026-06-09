@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import {
+  buildFallbackRecommendationResponse,
+  buildFallbackTrialPackageResponse,
   createMarkdownInput,
   emptyUserProfile,
   forbiddenClaimsNotice,
@@ -110,6 +112,36 @@ assert.equal(p1aTrialPackage.sourceProject.role, "reference_only");
 assert.deepEqual(
   p1aTrialPackage.questionIds,
   expectedQuestions.map((question) => question.id),
+);
+
+const fallbackRecommendation = buildFallbackRecommendationResponse(validUserProfile);
+assert.equal(fallbackRecommendation.schemaVersion, "p1b.v1");
+assert.equal(fallbackRecommendation.source, "fallback_mock");
+assert.equal(fallbackRecommendation.paths.length, 4);
+assert.equal(
+  fallbackRecommendation.paths.some(
+    (path) =>
+      path.pathId === "algorithm-llm-engineer" &&
+      path.decision === "not_recommended_short_term",
+  ),
+  true,
+);
+assert.equal(
+  fallbackRecommendation.projectMatches.every(
+    (match) => match.projectId === "opendocuments",
+  ),
+  true,
+);
+const fallbackPackage = buildFallbackTrialPackageResponse({
+  recommendationResponse: fallbackRecommendation,
+  selectedPathId: "industry-ai-product-assistant",
+  selectedProjectId: "opendocuments",
+});
+assert.equal(fallbackPackage.source, "fallback_mock");
+assert.equal(fallbackPackage.trialPackageCandidate.trialPackageId, p1aTrialPackage.id);
+assert.equal(
+  fallbackPackage.trialPackageCandidate.sourceProject.status,
+  "approved_for_trial_package",
 );
 assert.deepEqual(requiredTrialQuestionIds, p1aTrialPackage.questionIds);
 assert.equal(
@@ -235,6 +267,8 @@ assertSafePathfinderCopy(
     trialQuestionImpacts,
     trialQuestions,
     pageCopy,
+    fallbackRecommendation,
+    fallbackPackage,
   }),
 );
 

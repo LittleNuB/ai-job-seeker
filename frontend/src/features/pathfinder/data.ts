@@ -2,13 +2,19 @@ import {
   currentTrialPackageId,
   type ComplianceAdvice,
   type DemoVersion,
+  type GenerateTrialPackageResponse,
   type InterviewPrepItem,
   type MarkdownInput,
   type MetricRow,
   type OpenSourceProject,
+  type OpenSourceProjectRecord,
   type PathId,
+  type PathfinderProjectsResponse,
+  type PathfinderRecommendationResponse,
   type PortfolioOnePagerDraft,
+  type ProjectMatch,
   type RecommendationPath,
+  type RolePathRecommendation,
   type RiskRow,
   type SampleJd,
   type SampleJdNotice,
@@ -23,7 +29,7 @@ export const priorityPathId =
   "industry-ai-product-assistant" satisfies PathId;
 
 export const sampleJdNotice =
-  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或录用判断。" satisfies SampleJdNotice;
+  "样例 JD，用于当前试航和样本趋势参考，不代表具体公司岗位要求或求职结果判断。" satisfies SampleJdNotice;
 
 export const emptyUserProfile: UserProfileInput = {
   displayName: "",
@@ -165,10 +171,38 @@ export const sampleJds: SampleJd[] = [
   },
   {
     id: "jd-c",
+    title: "AI 数据评测助理",
+    targetPathId: "ai-data-evaluation-assistant",
+    notice: sampleJdNotice,
+    statusLabel: "可探索",
+    scenario:
+      "围绕数据标注、问答样例、质量抽检、错误归因和评测材料整理开展试航。",
+    responsibilities: [
+      "整理评测样例和标注口径。",
+      "记录错误类型和反馈闭环。",
+      "维护表格、质检记录和问题清单。",
+      "把评测边界写成可复核说明。",
+    ],
+    requirementSignals: [
+      "数据整理或内容审核经历。",
+      "能写清标注口径和抽检流程。",
+      "理解 AI 问答需要来源、失败案例和人工复核。",
+      "能把结果写成表格和说明材料。",
+    ],
+    userConnectionPrompts: [
+      "如果你的经历包含数据、表格、质检、测试或内容审核，可作为这条路径的用户信号。",
+      "当前仅作为试航方向，不输出模型质量结论。",
+    ],
+    gapOrAdvice: [
+      "补一份问答样例、错误分类和质检记录模板。",
+    ],
+  },
+  {
+    id: "jd-d",
     title: "算法工程 / 大模型研发",
     targetPathId: "algorithm-llm-engineer",
     notice: sampleJdNotice,
-    statusLabel: "短期不建议",
+    statusLabel: "暂缓主攻",
     scenario:
       "参与模型训练、检索优化、向量数据库、Embedding、Rerank、微调或评测平台开发。",
     responsibilities: [
@@ -210,6 +244,53 @@ export const openSourceProject: OpenSourceProject = {
   ],
   boundaryNotice:
     "本试航基于公开项目信息做产品拆解与场景设计，不表述为用户参与该仓库开发。",
+};
+
+export const openDocumentsProjectRecord: OpenSourceProjectRecord = {
+  projectId: "opendocuments",
+  name: "OpenDocuments",
+  sourceUrl: "https://github.com/joungminsung/OpenDocuments",
+  host: "github",
+  description:
+    "Self-hosted RAG / 企业知识库问答 / AI 文档搜索公开项目，P1-B.1 仅作 reference_only 试航参照。",
+  license: "MIT",
+  licenseSpdxId: "MIT",
+  licenseFileUrl:
+    "https://github.com/joungminsung/OpenDocuments/blob/main/LICENSE",
+  licenseVerificationStatus: "verified",
+  lastManualCheckAt: "2026-06-07",
+  referenceRole: "reference_only",
+  status: "approved_for_trial_package",
+  rolePathIds: [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant",
+  ],
+  projectTags: ["document_qa", "knowledge_base"],
+  capabilityTags: [
+    "requirement_breakdown",
+    "qa_pair_design",
+    "citation_and_source_display",
+    "risk_boundary_documentation",
+  ],
+  riskTags: ["attribution_risk", "resume_packaging_risk"],
+  publicCapabilities: openSourceProject.originalCapabilities,
+  notClaimed: [
+    "不声明用户参与 OpenDocuments 原仓库开发。",
+    "不声明用户完成企业生产交付。",
+    "不把公开项目能力写成用户个人产出。",
+  ],
+  forbiddenClaims: [
+    "岗位背书。",
+    "求职结果预测。",
+    "企业侧筛选。",
+    "履历包装。",
+    "不声明官方贡献记录。",
+  ],
+  allowedContexts: [
+    "仅作公开参考项目。",
+    "用于理解文档问答、知识库和引用展示场景。",
+    "用于生成产品试航任务起点。",
+  ],
 };
 
 const pathBase: Array<Omit<RecommendationPath, "summary" | "evidence"> & {
@@ -293,12 +374,50 @@ const pathBase: Array<Omit<RecommendationPath, "summary" | "evidence"> & {
     ],
   },
   {
+    id: "ai-data-evaluation-assistant",
+    title: "AI 数据评测助理",
+    verdict: "explore",
+    statusLabel: "可探索",
+    summaryTemplate: () =>
+      "这条路径用于整理标注口径、问答样例、质检流程和错误归因；P1-B.1 暂无 approved 项目可生成完整试航包。",
+    evidenceTemplate: (profile) => [
+      {
+        title: "JD 样本证据",
+        points: [
+          "样例 JD 常见任务包括标注规范、评测样例、质量抽检、错误分析和反馈闭环。",
+        ],
+      },
+      {
+        title: "用户背景证据",
+        points: summarizeUserProfileEvidence(profile),
+      },
+      {
+        title: "OpenDocuments 证据",
+        points: [
+          "OpenDocuments 可帮助理解问答来源和失败案例记录，但当前 approved 映射只开放产品/方案试航。",
+        ],
+      },
+      {
+        title: "风险证据",
+        points: [
+          "不能把试航记录写成模型质量结论；应限定为样例设计、检查流程和错误归因材料。",
+        ],
+      },
+      {
+        title: "下一步试航",
+        points: [
+          "补充数据评测公开项目人工核验后，再生成完整试航任务。",
+        ],
+      },
+    ],
+  },
+  {
     id: "algorithm-llm-engineer",
     title: "算法工程 / 大模型研发",
     verdict: "not_recommended_short_term",
-    statusLabel: "短期不建议",
+    statusLabel: "暂缓主攻",
     summaryTemplate: () =>
-      "这条路径保留为长期学习参照，P1-A 不把它作为短期主试航方向。",
+      "这条路径保留为长期学习参照，P1-B.1 不把它作为主试航方向，也不生成试航包。",
     evidenceTemplate: (profile) => [
       {
         title: "JD 样本证据",
@@ -351,6 +470,25 @@ export function getRecommendationPath(
 ): RecommendationPath {
   const paths = buildRecommendationPaths(profile);
   return paths.find((path) => path.id === pathId) ?? paths[0];
+}
+
+export function getP1BRolePath(
+  pathId: PathId,
+  response?: PathfinderRecommendationResponse,
+): RolePathRecommendation {
+  const paths = response?.paths ?? buildFallbackRecommendationResponse(emptyUserProfile).paths;
+  return paths.find((path) => path.pathId === pathId) ?? paths[0];
+}
+
+export function getApprovedProjectMatches(
+  pathId: PathId,
+  response?: PathfinderRecommendationResponse,
+): ProjectMatch[] {
+  const matches = response?.projectMatches ?? [];
+  return matches.filter(
+    (match) =>
+      match.rolePathId === pathId && match.decision === "matched_for_trial",
+  );
 }
 
 export function displayNameForProfile(profile: UserProfileInput): string {
@@ -470,7 +608,7 @@ export const portfolioDraft: PortfolioOnePagerDraft = {
 };
 
 export const portfolioPolishBoundary =
-  "这是一页作品集表达草稿，用于整理问题、方案、指标和边界。它不是正式简历，不代表岗位能力认证，也不声明用户参与 OpenDocuments 官方贡献。";
+  "这是一页作品集表达草稿，用于整理问题、方案、指标和边界。它不是正式履历，也不声明用户参与 OpenDocuments 官方贡献。";
 
 export const metricRows: MetricRow[] = [
   {
@@ -555,8 +693,8 @@ export const complianceAdvice: ComplianceAdvice = {
   ],
   avoid: [
     "不要说已经具备该岗位全部要求。",
-    "不要说这个项目能直接证明自己胜任。",
-    "不要做录用结果预测。",
+    "不要说这个项目能直接证明岗位结果。",
+    "不要做求职结果判断。",
     "不要把 OpenDocuments 说成自己的项目。",
   ],
 };
@@ -574,7 +712,7 @@ export const markdownExportItems = [
 ];
 
 export const forbiddenClaimsNotice =
-  "不可声称：用户开发了 OpenDocuments、完成了企业级 RAG 系统、具备算法研发能力、获得岗位认证、提升录用概率，或 AI 可替代合同 / 规范 / 施工方案的人工复核。";
+  "不可声称：用户开发了 OpenDocuments、完成了企业级 RAG 系统、具备算法研发能力、获得岗位背书、改善求职结果，或 AI 可替代合同 / 规范 / 施工方案的人工复核。";
 
 export function traceChainForProfile(profile: UserProfileInput): string {
   return `样例 JD + ${displayNameForProfile(profile)}背景 + OpenDocuments 公开来源 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown`;
@@ -605,11 +743,11 @@ export const interviewPrep: InterviewPrepItem[] = [
 
 export const pageCopy = {
   entrySubtitle:
-    "用你的真实背景完成一次固定 OpenDocuments 试航：填背景、看三条路径、完成 6 问、通过反包装检查后导出 Markdown。",
+    "用你的真实背景完成一次 OpenDocuments 试航：填背景、看 P1-B.1 路径建议、生成试航包、完成 6 问并导出 Markdown。",
   entryScope:
-    "当前版本固定 1 个试航包、3 条路径、1 个公开参考项目、6 个试航问题和 1 种导出格式；不接 LLM，不做自由推荐。",
+    "当前版本使用规则 fallback：4 条路径、1 个 approved 公开参考项目、6 个试航问题和 1 种导出格式；不接 LLM。",
   entryBoundaryNotice:
-    "这不是简历包装工具，也不做能力认证、企业推荐或录用预测。它只帮助你把路径判断、试航作答和边界说明整理成可追溯材料。",
+    "这不是履历美化工具，也不做岗位背书、企业侧动作或求职结果判断。它只帮助你把路径判断、试航作答和边界说明整理成可追溯材料。",
   entryBoundary: [
     "用户：真实输入",
     "项目：OpenDocuments",
@@ -619,7 +757,7 @@ export const pageCopy = {
   backgroundNotice:
     "请填写你自己的背景。页面不会提供默认身份、一键填充或默认作答；没有背景时，星图页会提示先补充。",
   recommendationConclusion:
-    "三条路径仍是固定试航包内容，不根据输入重新推荐；这里仅把你的背景作为证据链补充，帮助判断试航材料如何表达。",
+    "背景提交后会先请求 P1-B recommendation API；若后端尚未合并，则使用标注为 fallback_mock 的本地规则结果。",
   trialBoundary:
     "OpenDocuments 提供公开来源参照；你需要完成的是把它放进工程企业知识库场景，形成试点方案、指标、风险和作品集表达。结果页会区分开源项目能力与个人试航产出。",
   missingQuestions:
@@ -627,10 +765,339 @@ export const pageCopy = {
   aiUsageBlocker:
     "请先补充“AI 使用说明”。这是反包装检查的必要项，未说明 AI 如何辅助和如何人工筛选时，不能导出完整 Markdown。",
   resultBoundary:
-    "本结果是一次求职路径试航记录和作品集起点，不构成能力认证、录用判断、职业承诺或开源项目贡献声明。",
+    "本结果是一次求职路径试航记录和作品集起点，不构成岗位背书、求职结果判断、职业承诺或开源项目贡献声明。",
   markdownExportDescription:
     "完整 Markdown 仅在 6 问全部完成且反包装检查通过后生成。导出内容包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、OpenDocuments 公开能力、用户试航产出、不可声称内容、6 问作答和免责声明。",
 };
+
+const p1bRuleVersion = {
+  version: "p1b.frontend-fallback.v1",
+  effectiveAt: "2026-06-09",
+  rolePathTaxonomyVersion: "p1b.role-paths.v1",
+  projectLibraryVersion: "p1b.open-source-projects.v1",
+  antiPackagingRuleVersion: "p1-a.frontend-rules.v1",
+  notes: [
+    "FE-003 fallback mock; used only when BE-003 endpoints are unavailable.",
+    "No LLM is used in this fallback.",
+  ],
+};
+
+function evidence(
+  pathId: PathId,
+  type: RolePathRecommendation["evidence"][number]["type"],
+  title: string,
+  detail: string,
+  sourceRef: string,
+) {
+  return {
+    evidenceId: `${pathId}-${type}-${sourceRef}`.replace(/[^a-z0-9-]/gi, "-"),
+    type,
+    title,
+    detail,
+    sourceRef,
+  };
+}
+
+export function buildFallbackRecommendationResponse(
+  userProfile: UserProfileInput,
+): PathfinderRecommendationResponse {
+  const profileSignals = buildUserProfileSignals(userProfile);
+  const paths: RolePathRecommendation[] = [
+    {
+      pathId: "industry-ai-product-assistant",
+      title: "行业 AI 应用产品助理",
+      decision: "priority_trial",
+      rationale:
+        "用户背景中的行业资料、流程拆解、文档整理或项目协作信号，可与知识库问答产品试航连接。",
+      evidence: [
+        evidence(
+          "industry-ai-product-assistant",
+          "jd_sample",
+          "样例 JD 趋势",
+          "常见任务包括需求拆解、PRD、问答样例、验收口径和 Demo 测试。",
+          "sample-jd-product",
+        ),
+        evidence(
+          "industry-ai-product-assistant",
+          "user_profile",
+          "用户输入信号",
+          summarizeUserProfileEvidence(userProfile).join("；"),
+          "runtime-user-profile",
+        ),
+        evidence(
+          "industry-ai-product-assistant",
+          "open_source_project",
+          "OpenDocuments",
+          "approved_for_trial_package，可用于文档问答和引用展示场景试航。",
+          "project-opendocuments",
+        ),
+      ],
+      riskNotes: [
+        "仅做路径试航和作品集草稿，不声明用户参与原项目。",
+        "样例 JD 只作样本趋势参考。",
+      ],
+      suggestedProjectTypes: ["文档问答", "知识库", "内部助手"],
+      nextTrialAction: "选择 OpenDocuments 生成产品助理试航包。",
+    },
+    {
+      pathId: "industry-ai-solution-assistant",
+      title: "行业 AI 解决方案助理",
+      decision: "explore",
+      rationale:
+        "若用户具备客户沟通、方案材料、PoC 或交付协同经历，可用同一公开项目练习方案边界表达。",
+      evidence: [
+        evidence(
+          "industry-ai-solution-assistant",
+          "jd_sample",
+          "样例 JD 趋势",
+          "常见任务包括客户访谈、场景调研、PoC 范围、Demo 脚本和交付清单。",
+          "sample-jd-solution",
+        ),
+        evidence(
+          "industry-ai-solution-assistant",
+          "user_profile",
+          "用户输入信号",
+          summarizeUserProfileEvidence(userProfile).join("；"),
+          "runtime-user-profile",
+        ),
+        evidence(
+          "industry-ai-solution-assistant",
+          "open_source_project",
+          "OpenDocuments",
+          "approved_for_trial_package，可作为企业知识库方案参照。",
+          "project-opendocuments",
+        ),
+      ],
+      riskNotes: ["避免把 Demo 范围写成完整交付承诺。"],
+      suggestedProjectTypes: ["知识库方案", "PoC 说明", "交付边界"],
+      nextTrialAction: "选择 OpenDocuments 生成方案助理试航包。",
+    },
+    {
+      pathId: "ai-data-evaluation-assistant",
+      title: "AI 数据评测助理",
+      decision: "explore",
+      rationale:
+        "适合把数据整理、质检、标注和错误归因经历转成评测试航材料；当前没有 approved 项目进入完整生成链路。",
+      evidence: [
+        evidence(
+          "ai-data-evaluation-assistant",
+          "jd_sample",
+          "样例 JD 趋势",
+          "常见任务包括标注规范、评测样例、质量抽检和错误分析。",
+          "sample-jd-data-eval",
+        ),
+        evidence(
+          "ai-data-evaluation-assistant",
+          "user_profile",
+          "用户输入信号",
+          summarizeUserProfileEvidence(userProfile).join("；"),
+          "runtime-user-profile",
+        ),
+        evidence(
+          "ai-data-evaluation-assistant",
+          "risk",
+          "项目边界",
+          "待核验项目不能生成完整试航包。",
+          "project-library-boundary",
+        ),
+      ],
+      riskNotes: ["不能输出模型质量结论；只整理评测口径和材料。"],
+      suggestedProjectTypes: ["数据标注", "评测管理", "质检流程"],
+      nextTrialAction: "等待 approved 项目后再生成完整试航包。",
+    },
+    {
+      pathId: "algorithm-llm-engineer",
+      title: "算法工程 / 大模型研发",
+      decision: "not_recommended_short_term",
+      rationale:
+        "若缺少模型实验、工程代码和算法复现证据，P1-B.1 仅把该方向作为暂缓主攻风险路径。",
+      evidence: [
+        evidence(
+          "algorithm-llm-engineer",
+          "jd_sample",
+          "样例 JD 趋势",
+          "常见任务包括模型训练、检索优化、评测实验和工程代码维护。",
+          "sample-jd-algorithm",
+        ),
+        evidence(
+          "algorithm-llm-engineer",
+          "risk",
+          "短期风险",
+          "公开项目拆解不等同于算法研发经历，当前不生成试航包。",
+          "risk-short-term-algorithm",
+        ),
+      ],
+      riskNotes: [
+        "暂缓主攻。",
+        "不生成完整试航包。",
+        "可作为长期学习参照。",
+      ],
+      suggestedProjectTypes: ["长期学习参照"],
+      nextTrialAction: "先完成应用产品或方案试航，再补代码与实验材料。",
+    },
+  ];
+
+  const projectMatches: ProjectMatch[] = [
+    {
+      projectId: "opendocuments",
+      rolePathId: "industry-ai-product-assistant",
+      decision: "matched_for_trial",
+      matchedRules: ["rule-product-doc-qa-reference"],
+      evidence: [
+        evidence(
+          "industry-ai-product-assistant",
+          "open_source_project",
+          "人工核验项目",
+          "OpenDocuments License 已核验，状态为 approved_for_trial_package。",
+          "project-opendocuments",
+        ),
+      ],
+      boundaryNotes: openDocumentsProjectRecord.allowedContexts,
+    },
+    {
+      projectId: "opendocuments",
+      rolePathId: "industry-ai-solution-assistant",
+      decision: "matched_for_trial",
+      matchedRules: ["rule-solution-poc-reference"],
+      evidence: [
+        evidence(
+          "industry-ai-solution-assistant",
+          "open_source_project",
+          "人工核验项目",
+          "OpenDocuments 可用于知识库 PoC 范围和边界说明试航。",
+          "project-opendocuments",
+        ),
+      ],
+      boundaryNotes: openDocumentsProjectRecord.allowedContexts,
+    },
+  ];
+
+  const recommendationRun = {
+    recommendationRunId: `p1b-fallback-${Date.now()}`,
+    schemaVersion: "p1b.v1" as const,
+    createdAt: new Date().toISOString(),
+    ruleVersion: p1bRuleVersion,
+    userProfileSnapshot: userProfile,
+    profileSignals,
+    paths,
+    projectMatches,
+  };
+
+  return {
+    schemaVersion: "p1b.v1",
+    recommendationRun,
+    profileSignals,
+    paths,
+    projectMatches,
+    scopeDisclaimer:
+      "fallback_mock：BE-003 未可用时使用前端规则结果；不接 LLM，不做外部项目搜索。",
+    source: "fallback_mock",
+  };
+}
+
+export function buildFallbackProjectsResponse(): PathfinderProjectsResponse {
+  return {
+    schemaVersion: "p1b.v1",
+    projects: [openDocumentsProjectRecord],
+    dataBoundary:
+      "P1-B.1 仅展示 OpenDocuments approved 项目；待核验候选不进入完整试航包生成链路。",
+    source: "fallback_mock",
+  };
+}
+
+export function buildFallbackTrialPackageResponse(params: {
+  recommendationResponse: PathfinderRecommendationResponse;
+  selectedPathId: PathId;
+  selectedProjectId: string;
+}): GenerateTrialPackageResponse {
+  const targetRolePath = getP1BRolePath(
+    params.selectedPathId,
+    params.recommendationResponse,
+  );
+  return {
+    schemaVersion: "p1b.v1",
+    trialPackageCandidate: {
+      trialPackageId: currentTrialPackageId,
+      trialPackageVersion: "1.0.0",
+      generatedFrom: {
+        recommendationRunId:
+          params.recommendationResponse.recommendationRun.recommendationRunId,
+        selectedPathId: params.selectedPathId,
+        selectedProjectId: params.selectedProjectId,
+        ruleVersion: p1bRuleVersion.version,
+      },
+      title: "OpenDocuments 工程企业知识库 AI 助手试航",
+      targetRolePath,
+      sourceProject: openDocumentsProjectRecord,
+      trialQuestions: trialQuestions.map((question) => ({
+        questionId: question.id,
+        title: question.title,
+        prompt: question.prompt,
+        required: true,
+      })),
+      requiredMarkdownSections: markdownExportItems,
+      forbiddenClaims: openDocumentsProjectRecord.forbiddenClaims,
+      sampleJdDisclaimer: sampleJdNotice,
+    },
+    antiPackagingDefaults: {
+      rulesVersion: "p1-a.frontend-rules.v1",
+      status: "not_run",
+      exportAllowed: false,
+      findings: [],
+      requiredMarkdownSections: {
+        candidate_background: false,
+        path_conclusion: false,
+        sample_jd_note: false,
+        opendocuments_source_license: false,
+        opendocuments_original_capabilities: false,
+        user_trial_contribution: false,
+        forbidden_claims: false,
+        six_question_answers: false,
+        disclaimer: false,
+      },
+      blockingCount: 0,
+      warningCount: 0,
+    },
+    source: "fallback_mock",
+  };
+}
+
+function buildUserProfileSignals(profile: UserProfileInput) {
+  return [
+    {
+      signalId: "signal-background",
+      category: "industry_background" as const,
+      label: "专业 / 背景",
+      sourceField: "professionalBackground",
+      evidenceText: profile.professionalBackground,
+      confidence: "rule_high" as const,
+    },
+    {
+      signalId: "signal-project",
+      category: "domain_material" as const,
+      label: "工程 / 行业经历",
+      sourceField: "projectExperience",
+      evidenceText: profile.projectExperience,
+      confidence: "rule_high" as const,
+    },
+    {
+      signalId: "signal-ai-tool",
+      category: "ai_tool_usage" as const,
+      label: "AI 工具经历",
+      sourceField: "aiToolExperience",
+      evidenceText: profile.aiToolExperience,
+      confidence: "rule_medium" as const,
+    },
+    {
+      signalId: "signal-constraint",
+      category: "career_constraint" as const,
+      label: "限制条件",
+      sourceField: "constraints",
+      evidenceText: profile.constraints,
+      confidence: "rule_medium" as const,
+    },
+  ].filter((signal) => signal.evidenceText.trim());
+}
 
 export function createMarkdownInput(
   selectedPathId: PathId,

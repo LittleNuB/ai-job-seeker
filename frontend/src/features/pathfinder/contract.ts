@@ -1,5 +1,6 @@
 import { getAntiPackagingFindings } from "./content-guard";
 import {
+  buildFallbackRecommendationResponse,
   emptyUserProfile,
   forbiddenClaimsNotice,
   interviewPrep,
@@ -78,6 +79,8 @@ export const requiredMarkdownSectionLabels: Record<
 export function createInitialPathfinderState(): PathfinderState {
   return {
     profileSubmitted: false,
+    recommendationResponse: undefined,
+    trialPackageResponse: undefined,
     trailRecord: createTrailRecord(),
     backendSync: initialBackendSyncState,
   };
@@ -253,6 +256,48 @@ export function ensurePriorityTrailRecordPath(record: TrailRecord): TrailRecord 
     selectedPathId: priorityPathId,
     updatedAt: new Date().toISOString(),
   });
+}
+
+export function withP1BRecommendation(
+  state: PathfinderState,
+  recommendationResponse = buildFallbackRecommendationResponse(
+    state.trailRecord.userProfileSnapshot,
+  ),
+): PathfinderState {
+  return {
+    ...state,
+    profileSubmitted: true,
+    recommendationResponse,
+    trailRecord: recomputeTrailRecordStatus({
+      ...state.trailRecord,
+      recommendationRunId:
+        recommendationResponse.recommendationRun.recommendationRunId,
+      updatedAt: new Date().toISOString(),
+    }),
+  };
+}
+
+export function withTrialPackageCandidate(
+  state: PathfinderState,
+  response: NonNullable<PathfinderState["trialPackageResponse"]>,
+): PathfinderState {
+  const candidate = response.trialPackageCandidate;
+  return {
+    ...state,
+    trialPackageResponse: response,
+    trailRecord: recomputeTrailRecordStatus({
+      ...state.trailRecord,
+      schemaVersion: "p1b.v1",
+      trialPackageId: candidate.trialPackageId,
+      trialPackageVersion: candidate.trialPackageVersion,
+      selectedPathId: candidate.generatedFrom.selectedPathId,
+      selectedProjectId: candidate.generatedFrom.selectedProjectId,
+      recommendationRunId: candidate.generatedFrom.recommendationRunId,
+      trialPackageCandidate: candidate,
+      markdownSnapshot: undefined,
+      updatedAt: new Date().toISOString(),
+    }),
+  };
 }
 
 export function withMarkdownSnapshot(
@@ -456,7 +501,7 @@ function createInterviewPrepContract() {
         },
       ],
       boundaryReminder:
-        "回答只解释试航过程、证据和边界，不做岗位胜任认证。",
+        "回答只解释试航过程、证据和边界，不做岗位结论。",
       forbiddenClaims: [forbiddenClaimsNotice, portfolioPolishBoundary],
     })),
   };
@@ -468,14 +513,16 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
       typeof (value as { demoLoaded?: unknown }).demoLoaded === "boolean"
         ? Boolean((value as { demoLoaded?: unknown }).demoLoaded)
         : false;
-    return {
-      profileSubmitted:
-        typeof value.profileSubmitted === "boolean"
-          ? value.profileSubmitted
-          : legacyDemoLoaded,
-      trailRecord: normalizeTrailRecord(value.trailRecord),
-      backendSync: normalizeBackendSyncState(value.backendSync),
-    };
+  return {
+    profileSubmitted:
+      typeof value.profileSubmitted === "boolean"
+        ? value.profileSubmitted
+        : legacyDemoLoaded,
+    recommendationResponse: value.recommendationResponse,
+    trialPackageResponse: value.trialPackageResponse,
+    trailRecord: normalizeTrailRecord(value.trailRecord),
+    backendSync: normalizeBackendSyncState(value.backendSync),
+  };
   }
 
   if (isLegacyPathfinderState(value)) {
@@ -504,6 +551,10 @@ export function createPathfinderStateFromTrailRecord(
   return {
     profileSubmitted:
       options?.profileSubmitted ?? options?.demoLoaded ?? true,
+    recommendationResponse: buildFallbackRecommendationResponse(
+      record.userProfileSnapshot,
+    ),
+    trialPackageResponse: undefined,
     trailRecord: normalizeTrailRecord(record),
     backendSync:
       options?.backendSync ??
@@ -521,7 +572,7 @@ function normalizeTrailRecord(record: TrailRecord): TrailRecord {
     schemaVersion: pathfinderSchemaVersion,
     trialPackageId: p1aTrialPackage.id,
     trialPackageVersion: p1aTrialPackage.version,
-    selectedPathId: priorityPathId,
+    selectedPathId: record.selectedPathId ?? priorityPathId,
     userProfileSnapshot: normalizeUserProfile(record.userProfileSnapshot),
     trialAnswers: createTrialAnswers(trialAnswerMapFromRecord(record)),
     antiPackagingCheck:
