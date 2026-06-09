@@ -327,3 +327,46 @@
 - 主结论：两份方案无阻断级冲突，可以进入 P1-B.1 开发拆分。
 - P1-B.1 决策：真实用户背景 -> 规则路径推荐 -> 人工审核项目匹配 -> 试航包生成；继续复用 `analysis_records` 和 JSON fixture；不新增 migration；不做 LLM 主链路、不做真实 GitHub 搜索、不做真实 RAG。
 - 下一步建议任务：`DATA-004`、`BE-003`、`FE-003`、`QA-003`。
+
+## P1-B.1 Parallel Task Launch
+
+启动时间：2026-06-09
+
+- `DATA-004`
+  - 子对话名称：`数据方案D`
+  - Thread ID：`019eace6-fb8d-71b1-802e-fe749fdbbc81`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-004`
+  - 分支：`codex/pathfinder-data-004`
+  - 任务摘要：实现 P1-B.1 最小数据 fixture，包括 RolePath、ProjectMatchRule、OpenDocuments TrialTaskTemplate 和数据 fixture 文档。
+  - 预期提交：`data: add pathfinder p1b fixture set`
+
+- `BE-003`
+  - 子对话名称：`后端开发B`
+  - Thread ID：`019eace7-021d-7410-881e-0a2734d50b77`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-be-003`
+  - 分支：`codex/pathfinder-be-003`
+  - 任务摘要：新增 P1-B.1 recommendation / projects / trial package generate API，保持 `/records` 兼容，不新增 migration。
+  - 预期提交：`feat: add pathfinder p1b recommendation APIs`
+
+- `FE-003`
+  - 子对话名称：`前端开发C`
+  - Thread ID：`019eace7-0967-7041-8b1a-4314eafe24ef`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-fe-003`
+  - 分支：`codex/pathfinder-fe-003`
+  - 任务摘要：升级前端为 P1-B.1 真实背景 -> 推荐 -> 项目 -> 试航包产品流，保留 P1-A 保存 / 导出 / 反包装。
+  - 预期提交：`feat: add pathfinder p1b recommendation flow`
+
+- `QA-003`
+  - 子对话名称：`QA验证B`
+  - Thread ID：`019eace7-1310-76d3-aa8d-f6783627feb4`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-qa-003`
+  - 分支：`codex/pathfinder-qa-003`
+  - 任务摘要：输出 P1-B.1 执行型 QA 计划，覆盖 API、前端 E2E、数据 fixture、Scope Guard 和 Go/No-Go。
+  - 预期提交：`docs: add pathfinder p1b qa plan`
+
+主 Agent 后续处理顺序：
+
+1. 优先等待 `DATA-004` 与 `BE-003`，因为前端实现依赖数据和 API contract。
+2. 若 `FE-003` 先返回且使用 fallback，应在 PM merge review 中标记 fallback 边界。
+3. `QA-003` 可先文档合并，执行型回归需等 DATA / BE / FE 合并后再跑。
+4. 合并前必须确认所有子任务都没有触碰 B 类 dirty files、没有 push、没有新增 migration。
