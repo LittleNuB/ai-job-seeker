@@ -119,6 +119,8 @@
 - `GOV-001`：治理 / handoff / 协作机制
 - `P1-PRD-001`：P1 产品化 PRD
 - `DATA-001`：数据底座方案
+- `P1B-TECH-001`：P1-B 真实路径推荐技术契约
+- `DATA-003`：P1-B 审核开源项目库与路径匹配规则
 - `FE-001`：前端实现
 - `BE-001`：后端实现
 - `QA-001`：QA / 回归验证
@@ -139,7 +141,7 @@
 
 待启动任务：
 
-- 暂无。`DATA-002`、`FE-002`、`BE-002`、`QA-002` 已并行启动。
+- 暂无。`P1B-TECH-001` 与 `DATA-003` 已并行启动。
 
 ## 8. 子任务提示词必须包含的回传协议
 
@@ -203,7 +205,23 @@
 
 ## 12. 进行中任务
 
-暂无。`DATA-002`、`FE-002`、`BE-002`、`QA-002` 已完成并 cherry-pick 回 `codex/pathfinder-p1a-integration`。主 Agent 已完成第二轮 PM merge review。
+当前并行任务采用独立 git worktree 隔离模式。子任务可以在各自分支本地 commit，但禁止 push / PR。完成后由主 Agent 做 P1-B PM merge review，再决定是否进入开发拆分。
+
+- `P1B-TECH-001`
+  - 子对话名称：`技术方案A`
+  - Thread ID：`019eacdd-a995-74b1-beba-de4a1c98386b`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-p1b-tech-001`
+  - 分支：`codex/pathfinder-p1b-tech-001`
+  - 任务摘要：输出 P1-B 真实路径推荐、审核开源项目匹配、试航包生成的技术方案与接口契约。
+  - 预期交付：`docs/pathfinder-p0/p1-b-technical-architecture.md`
+
+- `DATA-003`
+  - 子对话名称：`数据方案C`
+  - Thread ID：`019eacde-4254-7af2-8e64-f8fe13de9ac4`
+  - worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-003`
+  - 分支：`codex/pathfinder-data-003`
+  - 任务摘要：输出 P1-B 审核开源项目库、路径标签体系、项目匹配规则和最小候选项目清单。
+  - 预期交付：`docs/pathfinder-p0/p1-b-open-source-project-library.md`
 
 ## 12.1 产品负责人决策记录
 
@@ -217,10 +235,11 @@
 
 ## 13. 下一步主 Agent 工作
 
-1. 产品负责人做一轮 P1-A 集成人工审查，重点检查真实用户输入、推荐页背景证据、试航页空白 6 问、结果页和 Markdown。
-2. 需要时发布执行型 QA 任务，按 `docs/pathfinder-p0/p1-a-productization-qa-plan.md` 产出浏览器截图和回归报告。
-3. 若产品审查通过，再决定是否 push `codex/pathfinder-p1a-integration` 到远端。
-4. 暂不启动 P1-B 专用表、LLM 主链路、多试航包或真实 RAG。
+1. 等待 `P1B-TECH-001` 与 `DATA-003` 回传。
+2. 核对两份方案是否冲突，尤其是真实路径推荐、项目库、TrialPackage 生成、LLM 边界和 Scope Guard。
+3. 执行 P1-B PM merge review，决定哪些进入 P1-B.1 开发、哪些放入 P1-B.2 / P2。
+4. 通过审计后再拆前端、后端、数据、QA 实现任务。
+5. 暂不启动 P1-B 专用表、LLM 主链路、多试航包黑箱推荐或真实 RAG。
 
 ## 14. 当前服务参考
 
