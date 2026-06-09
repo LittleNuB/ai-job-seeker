@@ -294,3 +294,36 @@
 - Contract 结论：current contract 使用 `p1a-opendocuments-engineering-kb`、`user_trial_contribution`、`sourceProjectReference`、`userTrialContribution`；旧 `p0-xiaoc-opendocuments` 与 `xiaoc_trial_contribution` 只保留为 legacy 兼容语境。
 - 验证：backend pytest 78 passed；frontend safety / lint / build passed；Pathfinder E2E 7 passed；`.\scripts\check_all.ps1` passed。
 - 当前建议：进入产品负责人人工审查和执行型 QA，不 push main，不启动 P1-B。
+
+## P1B-TECH-001 Status
+
+- 任务状态：已完成；原技术方案子进程误落文件到历史 Demo 目录，主 Agent 已接管并纠偏。
+- 子对话名称：`技术方案A`
+- worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-p1b-tech-001`
+- 分支：`codex/pathfinder-p1b-tech-001`
+- 交付文件：`docs/pathfinder-p0/p1-b-technical-architecture.md`
+- 原 worktree commit：`7639b73 docs: add pathfinder p1b technical architecture`
+- 主分支 cherry-pick commit：`6ef9a41 docs: add pathfinder p1b technical architecture`
+- 验证：`git diff --check HEAD~1 HEAD` 通过；文档任务未跑前后端全量测试。
+- 结论：P1-B.1 技术路线采用规则推荐、审核项目库、试航包生成和 `analysis_records` 复用；不新增 migration，不启用 LLM 主链路。
+
+## DATA-003 Status
+
+- 任务状态：已完成；子进程曾误落文件到历史 Demo 目录，已纠偏并由主 Agent 修正提交内空白格式。
+- 子对话名称：`数据方案C`
+- worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-003`
+- 分支：`codex/pathfinder-data-003`
+- 交付文件：`docs/pathfinder-p0/p1-b-open-source-project-library.md`
+- 原 worktree commit：`44fa37b docs: add pathfinder p1b project library plan`
+- 主分支 cherry-pick commit：`67c9919 docs: add pathfinder p1b project library plan`
+- 验证：`git diff --check HEAD~1 HEAD` 通过；文档任务未跑前后端全量测试。
+- 结论：OpenDocuments 是 P1-B.1 唯一 approved 项目；其他项目以候选类型 / 待核验表达，不进入用户可见完整试航包生成链路。
+
+## PM-MERGE-003 Status
+
+- 任务状态：已完成。
+- 交付文件：`docs/pathfinder-p0/pm-merge-review-p1b-planning.md`
+- 审查对象：`P1B-TECH-001`、`DATA-003`
+- 主结论：两份方案无阻断级冲突，可以进入 P1-B.1 开发拆分。
+- P1-B.1 决策：真实用户背景 -> 规则路径推荐 -> 人工审核项目匹配 -> 试航包生成；继续复用 `analysis_records` 和 JSON fixture；不新增 migration；不做 LLM 主链路、不做真实 GitHub 搜索、不做真实 RAG。
+- 下一步建议任务：`DATA-004`、`BE-003`、`FE-003`、`QA-003`。
