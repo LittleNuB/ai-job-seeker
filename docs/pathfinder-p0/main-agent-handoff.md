@@ -607,3 +607,19 @@ Main Agent follow-up order:
   - Data owner still needs periodic license/source revalidation.
   - User-signal matching is rule-first and may need tuning after real P1-C.1 interview confirmations.
   - Product owner should decide whether UI exposes all seven approved projects immediately or stages visible cards.
+
+## Codex Saved Project Binding Status
+
+- Date: 2026-06-11
+- Product owner completed a repository binding check from a Codex project thread.
+- Confirmed project root: `C:/Users/LittleNub/ai-job-seeker`
+- Confirmed branch: `codex/pathfinder-p1a-integration`
+- Confirmed status:
+  - branch tracks `origin/codex/pathfinder-p1a-integration`;
+  - current branch is ahead of remote;
+  - existing B-class dirty files remain unchanged.
+- Process update:
+  - Future newly created child tasks should use project-bound Codex threads targeting `C:\Users\LittleNub\ai-job-seeker`.
+  - Prefer new worktree child threads with role-letter naming, such as `前端开发C`, `后端开发B`, `数据方案C`, `QA验证B`.
+  - Reusing older child conversations is no longer the default and should only be done for an already in-flight task.
+  - Do not create projectless threads for Pathfinder work.
