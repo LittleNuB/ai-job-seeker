@@ -11,13 +11,17 @@ import {
   useState,
 } from "react";
 import {
+  confirmPathfinderInterviewSignals,
   createPathfinderRecord,
+  createPathfinderInterviewSession,
   deletePathfinderRecord,
+  extractPathfinderInterviewSignals,
   generatePathfinderTrialPackage,
   getPathfinderRecord,
   isPathfinderApiEnabled,
   requestPathfinderRecommendations,
   savePathfinderResult,
+  submitPathfinderInterviewTurn,
   updatePathfinderTrialAnswers,
 } from "./api";
 import {
@@ -37,7 +41,9 @@ import type {
   AntiPackagingCheck,
   BackendSyncState,
   GenerateTrialPackageResponse,
+  ExtractedProfileSignal,
   MarkdownSnapshot,
+  PathfinderInterviewSession,
   PathfinderRecommendationResponse,
   PathfinderState,
   PathId,
@@ -49,6 +55,26 @@ import type {
 type PathfinderAction =
   | {
       type: "submit_profile";
+      recommendationResponse?: PathfinderRecommendationResponse;
+    }
+  | {
+      type: "attach_interview_session";
+      session: PathfinderInterviewSession;
+      status?: PathfinderState["aiInterviewStatus"];
+    }
+  | {
+      type: "set_ai_interview_status";
+      status: PathfinderState["aiInterviewStatus"];
+    }
+  | {
+      type: "update_extracted_signal";
+      signalId: string;
+      value: string;
+    }
+  | {
+      type: "confirm_interview_signals";
+      session: PathfinderInterviewSession;
+      userProfile: UserProfileInput;
       recommendationResponse?: PathfinderRecommendationResponse;
     }
   | { type: "update_profile"; profile: UserProfileInput }
@@ -74,6 +100,11 @@ interface PathfinderContextValue {
   userProfile: UserProfileInput;
   trialAnswerMap: Partial<Record<TrialQuestionId, string>>;
   updateUserProfile: (profile: UserProfileInput) => void;
+  startInterviewSession: () => Promise<void>;
+  answerInterviewQuestion: (answer: string) => Promise<void>;
+  extractInterviewSignals: () => Promise<void>;
+  updateExtractedSignal: (signalId: string, value: string) => void;
+  confirmExtractedSignals: () => Promise<void>;
   submitUserProfile: () => void;
   generateTrialPackage: (params: {
     selectedPathId: PathId;
@@ -99,6 +130,52 @@ function reducer(
       return action.state;
     case "submit_profile":
       return withP1BRecommendation(state, action.recommendationResponse);
+    case "attach_interview_session":
+      return {
+        ...state,
+        interviewSessionId: action.session.sessionId,
+        interviewMessages: action.session.messages,
+        extractedSignals: action.session.extractedSignals,
+        signalConfirmationStatus: action.session.extractedSignals.length
+          ? "pending_confirmation"
+          : state.signalConfirmationStatus,
+        aiInterviewStatus: action.status ?? action.session.status,
+      };
+    case "set_ai_interview_status":
+      return {
+        ...state,
+        aiInterviewStatus: action.status,
+      };
+    case "update_extracted_signal":
+      return {
+        ...state,
+        extractedSignals: state.extractedSignals.map((signal) =>
+          signal.signalId === action.signalId
+            ? {
+                ...signal,
+                userEditableText: action.value,
+                confirmationStatus: "pending_confirmation",
+              }
+            : signal,
+        ),
+        signalConfirmationStatus: "pending_confirmation",
+      };
+    case "confirm_interview_signals":
+      return withP1BRecommendation(
+        {
+          ...state,
+          interviewSessionId: action.session.sessionId,
+          interviewMessages: action.session.messages,
+          extractedSignals: action.session.extractedSignals,
+          signalConfirmationStatus: "confirmed",
+          aiInterviewStatus: "confirmed",
+          trailRecord: updateTrailRecordProfile(
+            state.trailRecord,
+            action.userProfile,
+          ),
+        },
+        action.recommendationResponse,
+      );
     case "update_profile":
       return {
         ...state,
@@ -106,6 +183,7 @@ function reducer(
           state.trailRecord,
           action.profile,
         ),
+        signalConfirmationStatus: "not_started",
       };
     case "answer_question":
       return {
@@ -332,6 +410,134 @@ export function PathfinderProvider({
     skipAutoSyncAfterRemoteHydrationRef.current = false;
     dispatch({ type: "update_profile", profile });
   }, []);
+  const startInterviewSession = useCallback(async () => {
+    skipAutoSyncAfterRemoteHydrationRef.current = false;
+    dispatch({ type: "set_ai_interview_status", status: "asking" });
+    try {
+      const response = await createPathfinderInterviewSession();
+      dispatch({
+        type: "attach_interview_session",
+        session: response.session,
+        status:
+          response.session.source === "fallback_mock"
+            ? "fallback"
+            : response.session.status,
+      });
+    } catch {
+      dispatch({ type: "set_ai_interview_status", status: "failed" });
+    }
+  }, []);
+  const answerInterviewQuestion = useCallback(
+    async (answer: string) => {
+      skipAutoSyncAfterRemoteHydrationRef.current = false;
+      const session: PathfinderInterviewSession = {
+        sessionId:
+          state.interviewSessionId ?? `local-pending-${Date.now()}`,
+        status: state.aiInterviewStatus,
+        messages: state.interviewMessages,
+        extractedSignals: state.extractedSignals,
+        source:
+          state.aiInterviewStatus === "fallback" ? "fallback_mock" : "api",
+      };
+      dispatch({ type: "set_ai_interview_status", status: "asking" });
+      try {
+        const response = state.interviewSessionId
+          ? await submitPathfinderInterviewTurn({ session, answer })
+          : await createPathfinderInterviewSession({ initialAnswer: answer });
+        dispatch({
+          type: "attach_interview_session",
+          session: response.session,
+          status:
+            response.session.source === "fallback_mock"
+              ? "fallback"
+              : response.session.status,
+        });
+      } catch {
+        dispatch({ type: "set_ai_interview_status", status: "failed" });
+      }
+    },
+    [
+      state.aiInterviewStatus,
+      state.extractedSignals,
+      state.interviewMessages,
+      state.interviewSessionId,
+    ],
+  );
+  const extractInterviewSignals = useCallback(async () => {
+    if (!state.interviewSessionId && state.interviewMessages.length === 0) {
+      return;
+    }
+    const session: PathfinderInterviewSession = {
+      sessionId: state.interviewSessionId ?? `local-pending-${Date.now()}`,
+      status: state.aiInterviewStatus,
+      messages: state.interviewMessages,
+      extractedSignals: state.extractedSignals,
+      source: state.aiInterviewStatus === "fallback" ? "fallback_mock" : "api",
+    };
+    dispatch({ type: "set_ai_interview_status", status: "extracting" });
+    try {
+      const response = await extractPathfinderInterviewSignals({ session });
+      dispatch({
+        type: "attach_interview_session",
+        session: response.session,
+        status:
+          response.session.source === "fallback_mock"
+            ? "fallback"
+            : response.session.status,
+      });
+    } catch {
+      dispatch({ type: "set_ai_interview_status", status: "failed" });
+    }
+  }, [
+    state.aiInterviewStatus,
+    state.extractedSignals,
+    state.interviewMessages,
+    state.interviewSessionId,
+  ]);
+  const updateExtractedSignal = useCallback((signalId: string, value: string) => {
+    dispatch({ type: "update_extracted_signal", signalId, value });
+  }, []);
+  const confirmExtractedSignals = useCallback(async () => {
+    const editableSignals: ExtractedProfileSignal[] = state.extractedSignals
+      .map((signal) => ({
+        ...signal,
+        userEditableText: signal.userEditableText.trim(),
+      }))
+      .filter((signal) => signal.userEditableText);
+    if (!editableSignals.length) return;
+    const session: PathfinderInterviewSession = {
+      sessionId: state.interviewSessionId ?? `local-pending-${Date.now()}`,
+      status: state.aiInterviewStatus,
+      messages: state.interviewMessages,
+      extractedSignals: editableSignals,
+      source: state.aiInterviewStatus === "fallback" ? "fallback_mock" : "api",
+    };
+    dispatch({ type: "set_ai_interview_status", status: "extracting" });
+    try {
+      const response = await confirmPathfinderInterviewSignals({
+        session,
+        signals: editableSignals,
+        currentProfile: state.trailRecord.userProfileSnapshot,
+      });
+      const recommendationResponse = await requestPathfinderRecommendations({
+        userProfile: response.userProfile,
+      });
+      dispatch({
+        type: "confirm_interview_signals",
+        session: response.session,
+        userProfile: response.userProfile,
+        recommendationResponse,
+      });
+    } catch {
+      dispatch({ type: "set_ai_interview_status", status: "failed" });
+    }
+  }, [
+    state.aiInterviewStatus,
+    state.extractedSignals,
+    state.interviewMessages,
+    state.interviewSessionId,
+    state.trailRecord.userProfileSnapshot,
+  ]);
   const submitUserProfile = useCallback(() => {
     skipAutoSyncAfterRemoteHydrationRef.current = false;
     const userProfileSnapshot = state.trailRecord.userProfileSnapshot;
@@ -405,6 +611,11 @@ export function PathfinderProvider({
       userProfile,
       trialAnswerMap,
       updateUserProfile,
+      startInterviewSession,
+      answerInterviewQuestion,
+      extractInterviewSignals,
+      updateExtractedSignal,
+      confirmExtractedSignals,
       submitUserProfile,
       generateTrialPackage,
       ensurePriorityPath,
@@ -417,6 +628,11 @@ export function PathfinderProvider({
       userProfile,
       trialAnswerMap,
       updateUserProfile,
+      startInterviewSession,
+      answerInterviewQuestion,
+      extractInterviewSignals,
+      updateExtractedSignal,
+      confirmExtractedSignals,
       submitUserProfile,
       generateTrialPackage,
       ensurePriorityPath,

@@ -43,6 +43,11 @@ export const requiredTrialQuestionIds = trialQuestions.map(
   (question) => question.id,
 ) as TrialQuestionId[];
 
+const defaultTrialAnswerQuestions = trialQuestions.map((question) => ({
+  questionId: question.id,
+  prompt: question.prompt,
+}));
+
 export const p1aTrialPackage: TrialPackage = {
   id: currentTrialPackageId,
   version: "1.0.0",
@@ -68,8 +73,8 @@ export const requiredMarkdownSectionLabels: Record<
   candidate_background: "## 候选人背景",
   path_conclusion: "## 星图路径结论",
   sample_jd_note: "## 样例 JD 说明",
-  opendocuments_source_license: "## OpenDocuments 来源与 License",
-  opendocuments_original_capabilities: "## OpenDocuments 公开能力",
+  opendocuments_source_license: "## 项目来源与 License",
+  opendocuments_original_capabilities: "## 公开项目能力",
   user_trial_contribution: "## 用户试航产出",
   forbidden_claims: "## 不可声称内容",
   six_question_answers: "## 6 问作答",
@@ -79,6 +84,11 @@ export const requiredMarkdownSectionLabels: Record<
 export function createInitialPathfinderState(): PathfinderState {
   return {
     profileSubmitted: false,
+    interviewSessionId: undefined,
+    interviewMessages: [],
+    extractedSignals: [],
+    signalConfirmationStatus: "not_started",
+    aiInterviewStatus: "idle",
     recommendationResponse: undefined,
     trialPackageResponse: undefined,
     trailRecord: createTrailRecord(),
@@ -178,19 +188,21 @@ export function normalizeUserProfile(value: unknown): UserProfileInput {
 export function createTrialAnswers(
   answers: Partial<Record<TrialQuestionId, string>>,
   previous?: TrialAnswer[],
+  questions: Array<{ questionId: TrialQuestionId; prompt: string }> =
+    defaultTrialAnswerQuestions,
 ): TrialAnswer[] {
   const previousById = new Map(previous?.map((answer) => [answer.id, answer]));
   const now = new Date().toISOString();
 
-  return trialQuestions.map((question) => {
-    const existing = previousById.get(question.id);
-    const answer = answers[question.id] ?? existing?.answer ?? "";
+  return questions.map((question) => {
+    const existing = previousById.get(question.questionId);
+    const answer = answers[question.questionId] ?? existing?.answer ?? "";
     return {
-      id: question.id,
+      id: question.questionId,
       answer,
       status: answer.trim() ? "complete" : "empty",
       questionSnapshot: question.prompt,
-      impactModuleIds: [trialQuestionImpacts[question.id]],
+      impactModuleIds: [trialQuestionImpacts[question.questionId]],
       updatedAt:
         existing && existing.answer === answer ? existing.updatedAt : now,
     };
@@ -208,11 +220,9 @@ export function trialAnswerMapFromRecord(
 export function missingQuestionIdsFromAnswers(
   trialAnswers: TrialAnswer[],
 ): TrialQuestionId[] {
-  const answerMap = new Map(trialAnswers.map((answer) => [answer.id, answer]));
-  return requiredTrialQuestionIds.filter((id) => {
-    const answer = answerMap.get(id);
-    return !answer?.answer.trim();
-  });
+  return trialAnswers
+    .filter((answer) => !answer.answer.trim())
+    .map((answer) => answer.id);
 }
 
 export function updateTrailRecordProfile(
@@ -238,6 +248,10 @@ export function updateTrailRecordAnswer(
       [questionId]: value,
     },
     record.trialAnswers,
+    record.trialAnswers.map((answer) => ({
+      questionId: answer.id,
+      prompt: answer.questionSnapshot ?? "",
+    })),
   );
 
   return recomputeTrailRecordStatus({
@@ -282,6 +296,14 @@ export function withTrialPackageCandidate(
   response: NonNullable<PathfinderState["trialPackageResponse"]>,
 ): PathfinderState {
   const candidate = response.trialPackageCandidate;
+  const trialAnswers = createTrialAnswers(
+    trialAnswerMapFromRecord(state.trailRecord),
+    state.trailRecord.trialAnswers,
+    candidate.trialQuestions.map((question) => ({
+      questionId: question.questionId,
+      prompt: question.prompt,
+    })),
+  );
   return {
     ...state,
     trialPackageResponse: response,
@@ -294,6 +316,8 @@ export function withTrialPackageCandidate(
       selectedProjectId: candidate.generatedFrom.selectedProjectId,
       recommendationRunId: candidate.generatedFrom.recommendationRunId,
       trialPackageCandidate: candidate,
+      trialAnswers,
+      antiPackagingCheck: evaluateTrialAnswersAntiPackaging(trialAnswers),
       markdownSnapshot: undefined,
       updatedAt: new Date().toISOString(),
     }),
@@ -324,10 +348,10 @@ export function computeTrailRecordStatus(
   record: Pick<
     TrailRecord,
     "trialAnswers" | "antiPackagingCheck" | "markdownSnapshot"
-  >,
+>,
 ): PathfinderRecordStatus {
   const missing = missingQuestionIdsFromAnswers(record.trialAnswers);
-  if (missing.length === requiredTrialQuestionIds.length) return "draft";
+  if (missing.length === record.trialAnswers.length) return "draft";
   if (missing.length > 0) return "answers_incomplete";
   if (
     record.antiPackagingCheck.status === "blocked" ||
@@ -518,6 +542,29 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
       typeof value.profileSubmitted === "boolean"
         ? value.profileSubmitted
         : legacyDemoLoaded,
+    interviewSessionId:
+      typeof value.interviewSessionId === "string"
+        ? value.interviewSessionId
+        : undefined,
+    interviewMessages: Array.isArray(value.interviewMessages)
+      ? value.interviewMessages
+      : [],
+    extractedSignals: Array.isArray(value.extractedSignals)
+      ? value.extractedSignals
+      : [],
+    signalConfirmationStatus:
+      value.signalConfirmationStatus === "pending_confirmation" ||
+      value.signalConfirmationStatus === "confirmed"
+        ? value.signalConfirmationStatus
+        : "not_started",
+    aiInterviewStatus:
+      value.aiInterviewStatus === "asking" ||
+      value.aiInterviewStatus === "extracting" ||
+      value.aiInterviewStatus === "fallback" ||
+      value.aiInterviewStatus === "failed" ||
+      value.aiInterviewStatus === "confirmed"
+        ? value.aiInterviewStatus
+        : "idle",
     recommendationResponse: value.recommendationResponse,
     trialPackageResponse: value.trialPackageResponse,
     trailRecord: normalizeTrailRecord(value.trailRecord),
@@ -528,6 +575,10 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
   if (isLegacyPathfinderState(value)) {
     return {
       profileSubmitted: Boolean(value.demoLoaded),
+      interviewMessages: [],
+      extractedSignals: [],
+      signalConfirmationStatus: "not_started",
+      aiInterviewStatus: "idle",
       trailRecord: createTrailRecord({
         selectedPathId: value.selectedPathId,
         trialAnswers: value.trialAnswers,
@@ -551,6 +602,10 @@ export function createPathfinderStateFromTrailRecord(
   return {
     profileSubmitted:
       options?.profileSubmitted ?? options?.demoLoaded ?? true,
+    interviewMessages: [],
+    extractedSignals: [],
+    signalConfirmationStatus: "not_started",
+    aiInterviewStatus: "idle",
     recommendationResponse: buildFallbackRecommendationResponse(
       record.userProfileSnapshot,
     ),

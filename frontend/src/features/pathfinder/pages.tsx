@@ -10,6 +10,8 @@ import {
   FileText,
   GitBranch,
   Map as MapIcon,
+  MessageSquareText,
+  PencilLine,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -37,9 +39,8 @@ import {
   getRecommendationPath,
   isUserProfileReady,
   markdownExportItems,
-  openDocumentsProjectRecord,
   metricRows,
-  openSourceProject,
+  openDocumentsProjectRecord,
   pageCopy,
   portfolioDraft,
   portfolioPolishBoundary,
@@ -52,14 +53,18 @@ import {
   userProfileFields,
 } from "./data";
 import { requiredMarkdownSectionLabels } from "./contract";
+import { requestPathfinderProjects } from "./api";
 import { generatePathfinderMarkdown } from "./markdown";
 import { usePathfinder } from "./state";
 import type {
   BackendSyncStatus,
+  OpenSourceProjectRecord,
   PathfinderRecordStatus,
   PathId,
+  ProjectMatch,
   RecommendationDecision,
   RequiredMarkdownSection,
+  TrialQuestion,
   UserProfileInput,
 } from "./types";
 
@@ -86,7 +91,7 @@ function labelForMissing(questionId: string) {
 function labelForRecordStatus(status: PathfinderRecordStatus) {
   const labels: Record<PathfinderRecordStatus, string> = {
     draft: "草稿",
-    answers_incomplete: "6 问缺项",
+    answers_incomplete: "问答缺项",
     anti_packaging_blocked: "反包装阻断",
     ready_to_export: "完整可导出",
     exported: "已保存快照",
@@ -151,7 +156,7 @@ export function PathfinderEntryPage() {
   return (
     <div>
       <PageHeader
-        title="寻径星图：OpenDocuments 固定试航"
+        title="寻径星图：航前试航"
         description={pageCopy.entrySubtitle}
       />
 
@@ -167,7 +172,7 @@ export function PathfinderEntryPage() {
             }}
           >
             <div className="inline-flex rounded-md border border-teal-300/50 px-3 py-1 text-sm font-semibold text-teal-100">
-              P1-A 固定试航包
+              真实背景试航
             </div>
             <h2 className="mt-5 text-2xl font-semibold text-white">
               从真实背景开始一次试航
@@ -176,7 +181,7 @@ export function PathfinderEntryPage() {
               {pageCopy.entryScope}
             </p>
             <div className="mt-6 grid gap-3">
-              {["真实背景", "样例 JD", "OpenDocuments", "6 问试航", "Markdown"].map(
+              {["真实背景", "样例 JD", "已审计项目", "试航问答", "Markdown"].map(
                 (step, index) => (
                   <div key={step} className="flex items-center gap-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-teal-300/60 bg-teal-300/10 text-sm font-semibold text-teal-100">
@@ -239,11 +244,68 @@ export function PathfinderEntryPage() {
 
 export function PathfinderBackgroundPage() {
   const router = useRouter();
-  const { userProfile, updateUserProfile, submitUserProfile } = usePathfinder();
+  const {
+    state,
+    userProfile,
+    updateUserProfile,
+    startInterviewSession,
+    answerInterviewQuestion,
+    extractInterviewSignals,
+    updateExtractedSignal,
+    confirmExtractedSignals,
+    submitUserProfile,
+  } = usePathfinder();
+  const [interviewAnswer, setInterviewAnswer] = useState("");
+  const [isInterviewBusy, setIsInterviewBusy] = useState(false);
   const ready = isUserProfileReady(userProfile);
+  const hasPendingSignals = state.extractedSignals.length > 0;
+  const canConfirmSignals = state.extractedSignals.some((signal) =>
+    signal.userEditableText.trim(),
+  );
 
   function updateField(key: keyof UserProfileInput, value: string) {
     updateUserProfile({ ...userProfile, [key]: value });
+  }
+
+  async function onStartInterview() {
+    setIsInterviewBusy(true);
+    try {
+      await startInterviewSession();
+    } finally {
+      setIsInterviewBusy(false);
+    }
+  }
+
+  async function onSendInterviewAnswer() {
+    const answer = interviewAnswer.trim();
+    if (!answer) return;
+    setIsInterviewBusy(true);
+    try {
+      await answerInterviewQuestion(answer);
+      setInterviewAnswer("");
+    } finally {
+      setIsInterviewBusy(false);
+    }
+  }
+
+  async function onExtractSignals() {
+    setIsInterviewBusy(true);
+    try {
+      await extractInterviewSignals();
+    } finally {
+      setIsInterviewBusy(false);
+    }
+  }
+
+  async function onConfirmSignals() {
+    if (!canConfirmSignals) return;
+    setIsInterviewBusy(true);
+    try {
+      await confirmExtractedSignals();
+      router.push("/pathfinder/recommendation");
+    } finally {
+      setIsInterviewBusy(false);
+    }
   }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -256,13 +318,188 @@ export function PathfinderBackgroundPage() {
   return (
     <div>
       <PageHeader
-        title="真实用户背景输入"
-        description={pageCopy.backgroundNotice}
-        eyebrow="不预置身份 / 不提供一键填充 / 不提供默认作答"
+        title="航前访谈：先聊一轮背景"
+        description="先用自然语言讲真实经历，系统会整理可编辑的转岗信号；只有你确认后的内容才会进入后续推荐。"
       />
+
+      <div className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Panel>
+          <div className="flex items-start gap-3">
+            <MessageSquareText
+              className="mt-1 h-5 w-5 shrink-0 text-teal-700"
+              aria-hidden="true"
+            />
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">
+                先聊一轮背景，再生成可编辑的转岗信号
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                你可以讲项目、流程、资料、协作、AI 工具和限制条件。AI
+                只负责整理草稿，不替你编经历，也不直接决定推荐结果。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {state.interviewMessages.length ? (
+              state.interviewMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`rounded-md border p-3 text-sm leading-6 ${
+                    message.role === "user"
+                      ? "border-teal-200 bg-teal-50 text-teal-950"
+                      : "border-slate-200 bg-slate-50 text-slate-800"
+                  }`}
+                >
+                  <div className="mb-1 text-xs font-semibold text-slate-500">
+                    {message.role === "user" ? "你的回答" : "下一问"}
+                  </div>
+                  {message.content}
+                </div>
+              ))
+            ) : (
+              <Notice title="从真实经历开始" tone="teal">
+                不需要写成长表单。先回答一段话，后续问题会围绕你已经说过的内容继续追问。
+              </Notice>
+            )}
+          </div>
+
+          <label className="mt-5 block">
+            <span className="text-sm font-semibold text-slate-950">
+              你的回答
+            </span>
+            <textarea
+              value={interviewAnswer}
+              onChange={(event) => setInterviewAnswer(event.target.value)}
+              rows={5}
+              placeholder="例如：我做过客服知识库整理，把常见问题、处理流程和用户反馈归类，也用 AI 工具辅助整理初稿，但最终会人工确认。"
+              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+            />
+          </label>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            {!state.interviewSessionId ? (
+              <ActionButton
+                onClick={
+                  interviewAnswer.trim()
+                    ? onSendInterviewAnswer
+                    : onStartInterview
+                }
+                disabled={isInterviewBusy}
+              >
+                {interviewAnswer.trim() ? "发送回答" : "开始访谈"}
+              </ActionButton>
+            ) : (
+              <ActionButton
+                onClick={onSendInterviewAnswer}
+                disabled={!interviewAnswer.trim() || isInterviewBusy}
+              >
+                发送回答
+              </ActionButton>
+            )}
+            <ActionButton
+              onClick={onExtractSignals}
+              variant="secondary"
+              disabled={
+                !state.interviewMessages.some(
+                  (message) => message.role === "user",
+                ) || isInterviewBusy
+              }
+            >
+              整理信号草稿
+            </ActionButton>
+          </div>
+        </Panel>
+
+        <div className="grid content-start gap-4">
+          <Notice
+            title={
+              state.aiInterviewStatus === "failed"
+                ? "访谈服务暂不可用"
+                : state.signalConfirmationStatus === "confirmed"
+                  ? "信号已由你确认"
+                  : hasPendingSignals
+                    ? "信号待你确认"
+                    : "用户保留控制权"
+            }
+            tone={
+              state.signalConfirmationStatus === "confirmed"
+                ? "teal"
+                : state.aiInterviewStatus === "failed"
+                  ? "rose"
+                  : "amber"
+            }
+          >
+            {state.aiInterviewStatus === "fallback"
+              ? "当前使用本地兜底整理，不读取或暴露任何模型 key；你仍然可以编辑并确认信号。"
+              : "AI 只整理你已经回答的内容；确认前不会进入推荐。"}
+          </Notice>
+          <Panel>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <PencilLine className="h-4 w-4 text-teal-700" aria-hidden="true" />
+              AI 提取的背景信号草稿
+            </div>
+            {hasPendingSignals ? (
+              <div className="mt-4 space-y-3">
+                {state.extractedSignals.map((signal) => (
+                  <label key={signal.signalId} className="block">
+                    <span className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                      {signal.label}
+                      <StatusPill
+                        label={
+                          signal.confirmationStatus === "user_confirmed"
+                            ? "用户已确认"
+                            : signal.confirmationStatus ===
+                                "pending_confirmation"
+                              ? "待确认"
+                              : "来自用户回答"
+                        }
+                        tone={
+                          signal.confirmationStatus === "user_confirmed"
+                            ? "teal"
+                            : "amber"
+                        }
+                      />
+                    </span>
+                    <textarea
+                      value={signal.userEditableText}
+                      onChange={(event) =>
+                        updateExtractedSignal(
+                          signal.signalId,
+                          event.target.value,
+                        )
+                      }
+                      rows={3}
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                    />
+                  </label>
+                ))}
+                <ActionButton
+                  onClick={onConfirmSignals}
+                  disabled={!canConfirmSignals || isInterviewBusy}
+                >
+                  确认信号并查看推荐
+                </ActionButton>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                回答后点击“整理信号草稿”，这里会出现可编辑信号。你可以删改措辞，再确认用于推荐。
+              </p>
+            )}
+          </Panel>
+        </div>
+      </div>
 
       <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Panel>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-950">
+              手动背景输入
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              如果访谈不可用，或你更想直接填写结构化背景，可以继续使用手动输入。
+            </p>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {userProfileFields.map((field) => (
               <label
@@ -327,27 +564,81 @@ export function PathfinderBackgroundPage() {
   );
 }
 
+function projectBoundaryItems(params: {
+  match: ProjectMatch;
+  project?: OpenSourceProjectRecord;
+}) {
+  const { match, project } = params;
+  return [
+    project
+      ? `${project.name}：${project.description}`
+      : `项目：${match.projectId}`,
+    project
+      ? `License：${project.license}（${project.licenseVerificationStatus}）`
+      : "License：等待项目库返回核验信息。",
+    project?.sourceBoundary
+      ? `来源边界：${project.sourceBoundary}`
+      : "来源边界：仅作已审计公开项目参考，不声明用户参与原项目。",
+    ...match.boundaryNotes,
+  ];
+}
+
 export function PathfinderRecommendationPage() {
   const { state, userProfile, generateTrialPackage } = usePathfinder();
   const router = useRouter();
   const [selectedPathId, setSelectedPathId] = useState<PathId>(priorityPathId);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [projects, setProjects] = useState<OpenSourceProjectRecord[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const fallbackPaths = useMemo(() => buildRecommendationPaths(userProfile), [userProfile]);
   const recommendation = state.recommendationResponse;
   const p1bPaths = recommendation?.paths ?? [];
   const selectedPath = getP1BRolePath(selectedPathId, recommendation);
-  const approvedMatches = getApprovedProjectMatches(selectedPathId, recommendation);
-  const canGeneratePackage = approvedMatches.some(
-    (match) => match.projectId === openDocumentsProjectRecord.projectId,
+  const approvedMatches = useMemo(
+    () => getApprovedProjectMatches(selectedPathId, recommendation),
+    [recommendation, selectedPathId],
   );
+  const approvedMatchKey = approvedMatches
+    .map((match) => match.projectId)
+    .join("|");
+  const projectById = useMemo(
+    () => new Map(projects.map((project) => [project.projectId, project])),
+    [projects],
+  );
+  const canGeneratePackage = approvedMatches.some(
+    (match) => match.projectId === selectedProjectId,
+  );
+  const confirmedSignals =
+    state.signalConfirmationStatus === "confirmed" && state.extractedSignals.length
+      ? state.extractedSignals
+      : [];
+
+  useEffect(() => {
+    let active = true;
+    void requestPathfinderProjects().then((response) => {
+      if (active) setProjects(response.projects);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const stillAvailable = approvedMatches.some(
+      (match) => match.projectId === selectedProjectId,
+    );
+    if (!stillAvailable) {
+      setSelectedProjectId(approvedMatches[0]?.projectId ?? "");
+    }
+  }, [approvedMatchKey, approvedMatches, selectedProjectId]);
 
   async function onGenerateTrialPackage() {
-    if (!canGeneratePackage || isGenerating) return;
+    if (!canGeneratePackage || !selectedProjectId || isGenerating) return;
     setIsGenerating(true);
     try {
       await generateTrialPackage({
         selectedPathId,
-        selectedProjectId: openDocumentsProjectRecord.projectId,
+        selectedProjectId,
       });
       router.push("/pathfinder/trial");
     } finally {
@@ -380,12 +671,12 @@ export function PathfinderRecommendationPage() {
       />
 
       <div className="mb-6">
-        <Notice title="P1-B.1 推荐来源" tone={recommendation?.source === "fallback_mock" ? "amber" : "teal"}>
+        <Notice title="推荐依据" tone={recommendation?.source === "fallback_mock" ? "amber" : "teal"}>
           {pageCopy.recommendationConclusion}
           {recommendation?.source === "fallback_mock" ? (
             <>
               <br />
-              当前显示 fallback_mock：后端 P1-B API 不可用或尚未合并，不接 LLM。
+              当前使用本地规则兜底；推荐仍只使用你确认的背景、样例 JD 和已审计项目库。
             </>
           ) : null}
         </Notice>
@@ -399,11 +690,11 @@ export function PathfinderRecommendationPage() {
                 路径星图工作台
               </div>
               <p className="mt-1 text-sm text-slate-400">
-                沿四条 P1-B 路径查看用户信号、样例 JD、项目候选和风险边界。
+                查看已确认信号、样例 JD、已审计项目和风险边界。
               </p>
             </div>
             <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">
-              不做评分，不接 LLM
+              不做评分，AI 不直接决定结果
             </div>
           </div>
           <div className="grid gap-3">
@@ -465,15 +756,18 @@ export function PathfinderRecommendationPage() {
             {selectedPath.rationale}
           </p>
           <div className="mt-5 space-y-3">
-            {recommendation?.profileSignals.length ? (
+            {(confirmedSignals.length || recommendation?.profileSignals.length) ? (
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                   <UserRound className="h-4 w-4 text-teal-700" aria-hidden="true" />
-                  UserProfileSignal
+                  已确认背景信号
                 </div>
                 <div className="mt-2">
                   <BulletList
-                    items={recommendation.profileSignals.map(
+                    items={(confirmedSignals.length
+                      ? confirmedSignals
+                      : recommendation?.profileSignals ?? []
+                    ).map(
                       (signal) => `${signal.label}：${signal.evidenceText}`,
                     )}
                   />
@@ -483,7 +777,7 @@ export function PathfinderRecommendationPage() {
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <FileText className="h-4 w-4 text-teal-700" aria-hidden="true" />
-                RolePathRecommendation 证据链
+                路径证据链
               </div>
               <div className="mt-2">
                 <BulletList
@@ -496,21 +790,46 @@ export function PathfinderRecommendationPage() {
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <Database className="h-4 w-4 text-teal-700" aria-hidden="true" />
-                ProjectMatch / OpenDocuments approved
+                已审计项目库
               </div>
-              <div className="mt-2">
-                {canGeneratePackage ? (
-                  <BulletList
-                    items={[
-                      `${openDocumentsProjectRecord.name}：${openDocumentsProjectRecord.status}，License ${openDocumentsProjectRecord.licenseVerificationStatus}。`,
-                      "仅作 reference_only 公开参考，可进入 TrialPackageCandidate 生成链路。",
-                    ]}
-                  />
+              <div className="mt-3 space-y-3">
+                {approvedMatches.length ? (
+                  approvedMatches.map((match) => {
+                    const project = projectById.get(match.projectId);
+                    const selected = selectedProjectId === match.projectId;
+                    return (
+                      <button
+                        key={`${match.rolePathId}-${match.projectId}`}
+                        type="button"
+                        onClick={() => setSelectedProjectId(match.projectId)}
+                        className={`w-full rounded-md border p-3 text-left transition ${
+                          selected
+                            ? "border-teal-300 bg-teal-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-950">
+                            {project?.name ?? match.projectId}
+                          </span>
+                          <StatusPill
+                            label={selected ? "当前可试航项目" : "已审计项目"}
+                            tone={selected ? "teal" : "slate"}
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <BulletList
+                            items={projectBoundaryItems({ match, project })}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })
                 ) : (
                   <BulletList
                     items={[
-                      "该路径当前没有 OpenDocuments approved 匹配。",
-                      "待核验候选项目不进入完整试航包生成链路。",
+                      "该路径当前没有可进入试航的已审计项目匹配。",
+                      "待核验项目不会进入完整试航包生成链路。",
                     ]}
                   />
                 )}
@@ -531,7 +850,7 @@ export function PathfinderRecommendationPage() {
           <div className="mt-5">
             {canGeneratePackage ? (
               <ActionButton onClick={onGenerateTrialPackage} disabled={isGenerating}>
-                {isGenerating ? "正在生成试航包" : "生成 TrialPackageCandidate"}
+                {isGenerating ? "正在生成试航包" : "生成试航包"}
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </ActionButton>
             ) : (
@@ -547,8 +866,31 @@ export function PathfinderRecommendationPage() {
 export function PathfinderTrialPage() {
   const { state, userProfile, trialAnswerMap, answerQuestion } =
     usePathfinder();
+  const sourceProject =
+    state.trailRecord.trialPackageCandidate?.sourceProject ??
+    openDocumentsProjectRecord;
 
-  const missing = trialQuestions.filter(
+  const activeTrialQuestions = useMemo<TrialQuestion[]>(() => {
+    const candidateQuestions =
+      state.trailRecord.trialPackageCandidate?.trialQuestions;
+    if (!candidateQuestions?.length) return trialQuestions;
+
+    return candidateQuestions.map((question) => {
+      const fallback = trialQuestions.find(
+        (item) => item.id === question.questionId,
+      );
+      return {
+        id: question.questionId,
+        title: question.title,
+        prompt: question.prompt,
+        helper:
+          fallback?.helper ??
+          "请基于你的真实经历作答，并保留项目来源与个人产出的边界。",
+      };
+    });
+  }, [state.trailRecord.trialPackageCandidate?.trialQuestions]);
+
+  const missing = activeTrialQuestions.filter(
     (question) => !trialAnswerMap[question.id]?.trim(),
   );
   const canEnterResult =
@@ -562,7 +904,7 @@ export function PathfinderTrialPage() {
       <div>
         <PageHeader
           title="需要先填写背景"
-          description="试航 6 问必须基于真实用户背景开始，不提供默认身份或默认作答。"
+          description="试航问答必须基于真实用户背景开始，不提供默认身份或默认作答。"
         />
         <ButtonLink href="/pathfinder/background">返回背景页</ButtonLink>
       </div>
@@ -572,7 +914,7 @@ export function PathfinderTrialPage() {
   return (
     <div>
       <PageHeader
-        title="OpenDocuments 6 问试航"
+        title={`${sourceProject.name} 试航问答`}
         description={pageCopy.trialBoundary}
         eyebrow={`候选人：${displayNameForProfile(userProfile)} / ${labelForRecordStatus(state.trailRecord.status)}`}
       />
@@ -583,18 +925,33 @@ export function PathfinderTrialPage() {
             <div className="flex items-center gap-3">
               <Database className="h-5 w-5 text-teal-700" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-slate-950">
-                OpenDocuments 来源参照
+                {sourceProject.name} 来源参照
               </h2>
             </div>
             <div className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-              <p>项目：{openSourceProject.name}</p>
-              <p>License：{openSourceProject.license}</p>
-              <p>定位：{openSourceProject.positioning}</p>
-              <p>{openSourceProject.boundaryNotice}</p>
+              <p>项目：{sourceProject.name}</p>
+              <p>来源：{sourceProject.sourceUrl}</p>
+              <p>License：{sourceProject.license}</p>
+              <p>核验状态：{sourceProject.licenseVerificationStatus}</p>
+              {sourceProject.sourceBoundary ? (
+                <p>{sourceProject.sourceBoundary}</p>
+              ) : null}
+              <InfoBlock
+                title="公开能力"
+                items={sourceProject.publicCapabilities.slice(0, 4)}
+              />
+              <InfoBlock
+                title="可用表达边界"
+                items={sourceProject.allowedContexts.slice(0, 3)}
+              />
+              <InfoBlock
+                title="不可声称"
+                items={sourceProject.forbiddenClaims.slice(0, 3)}
+              />
             </div>
           </Panel>
           <Notice
-            title={missing.length ? "6 问尚未完成" : "6 问已完成"}
+            title={missing.length ? "试航问答尚未完成" : "试航问答已完成"}
             tone={missing.length ? "amber" : "teal"}
           >
             {missing.length
@@ -607,10 +964,10 @@ export function PathfinderTrialPage() {
           />
         </div>
 
-        <Section title="固定 6 问作答">
+        <Section title="试航作答">
           <Panel>
             <div className="space-y-5">
-              {trialQuestions.map((question, index) => {
+              {activeTrialQuestions.map((question, index) => {
                 const value = trialAnswerMap[question.id] ?? "";
                 return (
                   <div key={question.id} className="rounded-md border border-slate-200 bg-white p-4">
@@ -688,9 +1045,44 @@ export function PathfinderResultPage() {
   const [copyStatus, setCopyStatus] = useState<string>("");
   const selectedPathId = state.trailRecord.selectedPathId as PathId;
   const selectedPath = getRecommendationPath(selectedPathId, userProfile);
+  const sourceProject =
+    state.trailRecord.trialPackageCandidate?.sourceProject ??
+    openDocumentsProjectRecord;
+  const activeTrialQuestions = useMemo<TrialQuestion[]>(() => {
+    const candidateQuestions =
+      state.trailRecord.trialPackageCandidate?.trialQuestions;
+    if (!candidateQuestions?.length) return trialQuestions;
+
+    return candidateQuestions.map((question) => {
+      const fallback = trialQuestions.find(
+        (item) => item.id === question.questionId,
+      );
+      return {
+        id: question.questionId,
+        title: question.title,
+        prompt: question.prompt,
+        helper:
+          fallback?.helper ??
+          "请基于你的真实经历作答，并保留项目来源与个人产出的边界。",
+      };
+    });
+  }, [state.trailRecord.trialPackageCandidate?.trialQuestions]);
   const markdownInput = useMemo(
-    () => createMarkdownInput(selectedPathId, userProfile, trialAnswerMap),
-    [selectedPathId, trialAnswerMap, userProfile],
+    () =>
+      createMarkdownInput(
+        selectedPathId,
+        userProfile,
+        trialAnswerMap,
+        activeTrialQuestions,
+        sourceProject,
+      ),
+    [
+      activeTrialQuestions,
+      selectedPathId,
+      sourceProject,
+      trialAnswerMap,
+      userProfile,
+    ],
   );
   const markdownResult = useMemo(
     () => generatePathfinderMarkdown(markdownInput),
@@ -769,7 +1161,7 @@ export function PathfinderResultPage() {
             />
           </div>
           <p className="mt-3 text-base leading-7 text-slate-800">
-            {traceChainForProfile(userProfile)}
+            {traceChainForProfile(userProfile, sourceProject.name)}
           </p>
           {state.backendSync.status === "failed" ? (
             <p className="mt-2 text-sm leading-6 text-rose-800">
@@ -780,13 +1172,13 @@ export function PathfinderResultPage() {
             <TraceNode
               icon={<FileText className="h-5 w-5" aria-hidden="true" />}
               title="输入"
-              body={`样例 JD、${displayNameForProfile(userProfile)}背景、OpenDocuments 公开来源`}
+              body={`样例 JD、${displayNameForProfile(userProfile)}背景、${sourceProject.name} 公开来源`}
             />
             <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
             <TraceNode
               icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
               title="过程"
-              body="6 问试航作答与边界说明"
+              body="试航作答与边界说明"
             />
             <ArrowRight className="hidden h-5 w-5 text-teal-700 md:block" aria-hidden="true" />
             <TraceNode
@@ -894,7 +1286,7 @@ export function PathfinderResultPage() {
 
       {missing.length > 0 ? (
         <div className="mb-6">
-          <Notice title="6 问尚未完成" tone="amber">
+          <Notice title="试航问答尚未完成" tone="amber">
             {pageCopy.missingQuestions}
             <br />
             缺少：{missing.map(labelForMissing).join("、")}。
@@ -907,12 +1299,12 @@ export function PathfinderResultPage() {
           headers={["字段", "内容"]}
           rows={[
             ["候选人", displayNameForProfile(userProfile)],
-            ["试航对象", openSourceProject.name],
+            ["试航对象", sourceProject.name],
             ["推荐路径", selectedPath.title],
             ["试航主题", "工程企业知识库 AI 助手"],
             [
               "输入来源",
-              `${displayNameForProfile(userProfile)}背景 + 样例 JD + OpenDocuments 公开来源`,
+              `${displayNameForProfile(userProfile)}背景 + 样例 JD + ${sourceProject.name} 公开来源`,
             ],
             ["输出结果", "作品集一页纸草稿 + 指标表 + 风险清单"],
           ]}

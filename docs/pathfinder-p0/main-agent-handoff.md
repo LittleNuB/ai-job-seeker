@@ -675,3 +675,41 @@ Main Agent follow-up order:
 - Scope guard: no GitHub Search, no live RAG, no scoring/probability/certification/employer screening/resume packaging, no frontend changes, no forbidden B-class files touched.
 - Remaining risks: frontend should render display labels from title/prompt while persisting the stable IDs; future audited-project markdown schema expansion must update backend and frontend together.
 - Review recommendation: Main Agent review recommended before merging because this closes a cross-FE/BE contract mismatch.
+
+## FE-003 P1-C.1 Status
+
+- Task ID: `FE-003`
+- Child role: `前端开发B`
+- Worktree: `C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-fe-003`
+- Branch: `codex/pathfinder-fe-003`
+- Baseline: rebased onto `codex/pathfinder-p1a-integration` including `e138607 feat: load pathfinder audited project library`.
+- Delivered files:
+  - `frontend/src/features/pathfinder/api.ts`
+  - `frontend/src/features/pathfinder/contract.ts`
+  - `frontend/src/features/pathfinder/data.ts`
+  - `frontend/src/features/pathfinder/pages.tsx`
+  - `frontend/src/features/pathfinder/state.tsx`
+  - `frontend/src/features/pathfinder/types.ts`
+  - `frontend/scripts/pathfinder-static-tests.ts`
+  - `frontend/e2e/pathfinder.spec.ts`
+  - `docs/pathfinder-p0/p1-c-frontend-implementation.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Runtime behavior:
+  - `/pathfinder/background` now offers a pre-flight interview flow plus manual background fallback.
+  - FE client calls the five BE-003 interview APIs and normalizes backend sessions/signals into frontend state.
+  - Extracted signals are editable and must be user-confirmed before recommendation.
+  - Unconfirmed interview signals do not unlock the full recommendation page.
+  - Recommendation page loads BE-004 audited project records and renders matched project cards without score, ranking, or probability.
+  - Trial page renders current package question titles/prompts dynamically while preserving the backend-compatible six question IDs; FE no longer emits `mvp_plan` or `portfolio_boundary` as runtime answer IDs.
+  - Trial page, result page, and Markdown output now read the selected `trialPackageCandidate.sourceProject`; non-OpenDocuments exports use generic source/license/capability headings and project-specific filenames.
+  - Chatwoot license boundary is preserved in UI and Markdown validation coverage.
+  - Chatwoot license boundary is preserved in project card display.
+- Scope guard: no DeepSeek key exposure, no frontend key handling, no GitHub Search UI, no LLM final recommendation, no backend changes, no new API paths, no scoring/ranking/probability UI.
+- Validation:
+  - `npm run test:safety` passed.
+  - `npm run lint` passed.
+  - `npm run build` passed.
+  - `npm run test:e2e -- e2e/pathfinder.spec.ts` passed after starting the local frontend server on `127.0.0.1:3000`.
+- Remaining risks:
+  - Project-matching quality is still rule-first and should be reviewed with real interview transcripts.
+  - Product owner may still decide whether all seven approved projects should be visible immediately or staged.

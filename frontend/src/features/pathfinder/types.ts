@@ -41,6 +41,41 @@ export interface UserProfileInput {
   constraints: string;
 }
 
+export type InterviewMessageRole = "assistant" | "user" | "system";
+
+export type InterviewMessageStatus = "sent" | "received" | "failed";
+
+export interface InterviewMessage {
+  id: string;
+  role: InterviewMessageRole;
+  content: string;
+  createdAt: string;
+  status: InterviewMessageStatus;
+}
+
+export type UserProfileSignalConfirmationStatus =
+  | "from_user_answer"
+  | "pending_confirmation"
+  | "user_confirmed";
+
+export interface ExtractedProfileSignal extends UserProfileSignal {
+  confirmationStatus: UserProfileSignalConfirmationStatus;
+  userEditableText: string;
+}
+
+export type SignalConfirmationStatus =
+  | "not_started"
+  | "pending_confirmation"
+  | "confirmed";
+
+export type AiInterviewStatus =
+  | "idle"
+  | "asking"
+  | "extracting"
+  | "fallback"
+  | "failed"
+  | "confirmed";
+
 export type PathfinderApiSource = "api" | "fallback_mock";
 
 export type RecommendationDecision =
@@ -54,16 +89,25 @@ export interface UserProfileSignal {
   category:
     | "industry_background"
     | "domain_material"
+    | "project_experience"
     | "communication"
     | "data_handling"
     | "ai_tool_usage"
     | "technical_foundation"
     | "career_constraint"
-    | "risk";
+    | "risk"
+    | "goal";
   label: string;
   sourceField: keyof UserProfileInput | string;
   evidenceText: string;
-  confidence: "rule_high" | "rule_medium" | "needs_user_clarification";
+  confidence:
+    | "rule_high"
+    | "rule_medium"
+    | "needs_user_clarification"
+    | "low"
+    | "medium"
+    | "high"
+    | "needs_user_review";
 }
 
 export interface RecommendationEvidence {
@@ -94,23 +138,53 @@ export interface OpenSourceProjectRecord {
   projectId: string;
   name: string;
   sourceUrl: string;
+  officialUrl?: string;
   host: "github" | "gitlab" | "other_public_source";
+  repositoryVisibility?: "public" | "private" | "unknown";
   description: string;
   license: string;
   licenseSpdxId?: string;
   licenseFileUrl?: string;
   licenseVerificationStatus: "verified" | "pending" | "failed";
+  licenseVerifiedBy?: string;
+  licenseVerifiedAt?: string;
+  licenseVerificationMethod?: string;
   lastManualCheckAt?: string;
+  manualCheckMethod?: string[];
   referenceRole: "reference_only";
   status: "candidate" | "approved_for_trial_package" | "needs_review" | "retired";
+  projectDirection?: string[];
   rolePathIds: PathId[];
   projectTags: string[];
   capabilityTags: string[];
   riskTags: string[];
+  suitableUserSignals?: string[];
+  unsuitableUserSignals?: string[];
+  pathFit?: Array<{
+    pathId: PathId;
+    fit: "strong" | "medium" | "weak" | "not_applicable";
+    rationale: string;
+  }>;
   publicCapabilities: string[];
+  trialTaskIdea?: {
+    title: string;
+    summary: string;
+    genericTemplateId?: string;
+  };
+  evidenceRequirements?: string[];
+  riskNotes?: string[];
+  sourceBoundary?: string;
   notClaimed: string[];
   forbiddenClaims: string[];
   allowedContexts: string[];
+  reviewTriggers?: string[];
+  sourceSnapshot?: {
+    checkedBranch?: string;
+    readmeSummary?: string;
+    licenseSummary?: string;
+    manualCheckNotes?: string[];
+    nonCanonicalMetadata?: Record<string, unknown>;
+  };
 }
 
 export interface ProjectMatch {
@@ -189,6 +263,36 @@ export interface GenerateTrialPackageResponse {
   trialPackageCandidate: TrialPackageCandidate;
   antiPackagingDefaults: AntiPackagingCheck;
   source: PathfinderApiSource;
+}
+
+export interface PathfinderInterviewSession {
+  sessionId: string;
+  status: AiInterviewStatus;
+  messages: InterviewMessage[];
+  extractedSignals: ExtractedProfileSignal[];
+  nextQuestion?: string;
+  source: PathfinderApiSource;
+}
+
+export interface CreateInterviewSessionResponse {
+  schemaVersion: "p1c.v1";
+  session: PathfinderInterviewSession;
+}
+
+export interface SubmitInterviewTurnResponse {
+  schemaVersion: "p1c.v1";
+  session: PathfinderInterviewSession;
+}
+
+export interface ExtractInterviewSignalsResponse {
+  schemaVersion: "p1c.v1";
+  session: PathfinderInterviewSession;
+}
+
+export interface ConfirmInterviewSignalsResponse {
+  schemaVersion: "p1c.v1";
+  session: PathfinderInterviewSession;
+  userProfile: UserProfileInput;
 }
 
 export interface SampleJd {
@@ -366,7 +470,7 @@ export interface PortfolioDraft {
     mitigation: string;
   }>;
   sourceProjectReference: {
-    name: "OpenDocuments";
+    name: string;
     url: string;
     license: string;
     role: "reference_only";
@@ -375,7 +479,7 @@ export interface PortfolioDraft {
   userTrialContribution: string[];
   // Legacy backend compatibility only; current P1-A keys are sourceProjectReference/userTrialContribution.
   opendocumentsReference?: {
-    name: "OpenDocuments";
+    name: string;
     url: string;
     license: string;
     role: "reference_only";
@@ -450,6 +554,11 @@ export interface BackendSyncState {
 
 export interface PathfinderState {
   profileSubmitted: boolean;
+  interviewSessionId?: string;
+  interviewMessages: InterviewMessage[];
+  extractedSignals: ExtractedProfileSignal[];
+  signalConfirmationStatus: SignalConfirmationStatus;
+  aiInterviewStatus: AiInterviewStatus;
   recommendationResponse?: PathfinderRecommendationResponse;
   trialPackageResponse?: GenerateTrialPackageResponse;
   trailRecord: TrailRecord;
@@ -462,6 +571,7 @@ export interface MarkdownInput {
   sampleJdNotice: SampleJdNotice;
   sampleJds: SampleJd[];
   openSourceProject: OpenSourceProject;
+  sourceProject: OpenSourceProjectRecord;
   selectedPath: RecommendationPath;
   trialQuestions: TrialQuestion[];
   trialAnswers: Partial<Record<TrialQuestionId, string>>;

@@ -10,6 +10,14 @@ const requiredApiQuestionIds = [
   "portfolio_extension",
   "ai_usage_explanation",
 ];
+const genericApiQuestionIds = [
+  "project_understanding",
+  "role_connection",
+  "scenario_gap",
+  "application_solution",
+  "portfolio_extension",
+  "ai_usage_explanation",
+];
 const requiredMarkdownSections = [
   "candidate_background",
   "path_conclusion",
@@ -153,6 +161,359 @@ async function mockPathfinderApi(page: Page, requests: ApiRequestLog[]) {
   );
 }
 
+function projectRecord(projectId: string, name: string, license = "MIT") {
+  return {
+    projectId,
+    name,
+    sourceUrl: `https://github.com/example/${projectId}`,
+    officialUrl: `https://example.com/${projectId}`,
+    host: "github",
+    repositoryVisibility: "public",
+    description: `${name} audited public project reference.`,
+    license,
+    licenseSpdxId: "MIT",
+    licenseVerificationStatus: "verified",
+    licenseVerifiedAt: "2026-06-11",
+    referenceRole: "reference_only",
+    status: "approved_for_trial_package",
+    rolePathIds: ["industry-ai-product-assistant"],
+    projectTags: ["support_assistant"],
+    capabilityTags: ["scenario_mapping"],
+    riskTags: ["attribution_risk"],
+    publicCapabilities: ["workflow mapping", "knowledge base reference"],
+    notClaimed: [`不声明用户参与 ${name} 原项目。`],
+    forbiddenClaims: [`不得声明用户开发 ${name}。`],
+    allowedContexts: [`基于 ${name} 公开信息做试航拆解。`],
+    sourceBoundary:
+      projectId === "chatwoot"
+        ? "已审计项目库 / 当前样本参考；Chatwoot enterprise 目录有单独 License 边界。"
+        : "已审计项目库 / 当前样本参考。",
+  };
+}
+
+async function mockRecommendationAndProjectApi(
+  page: Page,
+  requests: ApiRequestLog[],
+) {
+  const projects = [
+    projectRecord("opendocuments", "OpenDocuments"),
+    projectRecord(
+      "chatwoot",
+      "Chatwoot",
+      "MIT Expat outside enterprise directory; enterprise directory has separate license",
+    ),
+  ];
+
+  await page.route("**/api/pathfinder/projects?status=approved_for_trial_package", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: "p1b.v1",
+        projects,
+        dataBoundary: "已审计项目库；仅作公开来源参考。",
+      }),
+    });
+  });
+
+  await page.route("**/api/pathfinder/recommendations", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as Record<string, unknown>;
+    requests.push({
+      method: request.method(),
+      url: request.url(),
+      headers: request.headers(),
+      body,
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: "p1b.v1",
+        recommendationRun: {
+          recommendationRunId: "p1b-rec-e2e",
+          schemaVersion: "p1b.v1",
+          createdAt: "2026-06-11T00:00:00Z",
+          ruleVersion: {
+            version: "p1b.e2e",
+            effectiveAt: "2026-06-11T00:00:00Z",
+            rolePathTaxonomyVersion: "p1b",
+            projectLibraryVersion: "p1c-audited-project-library.v1",
+            antiPackagingRuleVersion: "p1-a.frontend-rules.v1",
+            notes: [],
+          },
+          userProfileSnapshot: body.userProfile,
+          profileSignals: [
+            {
+              signalId: "signal-e2e",
+              category: "project_experience",
+              label: "用户确认经历",
+              sourceField: "interview",
+              evidenceText: "有客服知识库整理和流程拆解经历。",
+              confidence: "medium",
+            },
+          ],
+          paths: [
+            {
+              pathId: "industry-ai-product-assistant",
+              title: "行业 AI 应用产品助理",
+              decision: "priority_trial",
+              rationale: "可围绕用户确认信号做试航。",
+              evidence: [],
+              riskNotes: ["不得声明参与原项目。"],
+              suggestedProjectTypes: ["knowledge_base"],
+              nextTrialAction: "选择已审计项目生成试航包。",
+            },
+          ],
+          projectMatches: [
+            {
+              projectId: "opendocuments",
+              rolePathId: "industry-ai-product-assistant",
+              decision: "matched_for_trial",
+              matchedRules: ["audited_reference"],
+              evidence: [],
+              boundaryNotes: ["仅作公开参考。"],
+            },
+            {
+              projectId: "chatwoot",
+              rolePathId: "industry-ai-product-assistant",
+              decision: "matched_for_trial",
+              matchedRules: ["audited_reference"],
+              evidence: [],
+              boundaryNotes: [
+                "MIT Expat outside enterprise directory; enterprise directory has separate license",
+              ],
+            },
+          ],
+        },
+        profileSignals: [],
+        paths: [
+          {
+            pathId: "industry-ai-product-assistant",
+            title: "行业 AI 应用产品助理",
+            decision: "priority_trial",
+            rationale: "可围绕用户确认信号做试航。",
+            evidence: [],
+            riskNotes: ["不得声明参与原项目。"],
+            suggestedProjectTypes: ["knowledge_base"],
+            nextTrialAction: "选择已审计项目生成试航包。",
+          },
+        ],
+        projectMatches: [
+          {
+            projectId: "opendocuments",
+            rolePathId: "industry-ai-product-assistant",
+            decision: "matched_for_trial",
+            matchedRules: ["audited_reference"],
+            evidence: [],
+            boundaryNotes: ["仅作公开参考。"],
+          },
+          {
+            projectId: "chatwoot",
+            rolePathId: "industry-ai-product-assistant",
+            decision: "matched_for_trial",
+            matchedRules: ["audited_reference"],
+            evidence: [],
+            boundaryNotes: [
+              "MIT Expat outside enterprise directory; enterprise directory has separate license",
+            ],
+          },
+        ],
+        scopeDisclaimer: "不做评分、排名或概率预测。",
+      }),
+    });
+  });
+
+  await page.route("**/api/pathfinder/trial-packages/generate", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as Record<string, string>;
+    requests.push({
+      method: request.method(),
+      url: request.url(),
+      headers: request.headers(),
+      body,
+    });
+    const sourceProject =
+      projects.find((project) => project.projectId === body.selectedProjectId) ??
+      projects[0];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: "p1b.v1",
+        trialPackageCandidate: {
+          trialPackageId: `trial-${sourceProject.projectId}`,
+          trialPackageVersion: "1.0.0",
+          generatedFrom: {
+            recommendationRunId: body.recommendationRunId,
+            selectedPathId: body.selectedPathId,
+            selectedProjectId: body.selectedProjectId,
+            ruleVersion: "p1b.e2e",
+          },
+          title: `${sourceProject.name} 试航`,
+          targetRolePath: {
+            pathId: "industry-ai-product-assistant",
+            title: "行业 AI 应用产品助理",
+            decision: "priority_trial",
+            rationale: "可围绕用户确认信号做试航。",
+            evidence: [],
+            riskNotes: [],
+            suggestedProjectTypes: [],
+            nextTrialAction: "",
+          },
+          sourceProject,
+          trialQuestions: genericApiQuestionIds.map((questionId) => ({
+            questionId,
+            title:
+              questionId === "application_solution"
+                ? "MVP 计划"
+                : questionId === "portfolio_extension"
+                  ? "作品集边界"
+                  : questionId,
+            prompt: `${sourceProject.name} ${questionId} prompt`,
+            required: true,
+          })),
+          requiredMarkdownSections,
+          forbiddenClaims: sourceProject.forbiddenClaims,
+          sampleJdDisclaimer: "样例 JD / 当前样本趋势参考。",
+        },
+        antiPackagingDefaults: {
+          rulesVersion: "p1-a.frontend-rules.v1",
+          status: "not_run",
+          exportAllowed: false,
+          findings: [],
+          requiredMarkdownSections: Object.fromEntries(
+            requiredMarkdownSections.map((section) => [section, false]),
+          ),
+          blockingCount: 0,
+          warningCount: 0,
+        },
+      }),
+    });
+  });
+}
+
+async function mockInterviewApi(page: Page, requests: ApiRequestLog[]) {
+  const createdAt = "2026-06-11T00:00:00Z";
+  const session = {
+    schemaVersion: "p1c.v1",
+    sessionId: "interview-e2e",
+    status: "active",
+    messages: [
+      {
+        messageId: "assistant-1",
+        role: "assistant",
+        content: "先讲一段你最近整理过的业务资料或流程。",
+        createdAt,
+        modelStatus: "ok",
+      },
+    ],
+    extractedSignals: [],
+    confirmedSignals: [],
+    llmStatus: "ok",
+    createdAt,
+    updatedAt: createdAt,
+  };
+
+  await page.route("**/api/pathfinder/interview/sessions", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as Record<string, unknown>;
+    requests.push({ method: request.method(), url: request.url(), headers: request.headers(), body });
+    const messages = body.initialUserInput
+      ? [
+          {
+            messageId: "user-1",
+            role: "user",
+            content: body.initialUserInput,
+            createdAt,
+          },
+          ...session.messages,
+        ]
+      : session.messages;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ ...session, messages }),
+    });
+  });
+
+  await page.route("**/api/pathfinder/interview/sessions/interview-e2e/turns", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as Record<string, unknown>;
+    requests.push({ method: request.method(), url: request.url(), headers: request.headers(), body });
+    const nextSession = {
+      ...session,
+      messages: [
+        ...session.messages,
+        {
+          messageId: "user-1",
+          role: "user",
+          content: body.message,
+          createdAt,
+        },
+        {
+          messageId: "assistant-2",
+          role: "assistant",
+          content: "这些经历里，哪些内容是你亲自整理和确认的？",
+          createdAt,
+          modelStatus: "ok",
+        },
+      ],
+      updatedAt: createdAt,
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: "p1c.v1",
+        sessionId: "interview-e2e",
+        assistantMessage: nextSession.messages[2],
+        session: nextSession,
+      }),
+    });
+  });
+
+  await page.route("**/api/pathfinder/interview/sessions/interview-e2e/signals", async (route) => {
+    requests.push({ method: route.request().method(), url: route.request().url(), headers: route.request().headers(), body: {} });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        schemaVersion: "p1c.v1",
+        sessionId: "interview-e2e",
+        modelStatus: "ok",
+        signals: [
+          {
+            signalId: "sig-1",
+            category: "project_experience",
+            label: "客服知识库整理",
+            evidenceText: "有客服知识库整理和流程拆解经历。",
+            sourceMessageIds: ["user-1"],
+            confidence: "needs_user_review",
+            status: "candidate",
+          },
+        ],
+        createdAt,
+      }),
+    });
+  });
+
+  await page.route("**/api/pathfinder/interview/sessions/interview-e2e/confirmed-signals", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as { confirmedSignals: unknown[] };
+    requests.push({ method: request.method(), url: request.url(), headers: request.headers(), body: body as unknown as Record<string, unknown> });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...session,
+        status: "signals_confirmed",
+        confirmedSignals: body.confirmedSignals,
+      }),
+    });
+  });
+}
+
 async function fillProfile(page: Page) {
   await page.getByLabel("姓名或称呼（可选）").fill(profile.displayName);
   await page.getByLabel("专业 / 背景").fill(profile.professionalBackground);
@@ -179,9 +540,118 @@ test("guards recommendation when real background is missing", async ({ page }) =
   await expect(page.getByText("缺少背景时不会展示伪造的用户证据链")).toBeVisible();
 });
 
+test("runs AI interview, lets user edit confirmed signals, and generates a matched audited project trial", async ({
+  page,
+}) => {
+  const requests: ApiRequestLog[] = [];
+  await mockInterviewApi(page, requests);
+  await mockRecommendationAndProjectApi(page, requests);
+  await mockPathfinderApi(page, requests);
+
+  await page.goto("/pathfinder/background");
+  await page
+    .getByLabel("你的回答")
+    .fill("我做过客服知识库整理，也拆过用户反馈流程。");
+  await page.getByRole("button", { name: "发送回答" }).click();
+  await expect(page.getByText("下一问").last()).toBeVisible();
+
+  await page.getByRole("button", { name: "整理信号草稿" }).click();
+  await expect(page.getByText("客服知识库整理待确认")).toBeVisible();
+  await page
+    .locator("textarea")
+    .nth(1)
+    .fill("我确认做过客服知识库整理和流程拆解，但没有参与原项目开发。");
+  await page.getByRole("button", { name: "确认信号并查看推荐" }).click();
+
+  await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
+  await expect(page.getByText("已确认背景信号")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Chatwoot/ })).toBeVisible();
+  await expect(page.getByText("GitHub Search")).toHaveCount(0);
+  await expect(page.getByText("score")).toHaveCount(0);
+  await expect(page.getByText("ranking")).toHaveCount(0);
+  await expect(page.getByText("probability")).toHaveCount(0);
+  await expect(page.getByText("排名")).toHaveCount(0);
+  await expect(page.getByText("分数")).toHaveCount(0);
+  await expect(page.getByText("概率")).toHaveCount(0);
+  await expect(
+    page.getByText(
+      "MIT Expat outside enterprise directory; enterprise directory has separate license",
+    ).first(),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: /Chatwoot/ }).click();
+  await page.getByRole("button", { name: /生成试航包/ }).click();
+  await expect(page).toHaveURL(/\/pathfinder\/trial$/);
+  await expect(page.getByRole("heading", { name: "Chatwoot 试航问答" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chatwoot 来源参照" })).toBeVisible();
+  await expect(page.getByText("MVP 计划", { exact: true })).toBeVisible();
+  await expect(page.locator("textarea")).toHaveCount(6);
+  await expect(page.getByText("OpenDocuments 来源参照")).toHaveCount(0);
+
+  await fillAnswers(page);
+  await page.getByRole("link", { name: "进入结果页" }).click();
+  await expect(page).toHaveURL(/\/pathfinder\/result$/);
+  const chatwootMarkdownPreview = page.locator("textarea").last();
+  await expect(chatwootMarkdownPreview).toHaveValue(/## 项目来源与 License/);
+  await expect(chatwootMarkdownPreview).toHaveValue(/## 公开项目能力/);
+  await expect(chatwootMarkdownPreview).toHaveValue(/试航对象：Chatwoot/);
+  await expect(chatwootMarkdownPreview).toHaveValue(
+    /MIT Expat outside enterprise directory; enterprise directory has separate license/,
+  );
+  await expect(chatwootMarkdownPreview).not.toHaveValue(/试航对象：OpenDocuments/);
+
+  const chatwootDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "下载 Markdown" }).click();
+  const chatwootDownload = await chatwootDownloadPromise;
+  expect(chatwootDownload.suggestedFilename()).toBe("pathfinder-candidate-chatwoot.md");
+
+  const serializedRequests = JSON.stringify(requests);
+  expect(serializedRequests).not.toContain("DEEPSEEK");
+  expect(serializedRequests).not.toContain("api_key");
+});
+
+test("keeps recommendation guarded until AI signals are confirmed", async ({ page }) => {
+  const requests: ApiRequestLog[] = [];
+  await mockInterviewApi(page, requests);
+
+  await page.goto("/pathfinder/background");
+  await page
+    .getByLabel("你的回答")
+    .fill("我做过客服知识库整理，也拆过用户反馈流程。");
+  await page.getByRole("button", { name: "发送回答" }).click();
+  await page.getByRole("button", { name: "整理信号草稿" }).click();
+  await expect(page.getByText("客服知识库整理待确认")).toBeVisible();
+
+  await page.goto("/pathfinder/recommendation");
+  await expect(page.getByRole("heading", { name: "需要先补充真实背景" })).toBeVisible();
+  await expect(page.getByText("GitHub Search")).toHaveCount(0);
+  await expect(page.getByText("最佳项目")).toHaveCount(0);
+  await expect(page.getByText("排名")).toHaveCount(0);
+  await expect(page.getByText("概率")).toHaveCount(0);
+});
+
+test("falls back to manual-safe local interview signals when AI interview API fails", async ({
+  page,
+}) => {
+  await page.route("**/api/pathfinder/interview/sessions", async (route) => {
+    await route.fulfill({ status: 500, body: "{}" });
+  });
+
+  await page.goto("/pathfinder/background");
+  await page
+    .getByLabel("你的回答")
+    .fill("我做过客服知识库整理，也拆过用户反馈流程。");
+  await page.getByRole("button", { name: "发送回答" }).click();
+  await page.getByRole("button", { name: "整理信号草稿" }).click();
+
+  await expect(page.getByText("本地兜底整理")).toBeVisible();
+  await expect(page.getByText("AI 只整理你已经回答的内容")).toHaveCount(0);
+  await expect(page.getByText("GitHub Search")).toHaveCount(0);
+});
+
 test("runs P1-A real input pathfinder loop and exports markdown", async ({ page }) => {
   await page.goto("/pathfinder");
-  await expect(page.getByRole("heading", { name: "寻径星图：OpenDocuments 固定试航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "寻径星图：航前试航" })).toBeVisible();
   await expect(page.getByText("实岗试航 · 作品集起点")).toBeVisible();
   await expect(page.getByRole("link", { name: "AI Job Copilot" })).toHaveCount(0);
   await expect(page.getByText("这不是履历美化工具，也不做岗位背书、企业侧动作或求职结果判断")).toBeVisible();
@@ -189,24 +659,25 @@ test("runs P1-A real input pathfinder loop and exports markdown", async ({ page 
 
   await page.getByRole("link", { name: "填写背景" }).click();
   await expect(page).toHaveURL(/\/pathfinder\/background$/);
-  await expect(page.getByRole("heading", { name: "真实用户背景输入" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "航前访谈：先聊一轮背景" })).toBeVisible();
   await fillProfile(page);
   await page.getByRole("button", { name: "保存背景并查看星图" }).click();
 
   await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
   await expect(page.getByRole("heading", { name: "tester的 AI 转岗试航星图" })).toBeVisible();
-  await expect(page.getByText("fallback_mock")).toBeVisible();
-  await expect(page.getByText("UserProfileSignal")).toBeVisible();
+  await expect(page.getByText("推荐依据")).toBeVisible();
+  await expect(page.getByText("已确认背景信号")).toBeVisible();
   await expect(page.getByText(profile.professionalBackground).first()).toBeVisible();
   await expect(page.getByText("行业 AI 应用产品助理").first()).toBeVisible();
   await expect(page.getByText("行业 AI 解决方案助理").first()).toBeVisible();
   await expect(page.getByText("AI 数据评测助理").first()).toBeVisible();
   await expect(page.getByText("算法工程 / 大模型研发").first()).toBeVisible();
-  await expect(page.getByText("OpenDocuments approved")).toBeVisible();
+  await expect(page.getByText("已审计项目库", { exact: true })).toBeVisible();
+  await expect(page.getByText("当前可试航项目")).toBeVisible();
 
-  await page.getByRole("button", { name: /生成 TrialPackageCandidate/ }).click();
+  await page.getByRole("button", { name: /生成试航包/ }).click();
   await expect(page).toHaveURL(/\/pathfinder\/trial$/);
-  await expect(page.getByRole("heading", { name: "OpenDocuments 6 问试航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "OpenDocuments 试航问答" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "OpenDocuments 来源参照" })).toBeVisible();
   await expect(page.locator("textarea")).toHaveCount(6);
   await expect(page.locator("textarea").first()).toHaveValue("");
@@ -217,10 +688,10 @@ test("runs P1-A real input pathfinder loop and exports markdown", async ({ page 
   await page.getByRole("link", { name: "进入结果页" }).click();
 
   await expect(page).toHaveURL(/\/pathfinder\/result$/);
-  await expect(page.locator("p").filter({ hasText: "样例 JD + tester背景 + OpenDocuments 公开来源 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown" })).toBeVisible();
+  await expect(page.locator("p").filter({ hasText: "样例 JD + tester背景 + OpenDocuments 公开来源 -> 试航问答 -> 航迹表 / 作品集草稿 / Markdown" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "反包装检查摘要" })).toBeVisible();
   await expect(page.getByText("完整档案已就绪")).toBeVisible();
-  await expect(page.getByText("不可声称：用户开发了 OpenDocuments").first()).toBeVisible();
+  await expect(page.getByText("不可声称：用户开发、维护、贡献或完整复现所选开源项目").first()).toBeVisible();
 
   const markdownPreview = page.locator("textarea").last();
   await expect(markdownPreview).toHaveValue(/## 用户试航产出/);
@@ -235,14 +706,14 @@ test("runs P1-A real input pathfinder loop and exports markdown", async ({ page 
 });
 
 test("does not generate full markdown when trial answers are incomplete", async ({ page }) => {
-  await page.addInitScript((profilePayload) => {
+  await page.addInitScript(({ profilePayload, packageId }) => {
     window.sessionStorage.setItem(
       "pathfinder-p1-a-state",
       JSON.stringify({
         profileSubmitted: true,
         trailRecord: {
           schemaVersion: "p1-a.v1",
-          trialPackageId: currentTrialPackageId,
+          trialPackageId: packageId,
           trialPackageVersion: "1.0.0",
           status: "draft",
           userProfileSnapshot: profilePayload,
@@ -260,11 +731,11 @@ test("does not generate full markdown when trial answers are incomplete", async 
         },
       }),
     );
-  }, profile);
+  }, { profilePayload: profile, packageId: currentTrialPackageId });
 
   await page.goto("/pathfinder/result");
 
-  await expect(page.getByText("6 问尚未完成")).toBeVisible();
+  await expect(page.getByText("试航问答尚未完成")).toBeVisible();
   await expect(
     page
       .getByText("还有试航问题未完成。缺项会使结果页缺少对应追溯链")
@@ -281,12 +752,12 @@ test("blocks full markdown export when AI usage explanation is missing", async (
   await page.goto("/pathfinder/trial");
   await fillAnswers(page, [...answers.slice(0, 5), ""]);
 
-  await expect(page.getByText("6 问缺项").first()).toBeVisible();
+  await expect(page.getByText("问答缺项").first()).toBeVisible();
   await expect(page.getByText("未完成：AI 使用说明。")).toBeVisible();
   await expect(page.getByRole("button", { name: "进入结果页" })).toBeDisabled();
 
   await page.goto("/pathfinder/result");
-  await expect(page.getByText("6 问尚未完成")).toBeVisible();
+  await expect(page.getByText("试航问答尚未完成")).toBeVisible();
   await expect(page.getByText("缺少：AI 使用说明。")).toBeVisible();
   await expect(page.locator("textarea")).toHaveCount(0);
 });
@@ -316,7 +787,8 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
   await fillAnswers(page);
 
   await expect
-    .poll(() =>
+    .poll(
+      () =>
       apiRequests.some((request) => {
         const requestAnswers = request.body.trialAnswers as
           | Array<{ id: string; answer: string }>
@@ -331,6 +803,7 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
           requestAnswers.every((answer) => answer.answer.trim())
         );
       }),
+      { timeout: 20_000 },
     )
     .toBe(true);
 
@@ -340,7 +813,8 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
   await downloadPromise;
 
   await expect
-    .poll(() =>
+    .poll(
+      () =>
       apiRequests.some((request) => {
         const snapshot = request.body.markdownSnapshot as
           | { templateSource?: string; exportScope?: string; content?: string }
@@ -353,6 +827,7 @@ test("syncs TrailRecord answers and markdown snapshot to P1-A records API", asyn
           Boolean(snapshot.content?.includes("## 6 问作答"))
         );
       }),
+      { timeout: 20_000 },
     )
     .toBe(true);
 });

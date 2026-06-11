@@ -144,6 +144,31 @@ const unsafePositivePatterns: Array<{
     riskReason: "暗示官方贡献记录。",
     suggestedRewrite: "改为“不是官方贡献记录”。",
   },
+  {
+    ruleId: "open_source_project_ownership_claim",
+    pattern:
+      /(?:我|本人|用户|候选人).{0,10}(?:开发|维护|贡献|复现).{0,18}(?:开源项目|原项目|官方仓库|RAGFlow|Unstructured|Superset|Chatwoot|Node-RED|OpenRefine)/i,
+    riskReason: "暗示用户开发、维护、贡献或完整复现所选开源项目。",
+    suggestedRewrite: "改为“基于已审计公开项目做场景拆解和试航方案”。",
+  },
+  {
+    ruleId: "open_source_official_role_claim",
+    pattern: /(?:官方贡献|官方维护者|维护者身份|贡献记录|项目背书)/,
+    riskReason: "暗示官方贡献、维护者身份或项目背书。",
+    suggestedRewrite: "改为“非官方贡献记录，仅作公开来源参考”。",
+  },
+  {
+    ruleId: "full_replication_claim",
+    pattern: /(?:完整复现|复刻|重建).{0,12}(?:开源项目|原项目|系统|平台)/,
+    riskReason: "暗示完整复现公开项目或系统。",
+    suggestedRewrite: "改为“小范围场景拆解、MVP 方案或边界说明”。",
+  },
+  {
+    ruleId: "enterprise_delivery_claim",
+    pattern: /(?:完成|交付|上线|部署).{0,12}(?:企业级|生产级|真实企业).{0,12}(?:系统|平台|项目)/,
+    riskReason: "暗示完成企业级交付、上线或部署。",
+    suggestedRewrite: "改为“试航方案草稿、流程设计或验证计划”。",
+  },
 ];
 
 const safeNegation =

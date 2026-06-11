@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import {
+  buildConfirmedUserProfileFromSignals,
+  buildFallbackInterviewSession,
+  buildFallbackInterviewSignals,
+  buildFallbackInterviewTurn,
   buildFallbackRecommendationResponse,
   buildFallbackTrialPackageResponse,
   createMarkdownInput,
@@ -31,7 +35,11 @@ import {
   requiredTrialQuestionIds,
 } from "../src/features/pathfinder/contract";
 import { generatePathfinderMarkdown } from "../src/features/pathfinder/markdown";
-import type { TrialQuestionId, UserProfileInput } from "../src/features/pathfinder/types";
+import type {
+  OpenSourceProjectRecord,
+  TrialQuestionId,
+  UserProfileInput,
+} from "../src/features/pathfinder/types";
 
 const expectedQuestions: Array<{ id: TrialQuestionId; prompt: string }> = [
   {
@@ -73,7 +81,7 @@ const validUserProfile: UserProfileInput = {
   constraints: "不能使用真实企业内部资料，只能用脱敏或公开样例。",
 };
 
-const validTrialAnswers: Record<TrialQuestionId, string> = {
+const validTrialAnswers: Partial<Record<TrialQuestionId, string>> = {
   project_understanding:
     "OpenDocuments 主要解决企业资料分散、检索成本高、问答缺少来源依据的问题。",
   role_connection:
@@ -88,6 +96,43 @@ const validTrialAnswers: Record<TrialQuestionId, string> = {
     "AI 用于辅助整理公开信息和草拟结构，最终内容由我筛选、核验和改写。",
 };
 
+const chatwootProject: OpenSourceProjectRecord = {
+  projectId: "chatwoot",
+  name: "Chatwoot",
+  sourceUrl: "https://github.com/chatwoot/chatwoot",
+  officialUrl: "https://www.chatwoot.com/",
+  host: "github",
+  repositoryVisibility: "public",
+  description: "Open-source customer support platform.",
+  license:
+    "MIT Expat outside enterprise directory; enterprise directory has separate license",
+  licenseSpdxId: "MIT",
+  licenseVerificationStatus: "verified",
+  licenseVerifiedAt: "2026-06-11",
+  referenceRole: "reference_only",
+  status: "approved_for_trial_package",
+  rolePathIds: ["industry-ai-product-assistant"],
+  projectTags: ["customer_support_assistant"],
+  capabilityTags: ["scenario_mapping", "handoff_checklist"],
+  riskTags: ["attribution_risk", "sensitive_data_risk"],
+  publicCapabilities: [
+    "live chat",
+    "email support",
+    "conversation management across channels",
+  ],
+  sourceBoundary:
+    "已审计项目库 / 当前样本参考；Chatwoot enterprise 目录有单独 License 边界。",
+  notClaimed: ["不声明用户参与 Chatwoot 原仓库。"],
+  forbiddenClaims: [
+    "不得声明用户开发或部署 Chatwoot。",
+    "不得忽略 enterprise 目录单独 License 边界。",
+  ],
+  allowedContexts: [
+    "基于 Chatwoot 公开信息设计客服流程和工单试航。",
+    "用户产出是 SOP、分类、话术和反馈流程。",
+  ],
+};
+
 assert.deepEqual(
   trialQuestions.map((question) => ({
     id: question.id,
@@ -100,6 +145,11 @@ assert.deepEqual(
 assert.equal(pathfinderSchemaVersion, "p1-a.v1");
 assert.equal(createInitialPathfinderState().backendSync.status, "local_only");
 assert.equal(createInitialPathfinderState().profileSubmitted, false);
+assert.equal(createInitialPathfinderState().interviewSessionId, undefined);
+assert.deepEqual(createInitialPathfinderState().interviewMessages, []);
+assert.deepEqual(createInitialPathfinderState().extractedSignals, []);
+assert.equal(createInitialPathfinderState().signalConfirmationStatus, "not_started");
+assert.equal(createInitialPathfinderState().aiInterviewStatus, "idle");
 assert.deepEqual(createInitialPathfinderState().trailRecord.userProfileSnapshot, emptyUserProfile);
 assert.deepEqual(
   createInitialPathfinderState().trailRecord.trialAnswers.map((answer) => answer.answer),
@@ -144,6 +194,25 @@ assert.equal(
   "approved_for_trial_package",
 );
 assert.deepEqual(requiredTrialQuestionIds, p1aTrialPackage.questionIds);
+const genericTrialAnswers = createTrialAnswers(
+  {
+    application_solution: "我会先限定试航范围，再拆成两周内可验证的交付步骤。",
+    portfolio_extension: "作品集只呈现我的试航产出，不声明参与原项目。",
+  },
+  undefined,
+  [
+    { questionId: "application_solution", prompt: "如何规划一次小范围 MVP？" },
+    { questionId: "portfolio_extension", prompt: "作品集边界如何说明？" },
+    { questionId: "ai_usage_explanation", prompt: "AI 如何辅助？" },
+  ],
+);
+assert.deepEqual(
+  genericTrialAnswers.map((answer) => answer.id),
+  ["application_solution", "portfolio_extension", "ai_usage_explanation"],
+);
+assert.deepEqual(missingQuestionIdsFromAnswers(genericTrialAnswers), [
+  "ai_usage_explanation",
+]);
 assert.equal(
   Object.prototype.hasOwnProperty.call(
     requiredMarkdownSectionLabels,
@@ -179,6 +248,35 @@ assert.deepEqual(
 assert.equal(isUserProfileReady(emptyUserProfile), false);
 assert.equal(isUserProfileReady(validUserProfile), true);
 assert.ok(userProfileFields.length >= 9);
+
+const fallbackInterviewSession = buildFallbackInterviewSession();
+assert.equal(fallbackInterviewSession.source, "fallback_mock");
+assert.equal(fallbackInterviewSession.status, "fallback");
+assert.equal(fallbackInterviewSession.extractedSignals.length, 0);
+const fallbackInterviewTurn = buildFallbackInterviewTurn({
+  session: fallbackInterviewSession,
+  answer: "我做过客服知识库整理，也用 AI 辅助整理初稿。",
+});
+assert.equal(
+  fallbackInterviewTurn.messages.some((message) => message.role === "user"),
+  true,
+);
+const fallbackInterviewSignals = buildFallbackInterviewSignals(fallbackInterviewTurn);
+assert.equal(fallbackInterviewSignals.extractedSignals.length > 0, true);
+assert.equal(
+  fallbackInterviewSignals.extractedSignals.every(
+    (signal) => signal.confirmationStatus === "pending_confirmation",
+  ),
+  true,
+);
+const confirmedProfile = buildConfirmedUserProfileFromSignals({
+  signals: fallbackInterviewSignals.extractedSignals.map((signal) => ({
+    ...signal,
+    confirmationStatus: "user_confirmed",
+  })),
+  currentProfile: emptyUserProfile,
+});
+assert.equal(isUserProfileReady(confirmedProfile), true);
 
 for (const jd of sampleJds) {
   assert.equal(jd.notice, sampleJdNotice);
@@ -222,6 +320,28 @@ if (complete.ok) {
   assert.equal(complete.snapshot.content, complete.markdown);
   assert.ok(complete.snapshot.templateVersion.includes("p1-a"));
   assertSafePathfinderCopy(complete.markdown);
+}
+
+const chatwootMarkdown = generatePathfinderMarkdown(
+  createMarkdownInput(
+    priorityPathId,
+    { ...validUserProfile, displayName: "tester" },
+    validTrialAnswers,
+    trialQuestions,
+    chatwootProject,
+  ),
+);
+assert.equal(chatwootMarkdown.ok, true);
+if (chatwootMarkdown.ok) {
+  assert.equal(chatwootMarkdown.filename, "pathfinder-tester-chatwoot.md");
+  assert.ok(chatwootMarkdown.markdown.includes("## 项目来源与 License"));
+  assert.ok(chatwootMarkdown.markdown.includes("## 公开项目能力"));
+  assert.ok(chatwootMarkdown.markdown.includes("试航对象：Chatwoot"));
+  assert.ok(chatwootMarkdown.markdown.includes(chatwootProject.license));
+  assert.ok(chatwootMarkdown.markdown.includes(chatwootProject.sourceBoundary!));
+  assert.ok(!chatwootMarkdown.markdown.includes("试航对象：OpenDocuments"));
+  assert.ok(!chatwootMarkdown.markdown.includes("## OpenDocuments 来源与 License"));
+  assert.ok(!chatwootMarkdown.markdown.includes("## OpenDocuments 公开能力"));
 }
 
 const answerPackage = createTrialAnswers({
@@ -281,6 +401,11 @@ const visibleDefaultCopy = stringifyForCopyCheck({
 });
 assert.equal(visibleDefaultCopy.includes("小 C"), false);
 
+assert.equal(visibleDefaultCopy.includes("GitHub Search"), false);
+assert.equal(visibleDefaultCopy.includes("DeepSeek"), false);
+assert.equal(visibleDefaultCopy.includes("DEEPSEEK_API_KEY"), false);
+assert.equal(visibleDefaultCopy.includes("Key.txt"), false);
+
 for (const unsafeCopy of [
   "我已经可以胜任这个岗位。",
   "这个 Demo 可以预测 offer 概率。",
@@ -292,6 +417,10 @@ for (const unsafeCopy of [
   "这里是算法工程速成。",
   "OpenDocuments 是我的项目。",
   "用户开发了 OpenDocuments。",
+  "我维护了 Chatwoot 原项目。",
+  "候选人贡献了 RAGFlow 官方仓库。",
+  "我完整复现了开源项目平台。",
+  "我完成了企业级客服系统交付。",
   "我开发了企业 RAG 系统。",
   "我有官方贡献记录。",
   "AI 可替代合同人工复核。",

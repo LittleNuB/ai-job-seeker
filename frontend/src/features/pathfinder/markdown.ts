@@ -79,7 +79,7 @@ export function generatePathfinderMarkdown(
 
   return {
     ok: true,
-    filename: `pathfinder-${slugForFilename(displayNameForProfile(input.userProfile))}-opendocuments.md`,
+    filename: `pathfinder-${slugForFilename(displayNameForProfile(input.userProfile))}-${slugForFilename(input.sourceProject.projectId || input.sourceProject.name)}.md`,
     markdown,
     antiPackagingCheck,
     snapshot: createMarkdownSnapshot(markdown, "full"),
@@ -131,22 +131,29 @@ function renderSampleJdNotice(input: MarkdownInput): string {
 }
 
 function renderOpenSource(input: MarkdownInput): string {
-  const { openSourceProject } = input;
+  const { sourceProject } = input;
 
   return [
-    "## OpenDocuments 来源与 License",
-    `- 项目名称：${openSourceProject.name}`,
-    `- 项目来源：${openSourceProject.sourceUrl}`,
-    `- License：${openSourceProject.license}`,
-    `- 项目定位：${openSourceProject.positioning}`,
+    "## 项目来源与 License",
+    `- 项目名称：${sourceProject.name}`,
+    `- 项目来源：${sourceProject.sourceUrl}`,
+    sourceProject.officialUrl ? `- 官方站点：${sourceProject.officialUrl}` : "",
+    `- License：${sourceProject.license}`,
+    `- License 核验状态：${sourceProject.licenseVerificationStatus}`,
+    sourceProject.licenseVerifiedAt
+      ? `- License 核验日期：${sourceProject.licenseVerifiedAt}`
+      : "",
+    sourceProject.sourceBoundary
+      ? `- 来源边界：${sourceProject.sourceBoundary}`
+      : "- 来源边界：仅作已审计公开项目参考，不声明用户参与原项目。",
   ].join("\n");
 }
 
 function renderOriginalCapabilities(input: MarkdownInput): string {
   return [
-    "## OpenDocuments 公开能力",
+    "## 公开项目能力",
     "以下为公开项目信息中的能力说明，只作为试航理解的参考来源，不作为用户个人产出。",
-    ...input.openSourceProject.originalCapabilities.map(
+    ...input.sourceProject.publicCapabilities.map(
       (capability) => `- ${capability}`,
     ),
   ].join("\n");
@@ -165,12 +172,12 @@ function renderForbiddenClaims(): string {
     "## 不可声称内容",
     forbiddenClaimsNotice,
     "",
-    "- 不能声称参与 OpenDocuments 原仓库开发。",
-    "- 不能声称有官方贡献记录。",
+    "- 不能声称参与、开发、维护或贡献所选开源项目原仓库。",
+    "- 不能声称有官方贡献记录、官方维护者身份或项目背书。",
     "- 不能把试航记录表述为岗位结论。",
     "- 不能判断求职结果。",
-    "- 不能把公开项目能力写成个人开发成果。",
-    "- 不能把 2 周 MVP 试点设计说成企业级上线系统。",
+    "- 不能把公开项目能力写成个人开发成果或完整复现成果。",
+    "- 不能把试点设计说成企业级上线、部署或交付系统。",
   ].join("\n");
 }
 
@@ -192,19 +199,21 @@ function renderSixQuestions(
 }
 
 function renderResultModules(input: MarkdownInput): string {
+  const projectName = input.sourceProject.name;
+  const projectCapabilities = input.sourceProject.publicCapabilities.join("、");
   return [
     "## 航迹表摘要",
-    "- 试航对象：OpenDocuments",
+    `- 试航对象：${projectName}`,
     `- 推荐路径：${input.selectedPath.title}`,
-    "- 试航主题：工程企业知识库 AI 助手",
-    `- 输入来源：样例 JD + ${displayNameForProfile(input.userProfile)}背景 + OpenDocuments 公开来源`,
+    `- 试航主题：基于 ${projectName} 公开能力的转岗试航`,
+    `- 输入来源：样例 JD + ${displayNameForProfile(input.userProfile)}背景 + ${projectName} 公开来源`,
     "- 输出结果：作品集一页纸草稿 + 指标表 + 风险清单",
     "",
     "## 作品集一页纸草稿",
-    `- 标题：${input.portfolioDraft.title}`,
+    `- 标题：${projectName} 试航作品集草稿`,
     `- 目标岗位：${input.portfolioDraft.targetRole}`,
     `- 问题背景：${input.portfolioDraft.problemBackground}`,
-    `- 方案概述：${input.portfolioDraft.solutionOverview}`,
+    `- 方案概述：围绕 ${projectName} 的公开能力（${projectCapabilities}）做场景拆解、边界说明和小范围试航方案，不声明参与原项目。`,
     `- MVP 范围：${input.portfolioDraft.mvpScope}`,
     `- 评估指标：${input.portfolioDraft.evaluationMetrics.join("、")}`,
     `- 用户产出：${input.portfolioDraft.outputs.join("、")}`,
@@ -246,11 +255,13 @@ function renderResultModules(input: MarkdownInput): string {
 function renderDisclaimer(input: MarkdownInput): string {
   return [
     "## 免责声明",
-    `- 追溯链：${traceChainForProfile(input.userProfile)}`,
+    `- 追溯链：${traceChainForProfile(input.userProfile, input.sourceProject.name)}`,
     `- ${pageCopy.resultBoundary}`,
     "- 本结果仅用于求职路径试航和作品集准备参考。",
     `- ${input.sampleJdNotice}`,
-    `- ${input.openSourceProject.boundaryNotice}`,
+    input.sourceProject.sourceBoundary
+      ? `- ${input.sourceProject.sourceBoundary}`
+      : "- 所选项目仅作已审计公开来源参考，不声明用户参与原项目。",
     "- 本航迹表不是岗位背书，不是官方参与记录，也不用于判断求职结果。",
     "",
     "完整 Markdown 九项：",

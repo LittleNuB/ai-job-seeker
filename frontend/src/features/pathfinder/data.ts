@@ -2,7 +2,9 @@ import {
   currentTrialPackageId,
   type ComplianceAdvice,
   type DemoVersion,
+  type ExtractedProfileSignal,
   type GenerateTrialPackageResponse,
+  type InterviewMessage,
   type InterviewPrepItem,
   type MarkdownInput,
   type MetricRow,
@@ -11,6 +13,7 @@ import {
   type PathId,
   type PathfinderProjectsResponse,
   type PathfinderRecommendationResponse,
+  type PathfinderInterviewSession,
   type PortfolioOnePagerDraft,
   type ProjectMatch,
   type RecommendationPath,
@@ -21,6 +24,7 @@ import {
   type TrialQuestion,
   type TrialQuestionId,
   type UserProfileInput,
+  type UserProfileSignal,
 } from "./types";
 
 export const demoVersion = currentTrialPackageId satisfies DemoVersion;
@@ -252,7 +256,7 @@ export const openDocumentsProjectRecord: OpenSourceProjectRecord = {
   sourceUrl: "https://github.com/joungminsung/OpenDocuments",
   host: "github",
   description:
-    "Self-hosted RAG / 企业知识库问答 / AI 文档搜索公开项目，P1-B.1 仅作 reference_only 试航参照。",
+    "Self-hosted RAG / 企业知识库问答 / AI 文档搜索公开项目，当前仅作 reference_only 试航参照。",
   license: "MIT",
   licenseSpdxId: "MIT",
   licenseFileUrl:
@@ -379,7 +383,7 @@ const pathBase: Array<Omit<RecommendationPath, "summary" | "evidence"> & {
     verdict: "explore",
     statusLabel: "可探索",
     summaryTemplate: () =>
-      "这条路径用于整理标注口径、问答样例、质检流程和错误归因；P1-B.1 暂无 approved 项目可生成完整试航包。",
+      "这条路径用于整理标注口径、问答样例、质检流程和错误归因；当前如无已审计项目匹配，则不生成完整试航包。",
     evidenceTemplate: (profile) => [
       {
         title: "JD 样本证据",
@@ -417,7 +421,7 @@ const pathBase: Array<Omit<RecommendationPath, "summary" | "evidence"> & {
     verdict: "not_recommended_short_term",
     statusLabel: "暂缓主攻",
     summaryTemplate: () =>
-      "这条路径保留为长期学习参照，P1-B.1 不把它作为主试航方向，也不生成试航包。",
+      "这条路径保留为长期学习参照，当前不把它作为主试航方向，也不生成试航包。",
     evidenceTemplate: (profile) => [
       {
         title: "JD 样本证据",
@@ -703,8 +707,8 @@ export const markdownExportItems = [
   "候选人背景",
   "路径结论",
   "样例 JD 说明",
-  "OpenDocuments 来源与 License",
-  "OpenDocuments 公开能力",
+  "项目来源与 License",
+  "公开项目能力",
   "用户试航产出",
   "不可声称内容",
   "6 问作答",
@@ -712,10 +716,13 @@ export const markdownExportItems = [
 ];
 
 export const forbiddenClaimsNotice =
-  "不可声称：用户开发了 OpenDocuments、完成了企业级 RAG 系统、具备算法研发能力、获得岗位背书、改善求职结果，或 AI 可替代合同 / 规范 / 施工方案的人工复核。";
+  "不可声称：用户开发、维护、贡献或完整复现所选开源项目；不可声称完成企业级交付、具备算法研发能力、获得岗位背书、改善求职结果，或 AI 可替代合同 / 规范 / 施工方案的人工复核。";
 
-export function traceChainForProfile(profile: UserProfileInput): string {
-  return `样例 JD + ${displayNameForProfile(profile)}背景 + OpenDocuments 公开来源 -> 6 问试航 -> 航迹表 / 作品集草稿 / Markdown`;
+export function traceChainForProfile(
+  profile: UserProfileInput,
+  projectName = "已审计公开项目",
+): string {
+  return `样例 JD + ${displayNameForProfile(profile)}背景 + ${projectName} 公开来源 -> 试航问答 -> 航迹表 / 作品集草稿 / Markdown`;
 }
 
 export const interviewPrep: InterviewPrepItem[] = [
@@ -743,23 +750,23 @@ export const interviewPrep: InterviewPrepItem[] = [
 
 export const pageCopy = {
   entrySubtitle:
-    "用你的真实背景完成一次 OpenDocuments 试航：填背景、看 P1-B.1 路径建议、生成试航包、完成 6 问并导出 Markdown。",
+    "用你的真实背景完成一次航前试航：先聊背景、确认转岗信号、查看路径建议、选择已审计项目并导出 Markdown。",
   entryScope:
-    "当前版本使用规则 fallback：4 条路径、1 个 approved 公开参考项目、6 个试航问题和 1 种导出格式；不接 LLM。",
+    "当前版本展示路径建议、样例 JD、已审计公开项目、试航问答和 Markdown 导出；AI 只整理背景信号，不直接决定结果。",
   entryBoundaryNotice:
     "这不是履历美化工具，也不做岗位背书、企业侧动作或求职结果判断。它只帮助你把路径判断、试航作答和边界说明整理成可追溯材料。",
   entryBoundary: [
     "用户：真实输入",
-    "项目：OpenDocuments",
-    "任务：工程企业知识库 AI 助手试航",
+    "项目：已审计公开项目库",
+    "任务：围绕所选项目完成转岗试航",
     "导出：Markdown",
   ],
   backgroundNotice:
     "请填写你自己的背景。页面不会提供默认身份、一键填充或默认作答；没有背景时，星图页会提示先补充。",
   recommendationConclusion:
-    "背景提交后会先请求 P1-B recommendation API；若后端尚未合并，则使用标注为 fallback_mock 的本地规则结果。",
+    "背景确认后会生成路径建议；如果服务暂不可用，则使用本地规则兜底，仍只基于真实输入和已审计项目库。",
   trialBoundary:
-    "OpenDocuments 提供公开来源参照；你需要完成的是把它放进工程企业知识库场景，形成试点方案、指标、风险和作品集表达。结果页会区分开源项目能力与个人试航产出。",
+    "所选项目提供公开来源参照；你需要完成的是把它放进真实转岗场景，形成试点方案、指标、风险和作品集表达。结果页会区分开源项目能力与个人试航产出。",
   missingQuestions:
     "还有试航问题未完成。缺项会使结果页缺少对应追溯链，暂不能导出完整 Markdown。",
   aiUsageBlocker:
@@ -767,8 +774,201 @@ export const pageCopy = {
   resultBoundary:
     "本结果是一次求职路径试航记录和作品集起点，不构成岗位背书、求职结果判断、职业承诺或开源项目贡献声明。",
   markdownExportDescription:
-    "完整 Markdown 仅在 6 问全部完成且反包装检查通过后生成。导出内容包含候选人背景、路径结论、样例 JD 说明、OpenDocuments 来源与 License、OpenDocuments 公开能力、用户试航产出、不可声称内容、6 问作答和免责声明。",
+    "完整 Markdown 仅在试航问答全部完成且反包装检查通过后生成。导出内容包含候选人背景、路径结论、样例 JD 说明、项目来源与 License、公开能力、用户试航产出、不可声称内容、试航作答和免责声明。",
 };
+
+export const interviewStarterQuestion =
+  "先用一段话说说你做过的项目、处理过的资料或流程，以及你想转向的 AI 方向。";
+
+const interviewFollowUpQuestions = [
+  "这段经历里，你具体负责了哪些动作？例如调研、整理资料、沟通、测试、交付或复盘。",
+  "这些经历面向谁解决问题？你处理过哪些文档、数据、流程或用户反馈？",
+  "你用过哪些 AI 工具或技术工具？哪些内容是 AI 辅助，哪些由你人工确认？",
+  "接下来求职有什么目标、时间线或限制？哪些经历还不能公开或不能写成项目成果？",
+];
+
+export function buildFallbackInterviewSession(): PathfinderInterviewSession {
+  const now = new Date().toISOString();
+  return {
+    sessionId: `p1c-fallback-${Date.now()}`,
+    status: "fallback",
+    messages: [
+      {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: interviewStarterQuestion,
+        createdAt: now,
+        status: "received",
+      },
+    ],
+    extractedSignals: [],
+    nextQuestion: interviewStarterQuestion,
+    source: "fallback_mock",
+  };
+}
+
+export function buildFallbackInterviewTurn(params: {
+  session: PathfinderInterviewSession;
+  answer: string;
+}): PathfinderInterviewSession {
+  const now = new Date().toISOString();
+  const userMessage: InterviewMessage = {
+    id: `user-${Date.now()}`,
+    role: "user",
+    content: params.answer,
+    createdAt: now,
+    status: "sent",
+  };
+  const userTurnCount = params.session.messages.filter(
+    (message) => message.role === "user",
+  ).length;
+  const nextQuestion = interviewFollowUpQuestions[userTurnCount];
+  const nextAssistantMessage: InterviewMessage | undefined = nextQuestion
+    ? {
+        id: `assistant-${Date.now() + 1}`,
+        role: "assistant",
+        content: nextQuestion,
+        createdAt: now,
+        status: "received",
+      }
+    : undefined;
+
+  return {
+    ...params.session,
+    status: "fallback",
+    messages: [
+      ...params.session.messages,
+      userMessage,
+      ...(nextAssistantMessage ? [nextAssistantMessage] : []),
+    ],
+    extractedSignals: mergeExtractedSignals(
+      params.session.extractedSignals,
+      buildSignalsFromInterviewAnswer(params.answer, userTurnCount),
+    ),
+    nextQuestion,
+    source: "fallback_mock",
+  };
+}
+
+export function buildFallbackInterviewSignals(
+  session: PathfinderInterviewSession,
+): PathfinderInterviewSession {
+  return {
+    ...session,
+    status: "fallback",
+    extractedSignals: session.extractedSignals.length
+      ? session.extractedSignals
+      : buildSignalsFromInterviewAnswer(
+          session.messages
+            .filter((message) => message.role === "user")
+            .map((message) => message.content)
+            .join(" "),
+          0,
+        ),
+    source: "fallback_mock",
+  };
+}
+
+export function buildConfirmedUserProfileFromSignals(params: {
+  signals: ExtractedProfileSignal[];
+  currentProfile: UserProfileInput;
+}): UserProfileInput {
+  const confirmed = params.signals.filter(
+    (signal) => signal.confirmationStatus === "user_confirmed",
+  );
+  const textFor = (...categories: UserProfileSignal["category"][]) =>
+    confirmed
+      .filter((signal) => categories.includes(signal.category))
+      .map((signal) => signal.userEditableText.trim())
+      .filter(Boolean)
+      .join("；");
+  const allConfirmed = confirmed
+    .map((signal) => signal.userEditableText.trim())
+    .filter(Boolean)
+    .join("；");
+
+  return {
+    displayName: params.currentProfile.displayName,
+    professionalBackground:
+      textFor("industry_background", "domain_material") ||
+      params.currentProfile.professionalBackground ||
+      allConfirmed,
+    jobTarget:
+      params.currentProfile.jobTarget ||
+      "希望基于已确认经历探索 AI 产品、解决方案或数据评测相关试航方向。",
+    timeline:
+      params.currentProfile.timeline ||
+      "访谈中尚未确认具体时间线，后续可继续补充。",
+    projectExperience:
+      textFor("domain_material", "communication", "data_handling") ||
+      params.currentProfile.projectExperience ||
+      allConfirmed,
+    aiToolExperience:
+      textFor("ai_tool_usage") ||
+      params.currentProfile.aiToolExperience ||
+      "访谈中尚未确认 AI 工具经历，后续需要补充。",
+    technicalBasics:
+      textFor("technical_foundation", "data_handling") ||
+      params.currentProfile.technicalBasics ||
+      "访谈中尚未确认技术基础，后续需要补充。",
+    currentConfusion:
+      textFor("risk") ||
+      params.currentProfile.currentConfusion ||
+      "需要把真实经历整理成可迁移信号，并避免写成未做过的项目成果。",
+    constraints:
+      textFor("career_constraint") ||
+      params.currentProfile.constraints ||
+      "不使用未确认经历，不声称未参与过的项目或交付成果。",
+  };
+}
+
+function buildSignalsFromInterviewAnswer(
+  answer: string,
+  turnIndex: number,
+): ExtractedProfileSignal[] {
+  const trimmed = answer.trim();
+  if (!trimmed) return [];
+
+  const categories: UserProfileSignal["category"][] = [
+    "domain_material",
+    "communication",
+    "ai_tool_usage",
+    "career_constraint",
+  ];
+  const labels = [
+    "真实经历片段",
+    "协作与交付线索",
+    "AI 工具使用线索",
+    "目标与限制线索",
+  ];
+  const category = categories[Math.min(turnIndex, categories.length - 1)];
+
+  return [
+    {
+      signalId: `interview-signal-${turnIndex + 1}`,
+      category,
+      label: labels[Math.min(turnIndex, labels.length - 1)],
+      sourceField: "interview",
+      evidenceText: trimmed,
+      confidence: "needs_user_clarification",
+      confirmationStatus: "pending_confirmation",
+      userEditableText: trimmed,
+    },
+  ];
+}
+
+function mergeExtractedSignals(
+  currentSignals: ExtractedProfileSignal[],
+  nextSignals: ExtractedProfileSignal[],
+) {
+  const byId = new Map(
+    currentSignals.map((signal) => [signal.signalId, signal]),
+  );
+  for (const signal of nextSignals) {
+    byId.set(signal.signalId, signal);
+  }
+  return Array.from(byId.values());
+}
 
 const p1bRuleVersion = {
   version: "p1b.frontend-fallback.v1",
@@ -910,7 +1110,7 @@ export function buildFallbackRecommendationResponse(
       title: "算法工程 / 大模型研发",
       decision: "not_recommended_short_term",
       rationale:
-        "若缺少模型实验、工程代码和算法复现证据，P1-B.1 仅把该方向作为暂缓主攻风险路径。",
+        "若缺少模型实验、工程代码和算法复现证据，当前仅把该方向作为暂缓主攻风险路径。",
       evidence: [
         evidence(
           "algorithm-llm-engineer",
@@ -990,7 +1190,7 @@ export function buildFallbackRecommendationResponse(
     paths,
     projectMatches,
     scopeDisclaimer:
-      "fallback_mock：BE-003 未可用时使用前端规则结果；不接 LLM，不做外部项目搜索。",
+      "本地规则兜底：服务不可用时使用前端规则结果；AI 不直接决定路径，不做外部项目搜索。",
     source: "fallback_mock",
   };
 }
@@ -1000,7 +1200,7 @@ export function buildFallbackProjectsResponse(): PathfinderProjectsResponse {
     schemaVersion: "p1b.v1",
     projects: [openDocumentsProjectRecord],
     dataBoundary:
-      "P1-B.1 仅展示 OpenDocuments approved 项目；待核验候选不进入完整试航包生成链路。",
+      "仅展示已审计、已核验且可参考的项目；待核验候选不进入完整试航包生成链路。",
     source: "fallback_mock",
   };
 }
@@ -1103,6 +1303,8 @@ export function createMarkdownInput(
   selectedPathId: PathId,
   userProfile: UserProfileInput,
   trialAnswers: MarkdownInput["trialAnswers"],
+  activeTrialQuestions = trialQuestions,
+  sourceProject: OpenSourceProjectRecord = openDocumentsProjectRecord,
 ): MarkdownInput {
   return {
     demoVersion,
@@ -1110,8 +1312,9 @@ export function createMarkdownInput(
     sampleJdNotice,
     sampleJds,
     openSourceProject,
+    sourceProject,
     selectedPath: getRecommendationPath(selectedPathId, userProfile),
-    trialQuestions,
+    trialQuestions: activeTrialQuestions,
     trialAnswers,
     portfolioDraft,
     metrics: metricRows,
