@@ -14,22 +14,25 @@ from app.schemas.pathfinder import (
     UserProfileSignal,
 )
 from app.services.pathfinder_profile_service import extract_profile_signals
-from app.services.pathfinder_project_service import list_approved_projects
+from app.services.pathfinder_project_service import load_project_matching_fixture, list_approved_projects
 
 
 SCOPE_DISCLAIMER = (
     "P1-B.1 uses rule-first evidence from user-authorized profile fields, sample JD trend references, "
     "and manually reviewed public project fixtures. It does not call an LLM, certify ability, predict hiring "
-    "outcomes, screen candidates, package resumes, or rank projects."
+    "outcomes, screen candidates, package resumes, order projects by fit, or use project popularity."
 )
 
 DEFAULT_RULE_VERSION = PathfinderRuleVersion(
     version="p1b-rule-first.v1",
     effectiveAt="2026-06-09",
     rolePathTaxonomyVersion="p1b-minimal-taxonomy.v1",
-    projectLibraryVersion="p1a-opendocuments-fixture.v1",
+    projectLibraryVersion="p1c-project-library-matching.v1",
     antiPackagingRuleVersion="p1a-rules.v1",
-    notes=["DATA-004 fixture set is not present; using the existing OpenDocuments P1-A fixture."],
+    notes=[
+        "Uses DATA-003 audited project fixtures and P1-C.1 matching rules.",
+        "Project matches are rule-hit explanations only; no numeric fit metric, ordered comparison, repository popularity, or runtime fetching.",
+    ],
 )
 
 
@@ -52,7 +55,7 @@ def build_recommendation_run(
         userProfileSnapshot=user_profile,
         profileSignals=signals,
         paths=paths,
-        projectMatches=_build_project_matches(paths),
+        projectMatches=_build_project_matches(paths, signals),
     )
 
 
@@ -162,7 +165,7 @@ def _build_paths(
             ],
             risk_notes=[
                 "Do not turn a public reference project review into an algorithm-engineering experience claim.",
-                "Do not output fit, probability, or ability certification.",
+                "Do not output fit quantification, hiring likelihood, or ability certification.",
             ],
             suggested_project_types=[],
             next_trial_action="Treat this as a learning gap reference, not as a generated trial package path.",
@@ -171,28 +174,39 @@ def _build_paths(
     return paths
 
 
-def _build_project_matches(paths: list[RolePathRecommendation]) -> list[ProjectMatch]:
+def _build_project_matches(paths: list[RolePathRecommendation], signals: list[UserProfileSignal]) -> list[ProjectMatch]:
     projects = list_approved_projects()
+    rules = _matching_rules()
     matches: list[ProjectMatch] = []
     for path in paths:
         for project in projects:
-            if path.pathId in project.rolePathIds and path.decision in {"priority_trial", "explore"}:
+            rule = _matching_rule_for(project, path.pathId, signals, rules)
+            if path.decision in {"priority_trial", "explore"} and rule is not None:
                 matches.append(
                     ProjectMatch(
                         projectId=project.projectId,
                         rolePathId=path.pathId,
                         decision="matched_for_trial",
-                        matchedRules=["approved-project-hard-gate", f"role-path:{path.pathId}"],
+                        matchedRules=[
+                            "approved-project-hard-gate",
+                            f"role-path:{path.pathId}",
+                            str(rule.get("ruleId") or "p1c-project-rule"),
+                        ],
                         evidence=[
                             RecommendationEvidence(
                                 evidenceId=f"project-{project.projectId}-{path.pathId}",
                                 type="open_source_project",
                                 title=f"{project.name} public reference",
-                                detail="The project is manually reviewed, license verified, reference_only, and approved for trial package generation.",
+                                detail=str(
+                                    rule.get("explanationTemplate")
+                                    or "The audited project and user-authorized signals match this role path."
+                                ),
                                 sourceRef=f"project:{project.projectId}",
                             )
                         ],
-                        boundaryNotes=project.allowedContexts + project.forbiddenClaims,
+                        boundaryNotes=project.allowedContexts
+                        + project.forbiddenClaims
+                        + [str(note) for note in rule.get("forbiddenInterpretations", []) if note],
                     )
                 )
             else:
@@ -203,10 +217,118 @@ def _build_project_matches(paths: list[RolePathRecommendation]) -> list[ProjectM
                         decision="not_matched",
                         matchedRules=[],
                         evidence=[],
-                        boundaryNotes=["No approved trial template is available for this path in P1-B.1."],
+                        boundaryNotes=[
+                            "No P1-C audited matching rule hit for this project, role path, and user signal set."
+                        ],
                     )
                 )
     return matches
+
+
+def _matching_rules() -> list[dict]:
+    raw_rules = load_project_matching_fixture().get("matchRules")
+    return [rule for rule in raw_rules if isinstance(rule, dict)] if isinstance(raw_rules, list) else []
+
+
+def _matching_rule_for(
+    project,
+    role_path_id: str,
+    signals: list[UserProfileSignal],
+    rules: list[dict],
+) -> dict | None:
+    for rule in rules:
+        if role_path_id not in _string_list(rule.get("targetRolePathIds")):
+            continue
+        eligible_project_ids = _string_list(rule.get("eligibleProjectIds"))
+        if eligible_project_ids and project.projectId not in eligible_project_ids:
+            continue
+        if not set(_string_list(rule.get("requiredProjectTags"))).issubset(set(project.projectTags)):
+            continue
+        required_capability_any = set(_string_list(rule.get("requiredCapabilityTagsAny")))
+        if required_capability_any and not required_capability_any.intersection(project.capabilityTags):
+            continue
+        if not _user_signal_requirements_satisfied(rule.get("userSignalRequirements"), signals):
+            continue
+        return rule
+    return None
+
+
+def _user_signal_requirements_satisfied(raw_requirements, signals: list[UserProfileSignal]) -> bool:
+    if not isinstance(raw_requirements, list):
+        return True
+    for requirement in raw_requirements:
+        if not isinstance(requirement, dict) or not requirement.get("required"):
+            continue
+        signal_type = str(requirement.get("signalType") or "")
+        if not _has_signal_type(signals, signal_type):
+            return False
+    return True
+
+
+def _has_signal_type(signals: list[UserProfileSignal], signal_type: str) -> bool:
+    text = " ".join(
+        f"{signal.category} {signal.sourceField} {signal.evidenceText}".lower() for signal in signals
+    )
+    if signal_type == "document_or_content_experience":
+        return any(
+            marker in text
+            for marker in [
+                "domain_material",
+                "documentandresearchexperience",
+                "document",
+                "content",
+                "research",
+                "knowledge",
+                "资料",
+                "文档",
+            ]
+        )
+    if signal_type == "domain_experience":
+        return "industry_background" in text or "industrybackground" in text
+    if signal_type == "data_or_evaluation_experience":
+        return any(
+            marker in text
+            for marker in [
+                "technical_foundation",
+                "technicalbasics",
+                "data",
+                "evaluation",
+                "spreadsheet",
+                "excel",
+                "quality",
+                "table",
+                "数据",
+                "表格",
+                "评测",
+            ]
+        )
+    if signal_type == "implementation_or_ops_experience":
+        return any(
+            marker in text
+            for marker in [
+                "communication",
+                "projectexperience",
+                "implementation",
+                "operation",
+                "ops",
+                "support",
+                "customer",
+                "sop",
+                "delivery",
+                "实施",
+                "运营",
+                "客服",
+            ]
+        )
+    if signal_type == "communication_experience":
+        return "communication" in text or "projectexperience" in text
+    return False
+
+
+def _string_list(value) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item]
 
 
 def _decision(*, has_profile: bool, preferred: bool, matched: bool, default: str) -> str:
@@ -271,7 +393,7 @@ def _risk_evidence() -> RecommendationEvidence:
         evidenceId="risk-boundary",
         type="risk",
         title="Scope boundary",
-        detail="The result is a trial-path suggestion with evidence notes, not a score, ranking, ability certification, or hiring prediction.",
+        detail="The result is a trial-path suggestion with evidence notes, not a numeric fit metric, ordered comparison, ability certification, or hiring prediction.",
         sourceRef="scope:p1b-rule-first",
     )
 

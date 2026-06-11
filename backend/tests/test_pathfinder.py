@@ -481,9 +481,16 @@ async def test_create_pathfinder_recommendations_stores_p1b_run_without_scores(c
         "ai-application-ops-implementation-assistant",
     }
     assert body["paths"][0]["decision"] in {"priority_trial", "explore"}
-    assert any(match["decision"] == "matched_for_trial" for match in body["projectMatches"])
+    matched_projects = {
+        match["projectId"] for match in body["projectMatches"] if match["decision"] == "matched_for_trial"
+    }
+    assert len(matched_projects) > 1
     forbidden_keys = {"score", "ranking", "probability", "recommendationScore", "matchScore"}
     assert forbidden_keys.isdisjoint(json.dumps(body).split('"'))
+    response_text = json.dumps(body).lower()
+    assert "score" not in response_text
+    assert "ranking" not in response_text
+    assert "probability" not in response_text
 
     async for session in app.dependency_overrides[get_db]():
         record = await session.get(AnalysisRecord, body["recommendationRun"]["recommendationRunId"])
@@ -494,22 +501,52 @@ async def test_create_pathfinder_recommendations_stores_p1b_run_without_scores(c
 
 
 @pytest.mark.asyncio()
-async def test_pathfinder_projects_returns_only_approved_opendocuments(client: AsyncClient) -> None:
+async def test_pathfinder_projects_returns_all_approved_audited_projects(client: AsyncClient) -> None:
     response = await client.get("/api/pathfinder/projects", headers=auth_headers())
 
     assert response.status_code == 200
     body = response.json()
     assert body["schemaVersion"] == "p1b.v1"
-    assert [project["projectId"] for project in body["projects"]] == ["opendocuments"]
-    project = body["projects"][0]
-    assert project["status"] == "approved_for_trial_package"
-    assert project["licenseVerificationStatus"] == "verified"
-    assert project["referenceRole"] == "reference_only"
-    assert project["generateEligible"] is True
+    assert [project["projectId"] for project in body["projects"]] == [
+        "opendocuments",
+        "ragflow",
+        "unstructured",
+        "apache-superset",
+        "chatwoot",
+        "node-red",
+        "openrefine",
+    ]
+    for project in body["projects"]:
+        assert project["status"] == "approved_for_trial_package"
+        assert project["licenseVerificationStatus"] == "verified"
+        assert project["referenceRole"] == "reference_only"
+        assert project["generateEligible"] is True
 
     candidate_response = await client.get("/api/pathfinder/projects?status=candidate", headers=auth_headers())
     assert candidate_response.status_code == 200
     assert candidate_response.json()["projects"] == []
+    needs_review_response = await client.get("/api/pathfinder/projects?status=needs_review", headers=auth_headers())
+    assert needs_review_response.status_code == 200
+    assert needs_review_response.json()["projects"] == []
+
+
+@pytest.mark.asyncio()
+async def test_pathfinder_projects_supports_role_and_capability_filters(client: AsyncClient) -> None:
+    role_response = await client.get(
+        "/api/pathfinder/projects?rolePathId=ai-application-ops-implementation-assistant",
+        headers=auth_headers(),
+    )
+    assert role_response.status_code == 200
+    role_ids = {project["projectId"] for project in role_response.json()["projects"]}
+    assert role_ids == {"opendocuments", "chatwoot", "node-red"}
+
+    capability_response = await client.get(
+        "/api/pathfinder/projects?capabilityTag=feedback_loop_design",
+        headers=auth_headers(),
+    )
+    assert capability_response.status_code == 200
+    capability_ids = {project["projectId"] for project in capability_response.json()["projects"]}
+    assert {"apache-superset", "chatwoot", "node-red"}.issubset(capability_ids)
 
 
 @pytest.mark.asyncio()
@@ -545,6 +582,71 @@ async def test_generate_trial_package_for_approved_opendocuments(client: AsyncCl
 
 
 @pytest.mark.asyncio()
+async def test_generate_trial_package_for_non_opendocuments_project(client: AsyncClient) -> None:
+    recommendation_response = await client.post(
+        "/api/pathfinder/recommendations",
+        json=recommendation_payload(),
+        headers=auth_headers(),
+    )
+    assert recommendation_response.status_code == 200
+    run_id = recommendation_response.json()["recommendationRun"]["recommendationRunId"]
+
+    response = await client.post(
+        "/api/pathfinder/trial-packages/generate",
+        json={
+            "recommendationRunId": run_id,
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+            "selectedPathId": "industry-ai-product-assistant",
+            "selectedProjectId": "ragflow",
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    candidate = response.json()["trialPackageCandidate"]
+    assert candidate["generatedFrom"]["selectedProjectId"] == "ragflow"
+    assert candidate["trialPackageId"] == "p1c-ragflow-industry-ai-product-assistant-trial"
+    assert [question["questionId"] for question in candidate["trialQuestions"]] == [
+        "project_understanding",
+        "role_connection",
+        "scenario_gap",
+        "mvp_plan",
+        "portfolio_boundary",
+        "ai_usage_explanation",
+    ]
+
+
+@pytest.mark.asyncio()
+async def test_chatwoot_trial_package_preserves_license_boundary(client: AsyncClient) -> None:
+    recommendation_response = await client.post(
+        "/api/pathfinder/recommendations",
+        json=recommendation_payload(),
+        headers=auth_headers(),
+    )
+    assert recommendation_response.status_code == 200
+    run_id = recommendation_response.json()["recommendationRun"]["recommendationRunId"]
+
+    response = await client.post(
+        "/api/pathfinder/trial-packages/generate",
+        json={
+            "recommendationRunId": run_id,
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+            "selectedPathId": "industry-ai-product-assistant",
+            "selectedProjectId": "chatwoot",
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200
+    candidate = response.json()["trialPackageCandidate"]
+    assert candidate["sourceProject"]["license"] == (
+        "MIT Expat outside enterprise directory; enterprise directory has separate license"
+    )
+    assert "enterprise directory has separate license" in candidate["sampleJdDisclaimer"]
+    assert "enterprise" in json.dumps(candidate["forbiddenClaims"], ensure_ascii=False)
+
+
+@pytest.mark.asyncio()
 async def test_generate_trial_package_rejects_unmatched_path(client: AsyncClient) -> None:
     recommendation_response = await client.post(
         "/api/pathfinder/recommendations",
@@ -561,6 +663,30 @@ async def test_generate_trial_package_rejects_unmatched_path(client: AsyncClient
             "userProfileSnapshot": recommendation_payload()["userProfile"],
             "selectedPathId": "ai-data-evaluation-assistant",
             "selectedProjectId": "opendocuments",
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio()
+async def test_generate_trial_package_rejects_unaudited_project(client: AsyncClient) -> None:
+    recommendation_response = await client.post(
+        "/api/pathfinder/recommendations",
+        json=recommendation_payload(),
+        headers=auth_headers(),
+    )
+    assert recommendation_response.status_code == 200
+    run_id = recommendation_response.json()["recommendationRun"]["recommendationRunId"]
+
+    response = await client.post(
+        "/api/pathfinder/trial-packages/generate",
+        json={
+            "recommendationRunId": run_id,
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+            "selectedPathId": "industry-ai-product-assistant",
+            "selectedProjectId": "unreviewed-project",
         },
         headers=auth_headers(),
     )

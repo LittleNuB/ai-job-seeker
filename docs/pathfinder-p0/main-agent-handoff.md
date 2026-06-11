@@ -562,6 +562,8 @@ Main Agent follow-up order:
 - Runtime gap identified:
   - Existing `backend/app/services/pathfinder_project_service.py` still loads only `opendocuments.json`.
   - Therefore DATA-003 is a data foundation merge, not yet the full runtime implementation for multi-project matching.
+- Runtime gap update:
+  - This gap is addressed by `BE-004` after `PM-MERGE-005`: runtime project loading now reads all audited project fixtures and supports generic trial package generation for approved projects.
 - Follow-up dispatched:
   - `BE-004` sent to child thread `019ea0e6-bfe3-7751-bf98-e1740b7c89a5`.
   - Goal: load all audited project fixture files, apply matching rules without scores/rankings, support generic trial package generation for approved projects, and preserve Chatwoot license boundary.
@@ -569,3 +571,39 @@ Main Agent follow-up order:
 - FE sync:
   - `FE-003` child thread `019ea0e6-23df-7442-af0c-6b6e2ac54dae` was updated with BE-003 API details and DATA-003 / BE-004 runtime status.
   - FE should not hard-code OpenDocuments as the only project; it should tolerate current API returning one project until BE-004 lands.
+
+## BE-004 P1-C.1 Status
+
+- Task ID: `BE-004`
+- Child role: `后端开发A`
+- Worktree: `C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-be-004`
+- Branch: `codex/pathfinder-be-004`
+- Baseline: created from `codex/pathfinder-p1a-integration` at `978575b data: add pathfinder project library fixtures`.
+- Delivered files:
+  - `backend/app/services/pathfinder_project_service.py`
+  - `backend/app/services/pathfinder_recommendation_service.py`
+  - `backend/app/services/pathfinder_trial_package_service.py`
+  - `backend/tests/test_pathfinder.py`
+  - `docs/pathfinder-p0/p1-c-project-runtime-integration.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Runtime behavior:
+  - `load_project_library()` now loads all `data/pathfinder/open-source-projects/*.json` fixtures and normalizes them to `OpenSourceProjectRecord`.
+  - `/api/pathfinder/projects` returns all approved, verified, `reference_only` projects and preserves `rolePathId`, `capabilityTag`, and `status` filters.
+  - Recommendation `projectMatches` can include multiple audited projects using `p1c-project-library-matching.json` rule-hit explanations.
+  - Matching does not use stars, forks, popularity, numeric fit metrics, ordered comparisons, hiring prediction, certification, employer screening, or resume packaging.
+  - `generate_trial_package_candidate()` supports any matched approved project. OpenDocuments keeps the dedicated P1-A package; other approved projects use `genericTrialTemplate`.
+  - Chatwoot trial packages preserve the enterprise-directory license boundary in the source project license and generated disclaimer.
+- Storage: continues to reuse `analysis_records`; no new table and no Alembic migration.
+- Scope guard: no GitHub Search, no live RAG, no LLM changes, no frontend changes, no forbidden docs/files touched.
+- Tests added/updated:
+  - seven approved projects returned by `/projects`;
+  - `candidate` / `needs_review` statuses blocked from visible generatable projects;
+  - role path and capability filters;
+  - multiple `projectMatches` without `score`, `ranking`, or `probability` in response JSON;
+  - non-OpenDocuments trial package generation;
+  - Chatwoot license boundary retention;
+  - unaudited project rejection.
+- Remaining risks:
+  - Data owner still needs periodic license/source revalidation.
+  - User-signal matching is rule-first and may need tuning after real P1-C.1 interview confirmations.
+  - Product owner should decide whether UI exposes all seven approved projects immediately or stages visible cards.

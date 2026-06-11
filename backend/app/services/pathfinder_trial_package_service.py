@@ -12,7 +12,11 @@ from app.schemas.pathfinder import (
     TrialPackageGeneratedFrom,
     TrialQuestionCandidate,
 )
-from app.services.pathfinder_project_service import get_approved_project
+from app.services.pathfinder_project_service import (
+    OPENDOCUMENTS_PROJECT_ID,
+    get_approved_project,
+    load_project_matching_fixture,
+)
 
 
 _TRIAL_PACKAGE_FIXTURE = (
@@ -40,9 +44,17 @@ def generate_trial_package_candidate(
     ):
         raise ValueError("Selected path and project are not matched for trial generation.")
 
-    fixture = _trial_package_fixture()
+    fixture = _trial_package_fixture() if selected_project_id == OPENDOCUMENTS_PROJECT_ID else _generic_trial_template()
+    title = str(
+        fixture.get("title")
+        or source_project.name
+        or "Audited project reference trial package"
+    )
+    if selected_project_id != OPENDOCUMENTS_PROJECT_ID:
+        title = f"{source_project.name} - {title}"
+
     return TrialPackageCandidate(
-        trialPackageId=str(fixture.get("trialPackageId") or "p1b-opendocuments-trial"),
+        trialPackageId=str(fixture.get("trialPackageId") or f"p1c-{selected_project_id}-{selected_path_id}-trial"),
         trialPackageVersion=str(fixture.get("version") or "1.0.0"),
         generatedFrom=TrialPackageGeneratedFrom(
             recommendationRunId=recommendation_run.recommendationRunId,
@@ -50,16 +62,13 @@ def generate_trial_package_candidate(
             selectedProjectId=selected_project_id,
             ruleVersion=recommendation_run.ruleVersion.version,
         ),
-        title=str(fixture.get("title") or "OpenDocuments trial package"),
+        title=title,
         targetRolePath=target_path,
         sourceProject=source_project,
         trialQuestions=_trial_questions(fixture.get("fixedQuestions")),
         requiredMarkdownSections=list(fixture.get("requiredMarkdownSections") or []),
-        forbiddenClaims=list(fixture.get("forbiddenClaims") or []) + source_project.forbiddenClaims,
-        sampleJdDisclaimer=str(
-            fixture.get("sampleJdNotice")
-            or "Sample JD trend reference only; not a concrete company requirement or hiring judgment."
-        ),
+        forbiddenClaims=_dedupe_strings(list(fixture.get("forbiddenClaims") or []) + source_project.forbiddenClaims),
+        sampleJdDisclaimer=_trial_disclaimer(fixture, source_project),
     )
 
 
@@ -68,6 +77,11 @@ def _trial_package_fixture() -> dict[str, Any]:
     with _TRIAL_PACKAGE_FIXTURE.open("r", encoding="utf-8") as file:
         value = json.load(file)
     return value if isinstance(value, dict) else {}
+
+
+def _generic_trial_template() -> dict[str, Any]:
+    raw_template = load_project_matching_fixture().get("genericTrialTemplate")
+    return raw_template if isinstance(raw_template, dict) else {}
 
 
 def _trial_questions(raw_questions: Any) -> list[TrialQuestionCandidate]:
@@ -86,3 +100,27 @@ def _trial_questions(raw_questions: Any) -> list[TrialQuestionCandidate]:
             )
         )
     return questions
+
+
+def _trial_disclaimer(fixture: dict[str, Any], source_project) -> str:
+    base_notice = str(
+        fixture.get("sampleJdNotice")
+        or fixture.get("disclaimer")
+        or "Sample JD trend reference only; not a concrete company requirement or hiring judgment."
+    )
+    source_boundary = "; ".join(source_project.allowedContexts[:2])
+    return (
+        f"{base_notice} License boundary for {source_project.name}: {source_project.license}. "
+        f"Source boundary: {source_boundary}"
+    )
+
+
+def _dedupe_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result

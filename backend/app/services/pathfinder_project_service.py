@@ -12,7 +12,8 @@ from app.schemas.pathfinder import OpenSourceProjectRecord
 APPROVED_STATUS = "approved_for_trial_package"
 OPENDOCUMENTS_PROJECT_ID = "opendocuments"
 
-_PROJECT_FIXTURE = PROJECT_ROOT / "data" / "pathfinder" / "open-source-projects" / "opendocuments.json"
+_PROJECT_LIBRARY_DIR = PROJECT_ROOT / "data" / "pathfinder" / "open-source-projects"
+_PROJECT_MATCHING_FIXTURE = PROJECT_ROOT / "data" / "pathfinder" / "project-matching" / "p1c-project-library-matching.json"
 
 _DEFAULT_FORBIDDEN_CLAIMS = [
     "Do not claim the user contributed to the original OpenDocuments repository.",
@@ -67,8 +68,21 @@ def get_approved_project(project_id: str) -> OpenSourceProjectRecord:
 
 @lru_cache(maxsize=1)
 def load_project_library() -> tuple[OpenSourceProjectRecord, ...]:
-    fixture = _load_fixture(_PROJECT_FIXTURE)
-    return (_normalize_opendocuments(fixture),)
+    project_by_id: dict[str, OpenSourceProjectRecord] = {}
+    for path in sorted(_PROJECT_LIBRARY_DIR.glob("*.json")):
+        fixture = _load_fixture(path)
+        project = _normalize_project(fixture)
+        project_by_id[project.projectId] = project
+
+    ordered_ids = _matching_fixture_project_ids()
+    ordered_projects = [project_by_id.pop(project_id) for project_id in ordered_ids if project_id in project_by_id]
+    ordered_projects.extend(project_by_id[project_id] for project_id in sorted(project_by_id))
+    return tuple(ordered_projects)
+
+
+@lru_cache(maxsize=1)
+def load_project_matching_fixture() -> dict[str, Any]:
+    return _load_fixture(_PROJECT_MATCHING_FIXTURE)
 
 
 def _load_fixture(path: Path) -> dict[str, Any]:
@@ -77,21 +91,23 @@ def _load_fixture(path: Path) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def _normalize_opendocuments(raw: dict[str, Any]) -> OpenSourceProjectRecord:
+def _normalize_project(raw: dict[str, Any]) -> OpenSourceProjectRecord:
+    project_id = str(raw.get("projectId") or OPENDOCUMENTS_PROJECT_ID)
+    allowed_contexts = list(raw.get("allowedContexts") or _DEFAULT_ALLOWED_CONTEXTS)
+    source_boundary = str(raw.get("sourceBoundary") or "").strip()
+    if source_boundary and source_boundary not in allowed_contexts:
+        allowed_contexts.insert(0, source_boundary)
     return OpenSourceProjectRecord(
-        projectId=str(raw.get("projectId") or OPENDOCUMENTS_PROJECT_ID),
-        name=str(raw.get("name") or "OpenDocuments"),
-        sourceUrl=str(raw.get("sourceUrl") or "https://github.com/joungminsung/OpenDocuments"),
+        projectId=project_id,
+        name=str(raw.get("name") or project_id),
+        sourceUrl=str(raw.get("sourceUrl") or ""),
         host=raw.get("host") or "github",
-        description=(
-            "OpenDocuments is used as a manually reviewed public reference for document QA, "
-            "knowledge-base assistant, citation display, and retrieval-boundary trial tasks."
-        ),
+        description=str(raw.get("description") or raw.get("trialTaskIdea", {}).get("summary") or ""),
         license=str(raw.get("license") or "MIT"),
         licenseSpdxId=raw.get("licenseSpdxId") or "MIT",
         licenseFileUrl=raw.get("licenseFileUrl"),
         licenseVerificationStatus=raw.get("licenseVerificationStatus") or "verified",
-        lastManualCheckAt=raw.get("lastManualCheckAt"),
+        lastManualCheckAt=raw.get("lastManualCheckAt") or raw.get("licenseVerifiedAt"),
         referenceRole=raw.get("referenceRole") or "reference_only",
         status=raw.get("status") or APPROVED_STATUS,
         rolePathIds=list(raw.get("rolePathIds") or _DEFAULT_ROLE_PATH_IDS),
@@ -101,10 +117,17 @@ def _normalize_opendocuments(raw: dict[str, Any]) -> OpenSourceProjectRecord:
         publicCapabilities=list(raw.get("publicCapabilities") or []),
         notClaimed=list(raw.get("notClaimed") or []),
         forbiddenClaims=list(raw.get("forbiddenClaims") or _DEFAULT_FORBIDDEN_CLAIMS),
-        allowedContexts=list(raw.get("allowedContexts") or _DEFAULT_ALLOWED_CONTEXTS),
+        allowedContexts=allowed_contexts,
         needsReview=raw.get("status") != APPROVED_STATUS,
         generateEligible=_is_approved_raw(raw),
     )
+
+
+def _matching_fixture_project_ids() -> list[str]:
+    raw_ids = load_project_matching_fixture().get("auditedProjectIds")
+    if not isinstance(raw_ids, list):
+        return []
+    return [str(project_id) for project_id in raw_ids if project_id]
 
 
 def _is_approved(project: OpenSourceProjectRecord) -> bool:
