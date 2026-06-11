@@ -393,3 +393,22 @@
   - 完整 E2E：17 passed / 11 failed；Pathfinder 专项全部通过，失败集中在既有 auth / fixture / protected route 环境。
 - Scope Guard：未新增 LLM 主链路、真实 GitHub 搜索、真实 RAG、认证、概率、企业筛选、履历包装、评分系统或 migration。
 - 当前建议：进入产品负责人 P1-B.1 人工审查和 QA 执行型回归；完整 E2E 的非 Pathfinder 失败单独治理，不混入 Pathfinder 功能提交。
+
+## P1-C Planning Decision
+
+- 日期：2026-06-11
+- 产品负责人决策：同意 P1-C.1 暂不实现 GitHub Search。该功能实现成本较高，且未核验项目直接进入用户试航会破坏可信边界。
+- 新阶段定位：`P1-C`，重点是“AI 航前访谈 + 用户确认信号 + 已核验项目库匹配”。
+- P1-C.1 范围：
+  - AI 进行结构化访谈和追问。
+  - AI 抽取候选用户信号。
+  - 用户确认 / 修改信号。
+  - 推荐和试航包生成只使用用户确认信号、JD 样本趋势和已核验项目库。
+- P1-C.1 不做：
+  - GitHub Search。
+  - 实时项目抓取。
+  - 未核验项目生成完整试航包。
+  - LLM 直接决定最终路径或项目。
+- 已新增规划文档：`docs/pathfinder-p0/p1-c-agentic-interview-plan.md`
+- 已新增 glossary：`CONTEXT.md`
+- 下一步建议：先发布 `产品规划B`、`技术方案B`、`模型方案A`、`数据方案E` 四个规划任务，回传后再做 PM merge review。
