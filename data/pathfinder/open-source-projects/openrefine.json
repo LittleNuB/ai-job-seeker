@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "openrefine",
+  "name": "OpenRefine",
+  "sourceUrl": "https://github.com/OpenRefine/OpenRefine",
+  "officialUrl": "https://openrefine.org/",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Free, open-source tool for working with messy data and improving it.",
+  "license": "BSD 3-Clause",
+  "licenseSpdxId": "BSD-3-Clause",
+  "licenseFileUrl": "https://github.com/OpenRefine/OpenRefine/blob/master/LICENSE.txt",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "industry_data_processing",
+    "data_cleaning",
+    "data_quality"
+  ],
+  "rolePathIds": [
+    "ai-data-evaluation-assistant",
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant"
+  ],
+  "projectTags": [
+    "dashboard_analytics",
+    "data_annotation",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "evaluation_metric_design",
+    "error_analysis",
+    "handoff_checklist",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "sample_overgeneralization_risk",
+    "sensitive_data_risk"
+  ],
+  "suitableUserSignals": [
+    "有 Excel、表格清洗、数据核对、标签整理、运营数据或内容数据处理经验。",
+    "能描述脏数据问题、清洗规则、人工抽检和交付口径。",
+    "适合从 AI 数据准备、评测助理或业务数据分析方向试航。"
+  ],
+  "unsuitableUserSignals": [
+    "希望声明自己做了算法模型或数据平台研发。",
+    "没有任何表格、数据、质检或内容整理经历。",
+    "想把数据清洗结果写成市场全量结论。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "ai-data-evaluation-assistant",
+      "fit": "strong",
+      "rationale": "适合输出清洗规则、错误分类、抽检表和数据质量说明。"
+    },
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "medium",
+      "rationale": "适合解释 AI 应用上线前的数据准备和质量边界。"
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "medium",
+      "rationale": "适合输出客户侧数据准备清单和 PoC 数据边界。"
+    }
+  ],
+  "publicCapabilities": [
+    "messy data cleaning",
+    "data transformation and reconciliation workflows",
+    "data analysis and data wrangling",
+    "open data and data quality support"
+  ],
+  "trialTaskIdea": {
+    "title": "行业样本数据清洗与质检试航",
+    "summary": "选择一份样例表格，设计清洗规则、字段标准、错误分类、抽检记录和 AI 应用前的数据准备说明。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明自己处理过的数据、表格或质检场景。",
+    "需使用脱敏或公开样例数据。",
+    "需保留样本边界，不输出市场全量结论。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户开发 OpenRefine。",
+    "不得声明清洗样本代表市场全量。",
+    "不得把数据清洗写成算法研发或数据工程能力认证。"
+  ],
+  "riskNotes": [
+    "数据清洗项目容易被误写成全量数据分析结论。",
+    "必须记录样本来源、字段缺失和人工抽检边界。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；只作为数据清洗和质量流程参考。",
+  "notClaimed": [
+    "不声明用户参与 OpenRefine 原仓库。",
+    "不声明用户完成数据平台开发。",
+    "不声明样本分析代表市场全量。"
+  ],
+  "allowedContexts": [
+    "基于 OpenRefine 公开信息做数据清洗流程拆解。",
+    "用户产出是清洗规则、质检口径和样本边界说明。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或不再为 BSD-3-Clause。",
+    "README 移除 open-source data cleaning 定位。",
+    "仓库或官方文档无法核验。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "master",
+    "readmeSummary": "Free open-source tool for working with messy data and improving it.",
+    "licenseSummary": "BSD-style 3-clause license text observed on GitHub.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE.txt checked on 2026-06-11."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

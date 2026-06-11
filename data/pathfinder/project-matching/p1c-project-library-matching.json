@@ -1,0 +1,366 @@
+{
+  "schemaVersion": "pathfinder-project-matching.v1",
+  "recordType": "ProjectMatchingFixture",
+  "matchingSetId": "p1c-project-library-matching",
+  "version": "1.0.0",
+  "createdAt": "2026-06-11",
+  "updatedAt": "2026-06-11",
+  "scope": "P1-C.1 supports project recommendation cards from an audited project library and then lets the user enter a generic trial template with the selected approved project.",
+  "selectionPolicy": {
+    "allowedProjectStatuses": [
+      "approved_for_trial_package"
+    ],
+    "blockedProjectStatuses": [
+      "candidate",
+      "needs_review",
+      "retired"
+    ],
+    "requiresLicenseVerificationStatus": "verified",
+    "requiresReferenceRole": "reference_only",
+    "allowGithubSearch": false,
+    "allowRuntimeRepositoryFetching": false,
+    "allowUnreviewedProjectAsPrimaryTrial": false,
+    "allowScoringOrRanking": false,
+    "maxVisibleProjectCards": 3,
+    "selectionExplanationMode": "rule_hit_explanation_only"
+  },
+  "projectCardSchema": {
+    "requiredFields": [
+      "projectId",
+      "name",
+      "description",
+      "license",
+      "licenseVerificationStatus",
+      "referenceRole",
+      "pathFit",
+      "suitableUserSignals",
+      "trialTaskIdea",
+      "sourceBoundary",
+      "forbiddenClaims"
+    ],
+    "forbiddenFields": [
+      "matchScore",
+      "competencyScore",
+      "offerProbability",
+      "ranking",
+      "bestProject",
+      "companyFitScore"
+    ],
+    "displayCopyRules": [
+      "Use '已审计项目库 / 当前样本' wording.",
+      "Do not call a project 'best' or 'most suitable'.",
+      "Do not expose stars, forks, commits, or release cadence as matching evidence.",
+      "Always show reference_only and attribution boundary."
+    ]
+  },
+  "genericTrialTemplate": {
+    "templateId": "template-project-reference-mvp-v1",
+    "version": "1.0.0",
+    "title": "开源参考项目场景拆解试航",
+    "status": "approved",
+    "sourceProjectIdMode": "selected_approved_project",
+    "taskScope": "围绕一个已审计开源参考项目，结合用户确认信号，产出场景理解、岗位连接、MVP 范围、风险边界、作品集草稿和 AI 使用说明。",
+    "assumedUserInputs": [
+      "confirmed_user_profile_signals",
+      "target_role_path",
+      "domain_context",
+      "available_time",
+      "tool_familiarity"
+    ],
+    "fixedQuestions": [
+      {
+        "questionId": "project_understanding",
+        "title": "项目理解",
+        "prompt": "这个开源项目解决什么问题？公开能力、输入和输出分别是什么？",
+        "required": true,
+        "expectedOutputType": "project_understanding"
+      },
+      {
+        "questionId": "role_connection",
+        "title": "岗位连接",
+        "prompt": "它能帮助你理解哪些 AI 应用、解决方案、数据评测或运营实施工作？",
+        "required": true,
+        "expectedOutputType": "role_connection"
+      },
+      {
+        "questionId": "scenario_gap",
+        "title": "场景缺口",
+        "prompt": "放到你的行业或目标场景中，还缺哪些资料、流程、权限、指标或人工复核节点？",
+        "required": true,
+        "expectedOutputType": "scenario_gap"
+      },
+      {
+        "questionId": "mvp_plan",
+        "title": "MVP 试航方案",
+        "prompt": "你会如何设计一个 1-2 周低风险 MVP？包含范围、输入、输出、验收和不做事项。",
+        "required": true,
+        "expectedOutputType": "mvp_plan"
+      },
+      {
+        "questionId": "portfolio_boundary",
+        "title": "作品集边界",
+        "prompt": "如果把这次试航做成作品集草稿，你的真实贡献是什么？哪些能力或项目归属不可声称？",
+        "required": true,
+        "expectedOutputType": "portfolio_boundary"
+      },
+      {
+        "questionId": "ai_usage_explanation",
+        "title": "AI 使用说明",
+        "prompt": "你是否使用 AI 辅助？AI 帮你做了什么？你如何核验、筛选和修改？",
+        "required": true,
+        "expectedOutputType": "ai_usage_explanation"
+      }
+    ],
+    "outputAssets": [
+      "项目理解摘要",
+      "路径连接说明",
+      "MVP 范围",
+      "指标与验收口径",
+      "风险边界",
+      "作品集一页纸草稿",
+      "面试解释材料",
+      "Markdown 导出快照"
+    ],
+    "requiredMarkdownSections": [
+      "candidate_background",
+      "confirmed_user_signals",
+      "path_conclusion",
+      "audited_project_source_license",
+      "audited_project_public_capabilities",
+      "user_trial_contribution",
+      "forbidden_claims",
+      "fixed_question_answers",
+      "disclaimer"
+    ],
+    "forbiddenClaims": [
+      "不得声明用户开发、维护或官方贡献所选开源项目。",
+      "不得声明本试航复现完整系统或完成企业级交付。",
+      "不得输出能力认证、offer 概率、企业筛选、简历包装、真实 RAG 或复杂评分。",
+      "不得使用未审计项目作为完整试航主项目。"
+    ],
+    "disclaimer": "本模板只用于基于已审计开源参考项目做场景拆解和求职准备，不构成项目贡献声明、能力认证、录用判断或企业交付承诺。"
+  },
+  "matchRules": [
+    {
+      "ruleId": "rule-project-document-qa-reference",
+      "targetRolePathIds": [
+        "industry-ai-product-assistant",
+        "industry-ai-solution-assistant"
+      ],
+      "eligibleProjectIds": [
+        "opendocuments",
+        "ragflow"
+      ],
+      "requiredProjectTags": [
+        "document_qa",
+        "knowledge_base"
+      ],
+      "requiredCapabilityTagsAny": [
+        "qa_pair_design",
+        "retrieval_boundary_design",
+        "citation_and_source_display",
+        "evaluation_metric_design"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "document_or_content_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        },
+        {
+          "signalType": "domain_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": false
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有文档或行业资料处理信号，项目具备知识库 / 文档问答参考能力，可进入通用项目试航模板。",
+      "forbiddenInterpretations": [
+        "不是 RAG 工程能力认证。",
+        "不是项目热度排序。",
+        "不是用户参与原项目贡献。"
+      ]
+    },
+    {
+      "ruleId": "rule-document-parsing-data-prep",
+      "targetRolePathIds": [
+        "ai-data-evaluation-assistant",
+        "industry-ai-product-assistant"
+      ],
+      "eligibleProjectIds": [
+        "unstructured"
+      ],
+      "requiredProjectTags": [
+        "document_qa"
+      ],
+      "requiredCapabilityTagsAny": [
+        "error_analysis",
+        "evaluation_metric_design",
+        "risk_boundary_documentation"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "document_or_content_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        },
+        {
+          "signalType": "data_or_evaluation_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": false
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有文档处理或数据整理信号，项目可支撑文档解析、质量检查和知识库准备试航。",
+      "forbiddenInterpretations": [
+        "不是 OCR / NLP 算法研发能力证明。",
+        "不是专业文档审核替代。"
+      ]
+    },
+    {
+      "ruleId": "rule-bi-evaluation-dashboard",
+      "targetRolePathIds": [
+        "ai-data-evaluation-assistant",
+        "industry-ai-product-assistant",
+        "industry-ai-solution-assistant"
+      ],
+      "eligibleProjectIds": [
+        "apache-superset"
+      ],
+      "requiredProjectTags": [
+        "dashboard_analytics"
+      ],
+      "requiredCapabilityTagsAny": [
+        "evaluation_metric_design",
+        "feedback_loop_design"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "data_or_evaluation_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有表格、指标或看板经验，项目可支撑 AI 应用效果指标和试航复盘材料设计。",
+      "forbiddenInterpretations": [
+        "不是求职成功率看板。",
+        "不是模型或候选人评分系统。"
+      ]
+    },
+    {
+      "ruleId": "rule-customer-support-ops",
+      "targetRolePathIds": [
+        "ai-application-ops-implementation-assistant",
+        "industry-ai-product-assistant",
+        "industry-ai-solution-assistant"
+      ],
+      "eligibleProjectIds": [
+        "chatwoot"
+      ],
+      "requiredProjectTags": [
+        "customer_support_assistant"
+      ],
+      "requiredCapabilityTagsAny": [
+        "feedback_loop_design",
+        "user_training_material",
+        "handoff_checklist"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "implementation_or_ops_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        },
+        {
+          "signalType": "communication_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": false
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有运营、客服、实施或沟通信号，项目可支撑客服知识库、工单流转和上线 SOP 试航。",
+      "forbiddenInterpretations": [
+        "不是客服系统交付证明。",
+        "不能使用真实客户隐私数据。"
+      ]
+    },
+    {
+      "ruleId": "rule-low-code-workflow-automation",
+      "targetRolePathIds": [
+        "industry-ai-solution-assistant",
+        "ai-application-ops-implementation-assistant"
+      ],
+      "eligibleProjectIds": [
+        "node-red"
+      ],
+      "requiredProjectTags": [
+        "workflow_automation"
+      ],
+      "requiredCapabilityTagsAny": [
+        "scenario_mapping",
+        "handoff_checklist",
+        "risk_boundary_documentation"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "implementation_or_ops_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有流程或实施经验，项目可支撑低代码自动化流程、异常分支和上线清单试航。",
+      "forbiddenInterpretations": [
+        "不是完整系统集成能力认证。",
+        "不是全流程无人化承诺。"
+      ]
+    },
+    {
+      "ruleId": "rule-data-cleaning-quality",
+      "targetRolePathIds": [
+        "ai-data-evaluation-assistant",
+        "industry-ai-product-assistant"
+      ],
+      "eligibleProjectIds": [
+        "openrefine"
+      ],
+      "requiredProjectTags": [
+        "data_annotation"
+      ],
+      "requiredCapabilityTagsAny": [
+        "evaluation_metric_design",
+        "error_analysis",
+        "risk_boundary_documentation"
+      ],
+      "userSignalRequirements": [
+        {
+          "signalType": "data_or_evaluation_experience",
+          "evidenceMode": "user_confirmed_signal",
+          "required": true
+        }
+      ],
+      "result": "eligible_for_trial_template",
+      "explanationTemplate": "用户有数据清洗、表格或质检经验，项目可支撑样本数据清洗、错误分类和质量边界试航。",
+      "forbiddenInterpretations": [
+        "不是数据工程能力认证。",
+        "不是市场全量分析。"
+      ]
+    }
+  ],
+  "auditedProjectIds": [
+    "opendocuments",
+    "ragflow",
+    "unstructured",
+    "apache-superset",
+    "chatwoot",
+    "node-red",
+    "openrefine"
+  ],
+  "qualityGates": [
+    "Every visible project card must have licenseVerificationStatus=verified.",
+    "Every visible project card must show sourceBoundary and forbiddenClaims.",
+    "No project card may include score, probability, ranking, stars/forks-based evidence, or best-project wording.",
+    "Generic trial template must preserve selected project license and attribution boundary in Markdown."
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "node-red",
+  "name": "Node-RED",
+  "sourceUrl": "https://github.com/node-red/node-red",
+  "officialUrl": "https://nodered.org/",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Low-code programming for event-driven applications.",
+  "license": "Apache License 2.0",
+  "licenseSpdxId": "Apache-2.0",
+  "licenseFileUrl": "https://github.com/node-red/node-red/blob/main/LICENSE",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "low_code_automation",
+    "workflow_automation",
+    "industry_process_integration"
+  ],
+  "rolePathIds": [
+    "industry-ai-solution-assistant",
+    "ai-application-ops-implementation-assistant",
+    "industry-ai-product-assistant"
+  ],
+  "projectTags": [
+    "workflow_automation",
+    "implementation_playbook",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "mvp_scope_design",
+    "handoff_checklist",
+    "feedback_loop_design",
+    "user_training_material",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "full_system_replication_risk",
+    "real_runtime_claim_risk",
+    "sensitive_data_risk"
+  ],
+  "suitableUserSignals": [
+    "有流程梳理、自动化配置、实施、SOP、数据流转或系统对接经验。",
+    "能把业务流程画成触发器、节点、条件和异常处理。",
+    "适合做解决方案助理或应用实施助理的流程自动化试航。"
+  ],
+  "unsuitableUserSignals": [
+    "希望声明自己完成复杂后端集成开发。",
+    "无法描述业务流程或异常处理。",
+    "希望把低代码流程包装成完整企业系统交付。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "strong",
+      "rationale": "适合输出流程图、PoC 范围、集成假设、异常分支和交付清单。"
+    },
+    {
+      "pathId": "ai-application-ops-implementation-assistant",
+      "fit": "strong",
+      "rationale": "适合输出上线 checklist、维护 SOP、用户培训和反馈流程。"
+    },
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "medium",
+      "rationale": "适合输出内部工具需求、用户故事和流程验收标准。"
+    }
+  ],
+  "publicCapabilities": [
+    "low-code flow programming",
+    "event-driven application workflows",
+    "custom nodes and integrations",
+    "shared flows and node collections"
+  ],
+  "trialTaskIdea": {
+    "title": "低代码流程自动化试航",
+    "summary": "选择一个业务流程，设计触发器、节点、异常分支、权限边界、上线 checklist 和维护 SOP。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明处理过的流程、SOP、系统配置或跨团队协作经验。",
+    "需保留流程假设、不可自动化环节和人工复核点。",
+    "需明确试航不是企业系统上线交付。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户开发或维护 Node-RED。",
+    "不得声明完成生产级自动化平台。",
+    "不得将流程设计写成完整系统集成能力认证。"
+  ],
+  "riskNotes": [
+    "流程自动化容易被过度承诺为全流程替代人工。",
+    "需强调异常处理、权限、审计和人工确认节点。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；只作为低代码流程设计参照。",
+  "notClaimed": [
+    "不声明用户参与 Node-RED 原仓库。",
+    "不声明用户完成企业级自动化上线。",
+    "不声明自动化可替代业务审核。"
+  ],
+  "allowedContexts": [
+    "基于 Node-RED 公开信息做流程自动化方案拆解。",
+    "用户产出是流程图、节点说明和上线清单。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或不再为 Apache-2.0。",
+    "README 移除低代码 / event-driven 定位。",
+    "仓库或官方文档无法核验。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "main",
+    "readmeSummary": "Low-code programming for event-driven applications.",
+    "licenseSummary": "Apache License 2.0 file observed on GitHub.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE checked on 2026-06-11."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

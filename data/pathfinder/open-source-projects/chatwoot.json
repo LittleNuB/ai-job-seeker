@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "chatwoot",
+  "name": "Chatwoot",
+  "sourceUrl": "https://github.com/chatwoot/chatwoot",
+  "officialUrl": "https://www.chatwoot.com/",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Open-source customer support platform for live chat, email support, and omni-channel help desk workflows.",
+  "license": "MIT Expat outside enterprise directory; enterprise directory has separate license",
+  "licenseSpdxId": "MIT",
+  "licenseFileUrl": "https://github.com/chatwoot/chatwoot/blob/develop/LICENSE",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "customer_support_ticketing",
+    "ai_application_ops"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "ai-application-ops-implementation-assistant",
+    "industry-ai-solution-assistant"
+  ],
+  "projectTags": [
+    "customer_support_assistant",
+    "implementation_playbook",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "mvp_scope_design",
+    "feedback_loop_design",
+    "user_training_material",
+    "handoff_checklist",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "full_system_replication_risk",
+    "sensitive_data_risk",
+    "sample_overgeneralization_risk"
+  ],
+  "suitableUserSignals": [
+    "有客服、运营、工单、用户支持、知识库维护或 SOP 经验。",
+    "能设计对话分类、工单流转、服务话术和反馈闭环。",
+    "适合围绕智能客服或内部支持助手做运营实施试航。"
+  ],
+  "unsuitableUserSignals": [
+    "希望声明自己完成客服系统开发或企业上线。",
+    "不了解客服流程、SOP 或用户反馈场景。",
+    "计划使用真实客户隐私数据做公开材料。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "ai-application-ops-implementation-assistant",
+      "fit": "strong",
+      "rationale": "适合输出客服知识库维护 SOP、工单分类、上线 checklist 和培训材料。"
+    },
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "medium",
+      "rationale": "适合输出智能客服需求、用户故事、问题分类和验收指标。"
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "medium",
+      "rationale": "适合输出客户支持场景 PoC、演示脚本和交付边界。"
+    }
+  ],
+  "publicCapabilities": [
+    "live chat",
+    "email support",
+    "omni-channel help desk",
+    "conversation management across channels",
+    "self-hosted customer support platform"
+  ],
+  "trialTaskIdea": {
+    "title": "智能客服知识库与工单流转试航",
+    "summary": "围绕一个客服场景设计问题分类、回复边界、工单升级、知识库维护和反馈复盘流程。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明客服、运营、SOP、培训或用户支持经验。",
+    "需使用脱敏或虚构客户问题样例。",
+    "需注明 Chatwoot enterprise 目录有单独 License 边界。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户开发或部署 Chatwoot。",
+    "不得声明已完成企业客服系统交付。",
+    "不得使用真实客户隐私数据。",
+    "不得忽略 enterprise 目录单独 License 边界。"
+  ],
+  "riskNotes": [
+    "客服项目容易触及客户隐私和内部工单数据。",
+    "License 说明必须保留 enterprise 目录单独授权边界。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；仅作客服和工单流程参考。",
+  "notClaimed": [
+    "不声明用户参与 Chatwoot 原仓库。",
+    "不声明用户上线客服系统。",
+    "不声明可替代真实客服质检或隐私合规审核。"
+  ],
+  "allowedContexts": [
+    "基于 Chatwoot 公开信息设计客服流程和工单试航。",
+    "用户产出是 SOP、分类、话术和反馈流程。"
+  ],
+  "reviewTriggers": [
+    "主 License 或 enterprise 目录 License 边界变化。",
+    "README 移除客服平台定位。",
+    "仓库转私有或 License 文件无法核验。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "develop",
+    "readmeSummary": "Open-source customer support platform and help desk alternative.",
+    "licenseSummary": "MIT Expat outside enterprise directory; enterprise directory separately licensed.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE checked on 2026-06-11.",
+      "Enterprise directory license boundary is retained in fixture."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

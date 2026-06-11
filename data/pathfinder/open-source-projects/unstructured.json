@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "unstructured",
+  "name": "Unstructured",
+  "sourceUrl": "https://github.com/Unstructured-IO/unstructured",
+  "officialUrl": "https://www.unstructured.io/",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Open-source ETL solution for transforming complex documents into clean, structured formats for language models.",
+  "license": "Apache License 2.0",
+  "licenseSpdxId": "Apache-2.0",
+  "licenseFileUrl": "https://github.com/Unstructured-IO/unstructured/blob/main/LICENSE.md",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "document_parsing",
+    "document_etl",
+    "industry_data_processing"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant",
+    "ai-data-evaluation-assistant"
+  ],
+  "projectTags": [
+    "document_qa",
+    "data_annotation",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "mvp_scope_design",
+    "retrieval_boundary_design",
+    "evaluation_metric_design",
+    "error_analysis",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "real_runtime_claim_risk",
+    "sensitive_data_risk",
+    "professional_review_substitution_risk"
+  ],
+  "suitableUserSignals": [
+    "有文档整理、OCR、资料结构化、知识库准备、表格或报告处理经验。",
+    "能描述文档类型、字段抽取、质量检查和人工复核流程。",
+    "适合从文档解析和数据准备角度切入 AI 应用试航。"
+  ],
+  "unsuitableUserSignals": [
+    "希望声明自己完成复杂 OCR / NLP 算法研发。",
+    "缺少任何文档、数据或内容处理经历。",
+    "想使用未脱敏企业资料做公开作品集。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "medium",
+      "rationale": "适合解释知识库上线前的文档准备、格式支持和质量边界。"
+    },
+    {
+      "pathId": "ai-data-evaluation-assistant",
+      "fit": "strong",
+      "rationale": "适合输出解析质量检查、字段缺失表、错误分类和抽检标准。"
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "medium",
+      "rationale": "适合输出资料接入、处理流程和客户侧数据准备清单。"
+    }
+  ],
+  "publicCapabilities": [
+    "document-to-structured-data ETL",
+    "processing for complex documents",
+    "partitioning, chunking, enrichments, and embedding workflows referenced by README",
+    "document parsing topics such as PDF, OCR, DOCX, and data pipelines"
+  ],
+  "trialTaskIdea": {
+    "title": "工程资料解析与知识库准备试航",
+    "summary": "选择一类资料，设计字段清单、解析质量检查、人工抽检和进入知识库前的风险边界。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明处理过的文档类型、数据字段或质检经验。",
+    "需明确不使用未脱敏企业资料。",
+    "需记录解析质量不等于语义正确性或专业审核通过。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户实现了 Unstructured 的文档解析能力。",
+    "不得声明解析结果可替代合同、规范、施工方案人工复核。",
+    "不得声明完成企业级文档处理平台交付。"
+  ],
+  "riskNotes": [
+    "文档解析项目容易被误写成算法或 OCR 工程经验。",
+    "需要强调数据准备、抽检和复核，而不是模型能力认证。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；只用于文档处理流程设计和试航任务拆解。",
+  "notClaimed": [
+    "不声明用户参与 Unstructured 原仓库。",
+    "不声明用户实现其文档解析算法。",
+    "不声明解析输出无需人工复核。"
+  ],
+  "allowedContexts": [
+    "基于 Unstructured 公开信息做文档准备流程拆解。",
+    "用户贡献是字段设计、抽检口径和风险边界。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或不再为 Apache-2.0。",
+    "README 移除开源文档 ETL 定位。",
+    "仓库或文档无法核验。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "main",
+    "readmeSummary": "Open-source ETL for converting complex documents into structured formats for language models.",
+    "licenseSummary": "Apache License 2.0 file observed on GitHub.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE.md checked on 2026-06-11."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

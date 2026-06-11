@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "ragflow",
+  "name": "RAGFlow",
+  "sourceUrl": "https://github.com/infiniflow/ragflow",
+  "officialUrl": "https://ragflow.io",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Open-source Retrieval-Augmented Generation engine with Agent capabilities for enterprise-scale RAG workflows.",
+  "license": "Apache License 2.0",
+  "licenseSpdxId": "Apache-2.0",
+  "licenseFileUrl": "https://github.com/infiniflow/ragflow/blob/main/LICENSE",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "rag_knowledge_base",
+    "agentic_knowledge_workflow"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant"
+  ],
+  "projectTags": [
+    "document_qa",
+    "knowledge_base",
+    "implementation_playbook"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "mvp_scope_design",
+    "qa_pair_design",
+    "retrieval_boundary_design",
+    "citation_and_source_display",
+    "evaluation_metric_design",
+    "risk_boundary_documentation"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "full_system_replication_risk",
+    "real_runtime_claim_risk",
+    "sample_overgeneralization_risk"
+  ],
+  "suitableUserSignals": [
+    "有企业资料问答、知识库、客服知识、产品需求或方案 PoC 经验。",
+    "能设计 RAG 问答的资料范围、问题样例、引用核验和失败兜底。",
+    "适合做产品助理或解决方案助理方向的 RAG 场景拆解。"
+  ],
+  "unsuitableUserSignals": [
+    "只想证明自己会训练模型或做算法研发。",
+    "希望把 RAGFlow 运行效果写成本人项目交付。",
+    "无法解释 RAG、Agent、资料范围和人工核验边界。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "strong",
+      "rationale": "适合输出知识库问答需求、MVP 范围、典型问题和验收指标。"
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "strong",
+      "rationale": "适合输出企业 PoC 方案、资料接入清单、部署假设和交付边界。"
+    }
+  ],
+  "publicCapabilities": [
+    "RAG engine with Agent capabilities",
+    "document-oriented ingestion and retrieval workflow",
+    "self-hosting and cloud documentation",
+    "data synchronization from enterprise sources noted in README updates"
+  ],
+  "trialTaskIdea": {
+    "title": "企业资料 RAG PoC 方案试航",
+    "summary": "选择一个低风险资料场景，设计问题集、资料准备、引用核验、失败兜底和 2 周 PoC 输出。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明自己熟悉的资料类型和业务场景。",
+    "需要引用 RAGFlow 公开仓库、License 和 README 定位。",
+    "需把试航产出限定为 PoC 方案与场景拆解。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户开发或维护 RAGFlow。",
+    "不得声明已完成企业生产级 RAG 系统。",
+    "不得声明 RAGFlow 匹配结果证明用户具备算法能力。",
+    "不得把 README 中的项目能力写成用户个人能力。"
+  ],
+  "riskNotes": [
+    "RAG 项目容易诱发真实运行、效果承诺和算法能力包装。",
+    "需避免把企业级、production-ready 等原项目宣传语转成用户个人交付承诺。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；只用于设计 RAG 场景试航，不作为用户能力认证。",
+  "notClaimed": [
+    "不声明用户参与 RAGFlow 原仓库。",
+    "不声明用户复现完整 RAGFlow。",
+    "不声明用户完成线上生产部署。"
+  ],
+  "allowedContexts": [
+    "基于 RAGFlow 公开信息做 PoC 范围拆解。",
+    "RAGFlow 仅作为 reference_only 参考项目。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或不再为 Apache-2.0。",
+    "README 定位从 RAG 引擎明显变化。",
+    "仓库转私有或核心文档无法核验。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "main",
+    "readmeSummary": "RAG engine with Agent capabilities for enterprise RAG workflows.",
+    "licenseSummary": "Apache License 2.0 file observed on GitHub.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE checked on 2026-06-11.",
+      "Stars/forks/release data are not used for matching or ranking."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

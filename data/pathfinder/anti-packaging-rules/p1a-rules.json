@@ -1,7 +1,7 @@
 {
   "schemaVersion": "pathfinder-data-fixture.v1",
   "recordType": "AntiPackagingRuleSet",
-  "rulesVersion": "p1a-rules.v1",
+  "rulesVersion": "p1c-rules.v1",
   "trialPackageId": "p1a-opendocuments-engineering-kb",
   "createdAt": "2026-06-07",
   "updatedAt": "2026-06-07",
@@ -10,7 +10,9 @@
     "trial_answers",
     "portfolio_draft",
     "interview_prep",
-    "markdown_snapshot"
+    "markdown_snapshot",
+    "project_recommendation_card",
+    "audited_project_library"
   ],
   "defaultBlockingPolicy": "block_full_markdown_export",
   "rules": [
@@ -189,6 +191,33 @@
       ],
       "riskReason": "必须区分公开项目原能力和用户本次试航产出，避免开源项目归属误导。",
       "suggestedRewrite": "改为：我基于 OpenDocuments 公开信息做了场景拆解、MVP 范围和风险边界整理。",
+      "blockingPolicy": "block_full_markdown_export"
+    },
+    {
+      "ruleId": "p1c-open-source-project-attribution-general",
+      "category": "open_source_attribution",
+      "riskLevel": "blocking",
+      "forbidden": [
+        "我开发了该开源项目",
+        "我维护该开源项目",
+        "我参与该项目官方贡献",
+        "该项目是我的项目",
+        "我复现了完整系统",
+        "我基于该项目完成了企业级交付",
+        "我实现了该项目的核心能力"
+      ],
+      "allowedContexts": [
+        "基于该开源项目做场景拆解",
+        "基于公开项目信息做产品试航",
+        "该项目仅作为 reference_only 参考",
+        "不声明参与原仓库开发",
+        "不声明官方贡献",
+        "不声明复现完整系统",
+        "不声明企业级交付",
+        "我的贡献是试航方案、流程、指标和边界说明"
+      ],
+      "riskReason": "P1-C.1 会展示多个已审计开源项目，必须区分公开项目原能力与用户本次试航产出。",
+      "suggestedRewrite": "改为：我基于该项目的公开信息做了场景拆解、MVP 范围、指标和风险边界整理；不声明参与原仓库开发或官方贡献。",
       "blockingPolicy": "block_full_markdown_export"
     },
     {

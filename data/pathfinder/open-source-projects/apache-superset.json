@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "pathfinder-project-library.v1",
+  "recordType": "OpenSourceProjectRecord",
+  "projectId": "apache-superset",
+  "name": "Apache Superset",
+  "sourceUrl": "https://github.com/apache/superset",
+  "officialUrl": "https://superset.apache.org/",
+  "host": "github",
+  "repositoryVisibility": "public",
+  "description": "Modern data exploration and data visualization platform for charts, dashboards, SQL exploration, and BI workflows.",
+  "license": "Apache License 2.0",
+  "licenseSpdxId": "Apache-2.0",
+  "licenseFileUrl": "https://github.com/apache/superset/blob/master/LICENSE.txt",
+  "licenseVerificationStatus": "verified",
+  "licenseVerifiedBy": "data-scheme-b",
+  "licenseVerifiedAt": "2026-06-11",
+  "licenseVerificationMethod": "manual_web_check",
+  "referenceRole": "reference_only",
+  "status": "approved_for_trial_package",
+  "lastManualCheckAt": "2026-06-11",
+  "manualCheckMethod": [
+    "repo_page",
+    "license_file",
+    "readme"
+  ],
+  "projectDirection": [
+    "data_visualization_bi",
+    "industry_data_processing"
+  ],
+  "rolePathIds": [
+    "industry-ai-product-assistant",
+    "industry-ai-solution-assistant",
+    "ai-data-evaluation-assistant"
+  ],
+  "projectTags": [
+    "dashboard_analytics",
+    "implementation_playbook",
+    "internal_tooling"
+  ],
+  "capabilityTags": [
+    "scenario_mapping",
+    "mvp_scope_design",
+    "evaluation_metric_design",
+    "feedback_loop_design",
+    "risk_boundary_documentation",
+    "handoff_checklist"
+  ],
+  "riskTags": [
+    "attribution_risk",
+    "scoring_or_ranking_risk",
+    "sample_overgeneralization_risk"
+  ],
+  "suitableUserSignals": [
+    "有报表、数据看板、SQL 协作、运营分析、业务指标或 BI 使用经验。",
+    "能把业务问题转成指标口径、图表、看板和数据质量说明。",
+    "适合做 AI 应用中的数据洞察、效果评估和运营看板试航。"
+  ],
+  "unsuitableUserSignals": [
+    "希望声明自己具备数据工程或平台开发能力。",
+    "想输出模型效果评分或岗位匹配评分。",
+    "没有任何数据、表格、指标或分析场景经验。"
+  ],
+  "pathFit": [
+    {
+      "pathId": "ai-data-evaluation-assistant",
+      "fit": "strong",
+      "rationale": "适合输出指标表、样例看板、错误分析和质量复盘材料。"
+    },
+    {
+      "pathId": "industry-ai-product-assistant",
+      "fit": "medium",
+      "rationale": "适合解释 AI 产品的效果指标、用户行为看板和验收口径。"
+    },
+    {
+      "pathId": "industry-ai-solution-assistant",
+      "fit": "medium",
+      "rationale": "适合输出客户 PoC 的指标展示和汇报材料结构。"
+    }
+  ],
+  "publicCapabilities": [
+    "data exploration and visualization",
+    "no-code chart builder",
+    "web-based SQL editor",
+    "semantic layer for custom dimensions and metrics",
+    "support for many SQL-speaking data sources"
+  ],
+  "trialTaskIdea": {
+    "title": "AI 应用效果看板试航",
+    "summary": "为一个 AI 知识库或客服场景设计指标口径、数据表结构、样例看板和风险解释。",
+    "genericTemplateId": "template-project-reference-mvp-v1"
+  },
+  "evidenceRequirements": [
+    "用户需说明处理过的表格、指标、报表或看板场景。",
+    "需明确样例数据来源和样本限制。",
+    "需避免把看板指标写成求职或模型质量认证。"
+  ],
+  "forbiddenClaims": [
+    "不得声明用户开发了 Superset。",
+    "不得用看板输出岗位胜任分、匹配分或录用概率。",
+    "不得声明 BI 指标代表市场全量或模型真实质量。"
+  ],
+  "riskNotes": [
+    "BI 项目容易被误用为评分或排名界面。",
+    "必须把指标定位为试航过程指标，而非求职成功率或能力分。"
+  ],
+  "sourceBoundary": "已审计项目库 / 当前样本参考；只作为 BI 与数据可视化参考。",
+  "notClaimed": [
+    "不声明用户参与 Superset 原仓库。",
+    "不声明用户实现 BI 平台。",
+    "不声明指标代表岗位胜任或录用概率。"
+  ],
+  "allowedContexts": [
+    "基于 Superset 公开信息设计指标表和看板结构。",
+    "看板只用于试航过程复盘。"
+  ],
+  "reviewTriggers": [
+    "License 文件缺失或不再为 Apache-2.0。",
+    "README 移除 BI / visualization 定位。",
+    "Apache 项目状态或仓库地址发生重大变化。"
+  ],
+  "sourceSnapshot": {
+    "checkedBranch": "master",
+    "readmeSummary": "Modern business intelligence, data exploration, and visualization web application.",
+    "licenseSummary": "Apache License 2.0 file observed on GitHub.",
+    "manualCheckNotes": [
+      "GitHub repository page and LICENSE.txt checked on 2026-06-11."
+    ],
+    "nonCanonicalMetadata": {
+      "note": "background_only_not_used_for_scoring"
+    }
+  }
+}

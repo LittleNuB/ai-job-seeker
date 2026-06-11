@@ -515,3 +515,29 @@ Main Agent follow-up order:
   - 当前为后端会话与信号 API；前端仍需接入用户确认信号后再调用路径推荐。
   - 模型输出采用 JSON mode + 服务端校验；后续如改用 tool calls，可进一步收紧 schema。
   - P1-C.1 仍复用 `analysis_records`，长期查询和审计能力仍需 P1-C/P1-D 专用表评估。
+## DATA-003 P1-C.1 Status
+
+- Task ID: `DATA-003`
+- Child role: `数据方案B`
+- Worktree: `C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-003`
+- Branch: `codex/pathfinder-data-003`
+- Source commit reviewed: `fb7b5f2 data: add pathfinder project library fixtures`
+- Main-branch merge note: data worktree was not a descendant of the latest `codex/pathfinder-p1a-integration`, so Main Agent resolved conflicts manually. `opendocuments.json` uses the DATA-003 project-library schema; this handoff keeps the current main-branch QA/BE status blocks and appends this DATA status.
+- Delivered files:
+  - `data/pathfinder/open-source-projects/opendocuments.json`
+  - `data/pathfinder/open-source-projects/ragflow.json`
+  - `data/pathfinder/open-source-projects/unstructured.json`
+  - `data/pathfinder/open-source-projects/apache-superset.json`
+  - `data/pathfinder/open-source-projects/chatwoot.json`
+  - `data/pathfinder/open-source-projects/node-red.json`
+  - `data/pathfinder/open-source-projects/openrefine.json`
+  - `data/pathfinder/project-matching/p1c-project-library-matching.json`
+  - `data/pathfinder/anti-packaging-rules/p1a-rules.json`
+  - `docs/pathfinder-p0/p1-c-project-library-fixtures.md`
+- Project library scope: OpenDocuments is no longer the only audited project fixture. The library now includes seven verified `reference_only` projects for project recommendation cards and generic trial template matching.
+- Runtime note: existing backend project service still needs follow-up work to load all project fixture files and apply `p1c-project-library-matching.json`; DATA-003 is the data foundation, not the full runtime integration.
+- Scope guard: no GitHub Search, no live scraping, no scores/rankings, no offer probability, no certification, no resume packaging, no official project contribution claims, no migration.
+- Review risks:
+  - Chatwoot requires preserving its enterprise-directory license boundary in UI and export copy.
+  - License and README checks must be revalidated periodically.
+  - Product owner should confirm whether all seven verified projects are visible in P1-C.1 or whether UI exposure is staged.
