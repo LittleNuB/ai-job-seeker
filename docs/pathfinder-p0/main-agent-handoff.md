@@ -541,3 +541,31 @@ Main Agent follow-up order:
   - Chatwoot requires preserving its enterprise-directory license boundary in UI and export copy.
   - License and README checks must be revalidated periodically.
   - Product owner should confirm whether all seven verified projects are visible in P1-C.1 or whether UI exposure is staged.
+
+## PM-MERGE-005 / P1-C.1 Backend And Data Review
+
+- Date: 2026-06-11
+- Main branch commits merged:
+  - `5d9740b feat: add pathfinder agentic interview API`
+  - `978575b data: add pathfinder project library fixtures`
+- BE-003 review:
+  - Added P1-C.1 interview session APIs and DeepSeek-compatible interview client.
+  - LLM scope remains limited to follow-up questions and structured signal extraction.
+  - Key safety: code reads `DEEPSEEK_API_KEY` / `LLM_API_KEY`; it does not read, print, store, or commit `C:\Users\LittleNub\Desktop\Key.txt`.
+  - Storage still reuses `analysis_records`; no migration added.
+  - Main-branch validation: `tests/test_pathfinder.py -q` passed with 21 tests; backend full pytest passed with 87 tests.
+- DATA-003 review:
+  - Added audited project fixtures for OpenDocuments, RAGFlow, Unstructured, Apache Superset, Chatwoot, Node-RED, and OpenRefine.
+  - Added `p1c-project-library-matching.json` and upgraded anti-packaging rules to project-library attribution scope.
+  - JSON validation passed for all added/modified fixture files.
+  - `rg -n "小 C|xiaoc|小C" data/pathfinder docs/pathfinder-p0/p1-c-project-library-fixtures.md` found no default demo-user keywords.
+- Runtime gap identified:
+  - Existing `backend/app/services/pathfinder_project_service.py` still loads only `opendocuments.json`.
+  - Therefore DATA-003 is a data foundation merge, not yet the full runtime implementation for multi-project matching.
+- Follow-up dispatched:
+  - `BE-004` sent to child thread `019ea0e6-bfe3-7751-bf98-e1740b7c89a5`.
+  - Goal: load all audited project fixture files, apply matching rules without scores/rankings, support generic trial package generation for approved projects, and preserve Chatwoot license boundary.
+  - Expected commit: `feat: load pathfinder audited project library`
+- FE sync:
+  - `FE-003` child thread `019ea0e6-23df-7442-af0c-6b6e2ac54dae` was updated with BE-003 API details and DATA-003 / BE-004 runtime status.
+  - FE should not hard-code OpenDocuments as the only project; it should tolerate current API returning one project until BE-004 lands.
