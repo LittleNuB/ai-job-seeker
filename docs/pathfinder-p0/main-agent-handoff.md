@@ -412,3 +412,48 @@
 - 已新增规划文档：`docs/pathfinder-p0/p1-c-agentic-interview-plan.md`
 - 已新增 glossary：`CONTEXT.md`
 - 下一步建议：先发布 `产品规划B`、`技术方案B`、`模型方案A`、`数据方案E` 四个规划任务，回传后再做 PM merge review。
+## P1-C.1 Task Dispatch
+
+- Date: 2026-06-11
+- Main Agent thread: `019ea78e-7ae9-79a1-8389-6170206d20ad`
+- Dispatch constraint: a new project-bound thread could not be created because `C:\Users\LittleNub\ai-job-seeker` is not registered as a saved Codex project. Main Agent therefore reused existing project-bound child threads and did not create any projectless threads.
+- Provider decision: DeepSeek is the default P1-C.1 LLM provider. The local key path is `C:\Users\LittleNub\Desktop\Key.txt`; key contents must never be printed, committed, logged, or exposed to the frontend.
+- Scope decision: P1-C.1 implements AI interview, user-confirmed profile signals, and matching against audited project fixtures. GitHub Search is explicitly deferred.
+
+Dispatched tasks:
+
+- `BE-003`
+  - Child thread: `019ea0e6-bfe3-7751-bf98-e1740b7c89a5`
+  - Child role: `后端开发A` continued as existing project-bound backend thread.
+  - Expected branch: `codex/pathfinder-be-003`
+  - Goal: implement Pathfinder interview session APIs, DeepSeek-backed follow-up / signal extraction, schema validation, fallback, tests, and backend implementation doc.
+  - Expected commit: `feat: add pathfinder agentic interview API`
+
+- `FE-003`
+  - Child thread: `019ea0e6-23df-7442-af0c-6b6e2ac54dae`
+  - Child role: `前端开发B` continued as existing project-bound frontend thread.
+  - Expected branch: `codex/pathfinder-fe-003`
+  - Goal: implement AI interview UI, user signal confirmation, manual fallback, API client integration, updated safety/E2E tests, and frontend implementation doc.
+  - Expected commit: `feat: add pathfinder agentic interview flow`
+
+- `DATA-003`
+  - Child thread: `019ea0e5-815d-70d3-9617-9be98b03c2e1`
+  - Child role: `数据方案B` continued as existing project-bound data thread.
+  - Expected branch: `codex/pathfinder-data-003`
+  - Goal: add audited multi-project fixture library, license/source boundary fields, matching signals, anti-packaging project rules, and data fixture doc.
+  - Expected commit: `data: add pathfinder project library fixtures`
+
+- `QA-003`
+  - Child thread: `019ea0e7-5cc4-7103-9f94-09878370a01e`
+  - Child role: `QA验证A` continued as existing project-bound QA thread.
+  - Expected branch: `codex/pathfinder-qa-003`
+  - Goal: add executable QA plan for AI interview, data fixture, fallback, DeepSeek key safety, Scope Guard, and Go/No-Go standards.
+  - Expected commit: `docs: add pathfinder p1c qa plan`
+
+Main Agent follow-up order:
+
+1. Review DATA-003 fixture schema first because FE/BE project matching depends on stable project fields.
+2. Review BE-003 API contract and key-safety implementation before FE-003 final merge.
+3. Review FE-003 user-facing wording to ensure the flow feels like a product, not an internal demo script.
+4. Use QA-003 as the merge and execution checklist after DATA/BE/FE return.
+5. Do not push or merge to main until product owner finishes manual review.
