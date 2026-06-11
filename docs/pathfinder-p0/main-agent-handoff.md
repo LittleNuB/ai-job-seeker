@@ -457,3 +457,22 @@ Main Agent follow-up order:
 3. Review FE-003 user-facing wording to ensure the flow feels like a product, not an internal demo script.
 4. Use QA-003 as the merge and execution checklist after DATA/BE/FE return.
 5. Do not push or merge to main until product owner finishes manual review.
+
+## QA-003 Status
+
+- Task ID：`QA-003`
+- 子对话名称：`QA验证A`
+- worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-qa-003`
+- 分支：`codex/pathfinder-qa-003`
+- 基线说明：该 worktree 原分支落后 `codex/pathfinder-p1a-integration`；已 rebase 到当前 `codex/pathfinder-p1a-integration`，rebase 后 `codex/pathfinder-p1a-integration...HEAD = 0 0`。
+- 交付文件：`docs/pathfinder-p0/p1-c-agentic-interview-qa-plan.md`
+- handoff 更新：已追加本 `QA-003 Status`。
+- 任务范围：只产出 P1-C.1 航前 AI 访谈与多项目匹配 QA 计划，不实现前端、后端、数据 fixture 或运行逻辑。
+- 计划覆盖：
+  - 后端：无 key fallback、mock DeepSeek、坏 JSON / 缺字段、越界字段、interview session 保存读取、用户确认 signal、`analysis_records` 复用和无 migration。
+  - 前端：AI 访谈可用、AI 失败 fallback、用户编辑 / 确认信号、未确认信号阻断、多项目 fixture、无 GitHub Search、反包装、390px。
+  - 数据：项目 license / status / sourceBoundary 完整、OpenDocuments 不再唯一、无小 C 默认内容、needs_review 不可作为默认可选主项目。
+  - 安全隐私：key 不进前端 / 日志 / commit，用户回答不进 URL，API 错误不泄漏 provider/key。
+  - Scope Guard：禁止 score / percent / offer probability / certification / employer shortlist / resume packaging / official project contribution 等正向表达与字段。
+- 验证：文档任务仅需 `git diff --check` 与 `git status --short --branch`；BE / FE / DATA 合并后按 QA 计划执行全量验收命令。
+- 注意：任务提示中的 `docs/pathfinder-p0/p1-b-implementation-merge-review.md` 在当前仓库不存在，实际读取 `docs/pathfinder-p0/pm-merge-review-p1b-implementation.md`。
