@@ -18,6 +18,7 @@ from app.models.analysis import AnalysisRecord
 from app.schemas.pathfinder import (
     PATHFINDER_TYPE,
     P1A_TRIAL_PACKAGE,
+    P1C_SCHEMA_VERSION,
     P1B_SCHEMA_VERSION,
     SCHEMA_VERSION,
     TRIAL_PACKAGE_ID,
@@ -26,6 +27,14 @@ from app.schemas.pathfinder import (
     AntiPackagingCheckStatus,
     GenerateTrialPackageRequest,
     GenerateTrialPackageResponse,
+    ConfirmedSignalsRequest,
+    ExtractedProfileSignal,
+    InterviewMessage,
+    InterviewSession,
+    InterviewSessionCreateRequest,
+    InterviewSessionResponse,
+    InterviewTurnRequest,
+    InterviewTurnResponse,
     MarkdownExportScope,
     MarkdownSnapshot,
     PathfinderCreateRequest,
@@ -39,6 +48,8 @@ from app.schemas.pathfinder import (
     PathfinderResultResponse,
     PathfinderTrialAnswersResponse,
     RecommendationRun,
+    SignalConfirmation,
+    SignalExtractionResult,
     TrailRecord,
     TrialAnswersRequest,
     all_required_markdown_sections_present,
@@ -46,9 +57,11 @@ from app.schemas.pathfinder import (
     compute_pathfinder_status,
     default_anti_packaging_check,
     default_trial_answers,
+    find_forbidden_keys,
     normalize_trial_answers,
     pydantic_to_json,
 )
+from app.services.pathfinder_interview_client import DeepSeekInterviewClient, InterviewModelJSONError, InterviewModelResult
 from app.services.pathfinder_project_service import list_approved_projects
 from app.services.pathfinder_recommendation_service import SCOPE_DISCLAIMER, build_recommendation_run
 from app.services.pathfinder_trial_package_service import generate_trial_package_candidate
@@ -74,6 +87,158 @@ async def get_pathfinder_user_id(
 
 
 UserIdDep = Annotated[str, Depends(get_pathfinder_user_id)]
+
+
+def get_interview_llm_client() -> DeepSeekInterviewClient:
+    return DeepSeekInterviewClient()
+
+
+InterviewClientDep = Annotated[DeepSeekInterviewClient, Depends(get_interview_llm_client)]
+
+
+@router.post(
+    "/interview/sessions",
+    response_model=InterviewSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_interview_session(
+    payload: InterviewSessionCreateRequest,
+    session: SessionDep,
+    user_id: UserIdDep,
+    llm_client: InterviewClientDep,
+) -> InterviewSessionResponse:
+    now = _now_iso()
+    messages: list[InterviewMessage] = []
+    if payload.initialUserInput and payload.initialUserInput.strip():
+        messages.append(_new_interview_message("user", payload.initialUserInput.strip(), created_at=now))
+
+    assistant_message = await _build_assistant_message(llm_client, messages)
+    messages.append(assistant_message)
+
+    interview_session = InterviewSession(
+        sessionId=str(uuid4()),
+        status="active",
+        userProfileSnapshot=_jsonable(payload.userProfileSnapshot),
+        messages=messages,
+        extractedSignals=[],
+        confirmedSignals=[],
+        llmStatus=assistant_message.modelStatus or "fallback",
+        createdAt=now,
+        updatedAt=assistant_message.createdAt,
+    )
+    record = AnalysisRecord(
+        id=interview_session.sessionId,
+        user_id=user_id,
+        type=PATHFINDER_TYPE,
+        input_text=_dump_json(
+            {
+                "schemaVersion": P1C_SCHEMA_VERSION,
+                "recordKind": "interview_session",
+                "initialUserInput": payload.initialUserInput,
+                "userProfileSnapshot": _jsonable(payload.userProfileSnapshot),
+                "createdAt": now,
+            }
+        ),
+        input_file_url=None,
+        result=_dump_json(_interview_session_to_result(interview_session)),
+        match_score=None,
+    )
+    session.add(record)
+    await session.commit()
+
+    return interview_session
+
+
+@router.get("/interview/sessions/{session_id}", response_model=InterviewSessionResponse)
+async def get_interview_session(
+    session_id: str,
+    session: SessionDep,
+    user_id: UserIdDep,
+) -> InterviewSessionResponse:
+    record = await _get_owned_interview_record(session, user_id, session_id)
+    return _to_interview_session(record)
+
+
+@router.post("/interview/sessions/{session_id}/turns", response_model=InterviewTurnResponse)
+async def add_interview_turn(
+    session_id: str,
+    payload: InterviewTurnRequest,
+    session: SessionDep,
+    user_id: UserIdDep,
+    llm_client: InterviewClientDep,
+) -> InterviewTurnResponse:
+    record = await _get_owned_interview_record(session, user_id, session_id)
+    interview_session = _to_interview_session(record)
+    user_message = _new_interview_message("user", payload.message)
+    next_messages = [*interview_session.messages, user_message]
+    assistant_message = await _build_assistant_message(llm_client, next_messages)
+    interview_session.messages = [*next_messages, assistant_message]
+    interview_session.llmStatus = assistant_message.modelStatus or "fallback"
+    interview_session.updatedAt = assistant_message.createdAt
+    interview_session.status = "active"
+
+    record.result = _dump_json(_interview_session_to_result(interview_session))
+    await session.commit()
+
+    return InterviewTurnResponse(
+        sessionId=session_id,
+        assistantMessage=assistant_message,
+        session=interview_session,
+    )
+
+
+@router.post("/interview/sessions/{session_id}/signals", response_model=SignalExtractionResult)
+async def extract_interview_signals(
+    session_id: str,
+    session: SessionDep,
+    user_id: UserIdDep,
+    llm_client: InterviewClientDep,
+) -> SignalExtractionResult:
+    record = await _get_owned_interview_record(session, user_id, session_id)
+    interview_session = _to_interview_session(record)
+    model_messages = [_message_for_model(message) for message in interview_session.messages]
+    extracted_at = _now_iso()
+    try:
+        model_result = await llm_client.extract_signals(model_messages)
+    except InterviewModelJSONError:
+        extraction = SignalExtractionResult(
+            sessionId=session_id,
+            modelStatus="invalid_json",
+            signals=[],
+            summary="Model returned invalid JSON; no signals were accepted.",
+            fallbackReason="invalid_json",
+            createdAt=extracted_at,
+        )
+    else:
+        extraction = _build_signal_extraction(session_id, model_result, extracted_at)
+
+    interview_session.lastExtraction = extraction
+    interview_session.extractedSignals = extraction.signals
+    interview_session.llmStatus = extraction.modelStatus
+    interview_session.status = "signals_extracted" if extraction.signals else "active"
+    interview_session.updatedAt = extraction.createdAt
+    record.result = _dump_json(_interview_session_to_result(interview_session))
+    await session.commit()
+
+    return extraction
+
+
+@router.put("/interview/sessions/{session_id}/confirmed-signals", response_model=InterviewSessionResponse)
+async def update_confirmed_interview_signals(
+    session_id: str,
+    payload: ConfirmedSignalsRequest,
+    session: SessionDep,
+    user_id: UserIdDep,
+) -> InterviewSessionResponse:
+    record = await _get_owned_interview_record(session, user_id, session_id)
+    interview_session = _to_interview_session(record)
+    interview_session.confirmedSignals = payload.confirmedSignals
+    interview_session.status = "signals_confirmed"
+    interview_session.updatedAt = _now_iso()
+    record.result = _dump_json(_interview_session_to_result(interview_session))
+    await session.commit()
+
+    return interview_session
 
 
 @router.post("/recommendations", response_model=PathfinderRecommendationResponse)
@@ -398,6 +563,141 @@ async def _get_owned_recommendation_record(
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recommendation run not found")
     return record
+
+
+async def _get_owned_interview_record(
+    session: AsyncSession,
+    user_id: str,
+    session_id: str,
+) -> AnalysisRecord:
+    result = await session.execute(
+        select(AnalysisRecord).where(
+            AnalysisRecord.id == session_id,
+            AnalysisRecord.user_id == user_id,
+            AnalysisRecord.type == PATHFINDER_TYPE,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if record is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
+    input_payload = _load_input(record)
+    result_payload = _load_result(record)
+    if input_payload.get("recordKind") != "interview_session" and result_payload.get("recordKind") != "interview_session":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
+    return record
+
+
+async def _build_assistant_message(
+    llm_client: DeepSeekInterviewClient,
+    messages: list[InterviewMessage],
+) -> InterviewMessage:
+    try:
+        model_result = await llm_client.next_question([_message_for_model(message) for message in messages])
+    except InterviewModelJSONError:
+        return _new_interview_message(
+            "assistant",
+            "模型返回格式不可用。请先手动补充一个真实经历：项目背景、你的职责、处理的资料或流程，以及使用过的工具。",
+            model_provider="deepseek",
+            model_status="invalid_json",
+        )
+
+    content = ""
+    if isinstance(model_result.payload, dict):
+        content = str(model_result.payload.get("message") or "").strip()
+    if not content:
+        content = "模型暂时不可用。请继续补充一个真实项目经历，我会记录后用于候选信号确认。"
+    return _new_interview_message(
+        "assistant",
+        content,
+        model_provider=model_result.provider,
+        model_status=model_result.status if model_result.status in {"ok", "no_key", "error", "invalid_json"} else "fallback",
+    )
+
+
+def _build_signal_extraction(
+    session_id: str,
+    model_result: InterviewModelResult,
+    created_at: str,
+) -> SignalExtractionResult:
+    forbidden = find_forbidden_keys(model_result.payload)
+    if forbidden:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Forbidden P1-C signal extraction field(s): {', '.join(sorted(forbidden))}",
+        )
+
+    raw_signals = model_result.payload.get("signals") if isinstance(model_result.payload, dict) else []
+    if raw_signals is None:
+        raw_signals = []
+    if not isinstance(raw_signals, list):
+        raise HTTPException(status_code=422, detail="Signal extraction result must contain a signals array")
+
+    signals: list[ExtractedProfileSignal] = []
+    for index, raw_signal in enumerate(raw_signals, start=1):
+        if not isinstance(raw_signal, dict):
+            raise HTTPException(status_code=422, detail="Signal extraction item must be an object")
+        signal_payload = {
+            "signalId": raw_signal.get("signalId") or f"sig-{index}",
+            "status": "candidate",
+            **raw_signal,
+        }
+        try:
+            signals.append(ExtractedProfileSignal.model_validate(signal_payload))
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail="Invalid extracted profile signal") from exc
+
+    return SignalExtractionResult(
+        sessionId=session_id,
+        modelProvider=model_result.provider,
+        modelName=model_result.model,
+        modelStatus=model_result.status if model_result.status in {"ok", "no_key", "error", "invalid_json"} else "error",
+        signals=signals,
+        summary=str(model_result.payload.get("summary") or "") if isinstance(model_result.payload, dict) else None,
+        fallbackReason=model_result.error,
+        createdAt=created_at,
+    )
+
+
+def _to_interview_session(record: AnalysisRecord) -> InterviewSession:
+    result_payload = _load_result(record)
+    try:
+        return InterviewSession.model_validate(result_payload.get("session") or result_payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="Invalid interview session snapshot") from exc
+
+
+def _interview_session_to_result(interview_session: InterviewSession) -> dict[str, Any]:
+    return {
+        "schemaVersion": P1C_SCHEMA_VERSION,
+        "recordKind": "interview_session",
+        "session": interview_session.model_dump(mode="json", exclude_none=True),
+        "updatedAt": interview_session.updatedAt,
+    }
+
+
+def _new_interview_message(
+    role: str,
+    content: str,
+    *,
+    created_at: str | None = None,
+    model_provider: str | None = None,
+    model_status: str | None = None,
+) -> InterviewMessage:
+    return InterviewMessage(
+        messageId=f"msg-{uuid4().hex}",
+        role=role,
+        content=content,
+        modelProvider=model_provider,
+        modelStatus=model_status,
+        createdAt=created_at or _now_iso(),
+    )
+
+
+def _message_for_model(message: InterviewMessage) -> dict[str, str]:
+    return {
+        "role": message.role,
+        "content": f"[{message.messageId}] {message.content}",
+    }
 
 
 def _to_record_response(record: AnalysisRecord) -> TrailRecord:

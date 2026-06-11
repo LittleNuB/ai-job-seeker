@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 PATHFINDER_TYPE = "pathfinder"
 SCHEMA_VERSION = "p1-a.v1"
 P1B_SCHEMA_VERSION = "p1b.v1"
+P1C_SCHEMA_VERSION = "p1c.v1"
 TRIAL_PACKAGE_ID = "p1a-opendocuments-engineering-kb"
 TRIAL_PACKAGE_VERSION = "1.0.0"
 LEGACY_TRIAL_PACKAGE_ID = "p0-xiaoc-opendocuments"
@@ -127,7 +128,16 @@ FORBIDDEN_RESULT_KEYS = {
     # P0 guard aliases kept as a stricter safety net for nested result JSON.
     "score",
     "scores",
+    "percent",
+    "percentage",
     "probability",
+    "offer_probability_percent",
+    "offerProbabilityPercent",
+    "employer_shortlist",
+    "employerShortlist",
+    "project_ownership",
+    "projectOwnership",
+    "openDocumentsOwnership",
     "resume_suggestion",
     "resumeSuggestion",
 }
@@ -341,6 +351,152 @@ class GenerateTrialPackageResponse(P1ABaseModel):
     schemaVersion: Literal["p1b.v1"] = P1B_SCHEMA_VERSION
     trialPackageCandidate: TrialPackageCandidate
     antiPackagingDefaults: AntiPackagingCheck
+
+
+class InterviewMessage(P1ABaseModel):
+    messageId: str
+    role: Literal["user", "assistant"]
+    content: str
+    createdAt: str
+    modelProvider: str | None = None
+    modelStatus: Literal["ok", "no_key", "error", "invalid_json", "fallback"] | None = None
+
+    @field_validator("content")
+    @classmethod
+    def strip_content(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("message content is required")
+        return value
+
+
+class ExtractedProfileSignal(P1ABaseModel):
+    signalId: str
+    category: Literal[
+        "industry_background",
+        "domain_material",
+        "project_experience",
+        "communication",
+        "data_handling",
+        "ai_tool_usage",
+        "technical_foundation",
+        "career_constraint",
+        "risk",
+        "goal",
+    ]
+    label: str
+    evidenceText: str
+    sourceMessageIds: list[str] = Field(default_factory=list)
+    confidence: Literal["low", "medium", "high", "needs_user_review"] = "needs_user_review"
+    status: Literal["candidate", "confirmed", "edited", "rejected"] = "candidate"
+    userEditedText: str | None = None
+
+    @model_validator(mode="after")
+    def reject_forbidden_signal_fields(self) -> "ExtractedProfileSignal":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-C signal", forbidden))
+        return self
+
+
+class SignalExtractionResult(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    sessionId: str
+    modelProvider: str = "deepseek"
+    modelName: str | None = None
+    modelStatus: Literal["ok", "no_key", "error", "invalid_json"] = "ok"
+    signals: list[ExtractedProfileSignal] = Field(default_factory=list)
+    summary: str | None = None
+    fallbackReason: str | None = None
+    createdAt: str
+
+
+class SignalConfirmation(P1ABaseModel):
+    signalId: str
+    category: ExtractedProfileSignal.model_fields["category"].annotation
+    label: str
+    evidenceText: str
+    sourceMessageIds: list[str] = Field(default_factory=list)
+    confidence: ExtractedProfileSignal.model_fields["confidence"].annotation = "needs_user_review"
+    status: Literal["confirmed", "edited", "rejected"]
+    userEditedText: str | None = None
+
+    @model_validator(mode="after")
+    def reject_forbidden_confirmation_fields(self) -> "SignalConfirmation":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-C confirmed signal", forbidden))
+        return self
+
+
+class InterviewSession(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    sessionId: str
+    status: Literal["active", "signals_extracted", "signals_confirmed", "archived"] = "active"
+    userProfileSnapshot: UserProfileInput | dict[str, Any] | None = None
+    messages: list[InterviewMessage] = Field(default_factory=list)
+    extractedSignals: list[ExtractedProfileSignal] = Field(default_factory=list)
+    confirmedSignals: list[SignalConfirmation] = Field(default_factory=list)
+    lastExtraction: SignalExtractionResult | None = None
+    llmProvider: str = "deepseek"
+    llmStatus: Literal["ok", "no_key", "error", "invalid_json", "fallback"] = "fallback"
+    createdAt: str
+    updatedAt: str
+
+
+class InterviewSessionCreateRequest(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    initialUserInput: str | None = None
+    userProfileSnapshot: UserProfileInput | dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def reject_forbidden_create_fields(self) -> "InterviewSessionCreateRequest":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-C interview input", forbidden))
+        return self
+
+
+class InterviewTurnRequest(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    message: str
+
+    @field_validator("message")
+    @classmethod
+    def strip_message(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("message is required")
+        return value
+
+    @model_validator(mode="after")
+    def reject_forbidden_turn_fields(self) -> "InterviewTurnRequest":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-C interview turn", forbidden))
+        return self
+
+
+class InterviewTurnResponse(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    sessionId: str
+    assistantMessage: InterviewMessage
+    session: InterviewSession
+
+
+class ConfirmedSignalsRequest(P1ABaseModel):
+    schemaVersion: Literal["p1c.v1"] = P1C_SCHEMA_VERSION
+    confirmedSignals: list[SignalConfirmation]
+
+    @model_validator(mode="after")
+    def reject_forbidden_confirmed_fields(self) -> "ConfirmedSignalsRequest":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-C confirmed signals", forbidden))
+        return self
+
+
+InterviewSessionResponse = InterviewSession
 
 
 class SourceProject(P1ABaseModel):
@@ -705,6 +861,10 @@ def _find_forbidden_keys(value: Any) -> set[str]:
         for child in value:
             found.update(_find_forbidden_keys(child))
     return found
+
+
+def find_forbidden_keys(value: Any) -> set[str]:
+    return _find_forbidden_keys(value)
 
 
 def _format_forbidden_fields_error(scope: str, forbidden: set[str]) -> str:

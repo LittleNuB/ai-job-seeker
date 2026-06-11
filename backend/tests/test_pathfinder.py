@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.database import Base, get_db
 from app.main import app
+from app.api.pathfinder import get_interview_llm_client
 from app.models.analysis import AnalysisRecord
 from app.models.user import User
+from app.services.pathfinder_interview_client import InterviewModelJSONError, InterviewModelResult
 
 
 TEST_USER_ID = "user-pathfinder-1"
@@ -66,6 +68,63 @@ async def client(tmp_path) -> AsyncIterator[AsyncClient]:
 
 def auth_headers(user_id: str = TEST_USER_ID) -> dict[str, str]:
     return {"X-User-Id": user_id}
+
+
+class FakeInterviewClient:
+    def __init__(
+        self,
+        *,
+        question_status: str = "ok",
+        question_payload: dict | None = None,
+        extraction_status: str = "ok",
+        extraction_payload: dict | None = None,
+        raise_invalid_json: bool = False,
+    ) -> None:
+        self.question_status = question_status
+        self.question_payload = question_payload or {
+            "message": "请补充一个你亲自参与的项目：你负责什么、面向谁、处理了哪些资料或流程？",
+            "shouldContinue": True,
+            "focus": "project_experience",
+        }
+        self.extraction_status = extraction_status
+        self.extraction_payload = extraction_payload or {
+            "summary": "抽取了用户项目、资料处理和 AI 工具使用信号。",
+            "signals": [
+                {
+                    "signalId": "sig-project-1",
+                    "category": "project_experience",
+                    "label": "参与工程资料整理项目",
+                    "evidenceText": "用户提到参与过工程项目资料整理。",
+                    "sourceMessageIds": [],
+                    "confidence": "medium",
+                },
+                {
+                    "signalId": "sig-ai-tool-1",
+                    "category": "ai_tool_usage",
+                    "label": "使用 AI 辅助整理草稿",
+                    "evidenceText": "用户说明 AI 用于辅助整理和草拟。",
+                    "sourceMessageIds": [],
+                    "confidence": "medium",
+                },
+            ],
+        }
+        self.raise_invalid_json = raise_invalid_json
+
+    async def next_question(self, messages: list[dict[str, str]]) -> InterviewModelResult:
+        return InterviewModelResult(status=self.question_status, payload=self.question_payload, model="fake-deepseek")
+
+    async def extract_signals(self, messages: list[dict[str, str]]) -> InterviewModelResult:
+        if self.raise_invalid_json:
+            raise InterviewModelJSONError("invalid json")
+        return InterviewModelResult(
+            status=self.extraction_status,
+            payload=self.extraction_payload,
+            model="fake-deepseek",
+        )
+
+
+def override_interview_client(fake_client: FakeInterviewClient) -> None:
+    app.dependency_overrides[get_interview_llm_client] = lambda: fake_client
 
 
 def create_payload() -> dict:
@@ -243,6 +302,166 @@ async def save_answers(client: AsyncClient, record_id: str, *, complete: bool = 
     )
     assert response.status_code == 200
     return response.json()
+
+
+@pytest.mark.asyncio()
+async def test_create_interview_session_uses_no_key_fallback_and_stores_analysis_record(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient(question_status="no_key"))
+
+    response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={
+            "schemaVersion": "p1c.v1",
+            "initialUserInput": "我做过工程资料整理，也用 AI 辅助写过需求草稿。",
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+        },
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["schemaVersion"] == "p1c.v1"
+    assert body["llmStatus"] == "no_key"
+    assert body["messages"][0]["role"] == "user"
+    assert body["messages"][1]["role"] == "assistant"
+    assert body["messages"][1]["modelStatus"] == "no_key"
+    assert "DEEPSEEK" not in json.dumps(body)
+
+    async for session in app.dependency_overrides[get_db]():
+        record = await session.get(AnalysisRecord, body["sessionId"])
+        assert record is not None
+        assert record.type == "pathfinder"
+        assert record.input_file_url is None
+        assert record.match_score is None
+        assert json.loads(record.input_text)["recordKind"] == "interview_session"
+        assert json.loads(record.result)["schemaVersion"] == "p1c.v1"
+
+
+@pytest.mark.asyncio()
+async def test_interview_turn_is_saved_and_read_back(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient())
+    create_response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={"schemaVersion": "p1c.v1", "initialUserInput": "我做过客户沟通和资料整理。"},
+        headers=auth_headers(),
+    )
+    assert create_response.status_code == 201
+    session_id = create_response.json()["sessionId"]
+
+    turn_response = await client.post(
+        f"/api/pathfinder/interview/sessions/{session_id}/turns",
+        json={"schemaVersion": "p1c.v1", "message": "我主要负责把客户需求整理成 PRD 和试点清单。"},
+        headers=auth_headers(),
+    )
+
+    assert turn_response.status_code == 200
+    body = turn_response.json()
+    assert body["sessionId"] == session_id
+    assert body["assistantMessage"]["modelStatus"] == "ok"
+    assert len(body["session"]["messages"]) == 4
+
+    get_response = await client.get(f"/api/pathfinder/interview/sessions/{session_id}", headers=auth_headers())
+    assert get_response.status_code == 200
+    assert len(get_response.json()["messages"]) == 4
+
+    other_response = await client.get(f"/api/pathfinder/interview/sessions/{session_id}", headers=auth_headers(OTHER_USER_ID))
+    assert other_response.status_code == 404
+
+
+@pytest.mark.asyncio()
+async def test_signal_extraction_handles_invalid_json_without_accepting_signals(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient(raise_invalid_json=True))
+    create_response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={"schemaVersion": "p1c.v1", "initialUserInput": "我做过数据表整理。"},
+        headers=auth_headers(),
+    )
+    session_id = create_response.json()["sessionId"]
+
+    response = await client.post(f"/api/pathfinder/interview/sessions/{session_id}/signals", headers=auth_headers())
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["modelStatus"] == "invalid_json"
+    assert body["signals"] == []
+
+    get_response = await client.get(f"/api/pathfinder/interview/sessions/{session_id}", headers=auth_headers())
+    assert get_response.json()["lastExtraction"]["modelStatus"] == "invalid_json"
+    assert get_response.json()["extractedSignals"] == []
+
+
+@pytest.mark.asyncio()
+async def test_signal_extraction_rejects_forbidden_model_fields(client: AsyncClient) -> None:
+    override_interview_client(
+        FakeInterviewClient(
+            extraction_payload={
+                "signals": [
+                    {
+                        "signalId": "sig-bad",
+                        "category": "project_experience",
+                        "label": "错误信号",
+                        "evidenceText": "模型越界输出。",
+                        "sourceMessageIds": [],
+                        "confidence": "high",
+                        "score": 99,
+                    }
+                ]
+            }
+        )
+    )
+    create_response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={"schemaVersion": "p1c.v1", "initialUserInput": "我做过 AI 工具试点。"},
+        headers=auth_headers(),
+    )
+    session_id = create_response.json()["sessionId"]
+
+    response = await client.post(f"/api/pathfinder/interview/sessions/{session_id}/signals", headers=auth_headers())
+
+    assert response.status_code == 422
+    assert "Forbidden P1-C signal extraction field" in response.text
+
+
+@pytest.mark.asyncio()
+async def test_signal_extraction_and_confirmation_round_trip(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient())
+    create_response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={"schemaVersion": "p1c.v1", "initialUserInput": "我做过工程资料整理，也用 AI 辅助写过需求草稿。"},
+        headers=auth_headers(),
+    )
+    session_id = create_response.json()["sessionId"]
+
+    extraction_response = await client.post(f"/api/pathfinder/interview/sessions/{session_id}/signals", headers=auth_headers())
+
+    assert extraction_response.status_code == 200
+    extraction = extraction_response.json()
+    assert extraction["modelStatus"] == "ok"
+    assert len(extraction["signals"]) == 2
+    assert "score" not in json.dumps(extraction)
+
+    confirmed = [
+        {
+            **extraction["signals"][0],
+            "status": "confirmed",
+        },
+        {
+            **extraction["signals"][1],
+            "status": "edited",
+            "userEditedText": "我使用 AI 辅助整理草稿，但最终确认和边界判断由我完成。",
+        },
+    ]
+    confirm_response = await client.put(
+        f"/api/pathfinder/interview/sessions/{session_id}/confirmed-signals",
+        json={"schemaVersion": "p1c.v1", "confirmedSignals": confirmed},
+        headers=auth_headers(),
+    )
+
+    assert confirm_response.status_code == 200
+    body = confirm_response.json()
+    assert body["status"] == "signals_confirmed"
+    assert len(body["confirmedSignals"]) == 2
+    assert body["confirmedSignals"][1]["userEditedText"].startswith("我使用 AI")
 
 
 @pytest.mark.asyncio()

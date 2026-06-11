@@ -476,3 +476,42 @@ Main Agent follow-up order:
   - Scope Guard：禁止 score / percent / offer probability / certification / employer shortlist / resume packaging / official project contribution 等正向表达与字段。
 - 验证：文档任务仅需 `git diff --check` 与 `git status --short --branch`；BE / FE / DATA 合并后按 QA 计划执行全量验收命令。
 - 注意：任务提示中的 `docs/pathfinder-p0/p1-b-implementation-merge-review.md` 在当前仓库不存在，实际读取 `docs/pathfinder-p0/pm-merge-review-p1b-implementation.md`。
+## BE-003 P1-C.1 Status
+
+- 任务状态：已完成，待主 Agent review。
+- 子对话名称：`后端开发A`
+- worktree：`C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-be-003`
+- 分支：`codex/pathfinder-be-003`
+- 基线说明：原 `codex/pathfinder-be-003` worktree 存在旧 P1-B 提交且不是从当前 `codex/pathfinder-p1a-integration` 派生；已将旧分支保留为 `codex/pathfinder-be-003-stale-p1b`，并从 `codex/pathfinder-p1a-integration` 创建新的 `codex/pathfinder-be-003`。
+- 交付文件：
+  - `backend/app/api/pathfinder.py`
+  - `backend/app/schemas/pathfinder.py`
+  - `backend/app/services/pathfinder_interview_client.py`
+  - `backend/tests/test_pathfinder.py`
+  - `docs/pathfinder-p0/p1-c-backend-implementation.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- 实现摘要：
+  - 新增 `POST /api/pathfinder/interview/sessions`。
+  - 新增 `GET /api/pathfinder/interview/sessions/{session_id}`。
+  - 新增 `POST /api/pathfinder/interview/sessions/{session_id}/turns`。
+  - 新增 `POST /api/pathfinder/interview/sessions/{session_id}/signals`。
+  - 新增 `PUT /api/pathfinder/interview/sessions/{session_id}/confirmed-signals`。
+  - 新增 P1-C.1 `InterviewSession`、`InterviewMessage`、`ExtractedProfileSignal`、`SignalExtractionResult`、`SignalConfirmation` 等 schema。
+  - 新增 DeepSeek OpenAI-compatible client，默认 `https://api.deepseek.com` 与 `deepseek-v4-flash`；支持配置 `deepseek-v4-pro`。
+  - 继续复用 `analysis_records`，`recordKind = "interview_session"`，不新增 migration。
+  - LLM 只做访谈追问和结构化信号抽取，不做最终路径 / 项目推荐决策。
+  - 服务端校验模型 JSON 输出并拒绝 score、percent、offer probability、certification、employer shortlist、resume packaging、OpenDocuments/project ownership 等越界字段。
+- DeepSeek key 安全：
+  - 代码优先读取 `DEEPSEEK_API_KEY`，兼容 `LLM_API_KEY`。
+  - 代码不读取、不打印、不提交 `C:\Users\LittleNub\Desktop\Key.txt` 内容。
+  - 本地如需使用 key 文件，应在运行前由 shell 注入环境变量。
+- 验证：
+  - `python -m pytest tests/test_pathfinder.py -q`：21 passed。
+  - `python -m pytest`：87 passed。
+  - `git diff --check`：通过，仅有 Windows LF/CRLF 提示。
+  - `git ls-files --others --exclude-standard backend/alembic/versions`：无输出。
+- Scope Guard：未新增 GitHub Search、真实 RAG、评分、概率、认证、企业筛选、履历包装、专用表或 migration。
+- Remaining risks：
+  - 当前为后端会话与信号 API；前端仍需接入用户确认信号后再调用路径推荐。
+  - 模型输出采用 JSON mode + 服务端校验；后续如改用 tool calls，可进一步收紧 schema。
+  - P1-C.1 仍复用 `analysis_records`，长期查询和审计能力仍需 P1-C/P1-D 专用表评估。
