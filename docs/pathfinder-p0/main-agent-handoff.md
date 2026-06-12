@@ -713,3 +713,30 @@ Main Agent follow-up order:
 - Remaining risks:
   - Project-matching quality is still rule-first and should be reviewed with real interview transcripts.
   - Product owner may still decide whether all seven approved projects should be visible immediately or staged.
+
+## FE-003 Merge Review And Integration Fix
+
+- Date: 2026-06-12
+- FE-003 merge commit on main integration branch: `94a6e69 feat: add pathfinder agentic interview flow`.
+- Main Agent integration fix commit: `64f6fc5 fix: align pathfinder frontend with p1c backend`.
+- Merge review findings:
+  - The FE-003 amendment correctly removed runtime `mvp_plan` / `portfolio_boundary` answer IDs and dynamic Chatwoot source rendering worked in mocked E2E.
+  - Real backend integration initially still failed because frontend profile strings were sent directly to `/api/pathfinder/recommendations`, while backend P1-C expects list fields for `projectExperience` and `technicalBasics`.
+  - Real backend integration also exposed a new backend path id, `ai-application-ops-implementation-assistant`, which was missing from frontend `PathId` and visual metadata.
+  - API success returned English backend role titles, so frontend now localizes known path titles for user-facing UI.
+- Fixes applied by Main Agent:
+  - `frontend/src/features/pathfinder/api.ts`: serialize frontend profile into backend-compatible P1-C profile shape for recommendation and trial-package generation.
+  - `frontend/src/features/pathfinder/api.ts`: localize known backend role-path titles before rendering.
+  - `frontend/src/features/pathfinder/api.ts`: create records with the selected `trialPackageCandidate` id/version instead of always using the OpenDocuments P1-A package id/version.
+  - `frontend/src/features/pathfinder/types.ts`: add `ai-application-ops-implementation-assistant` to `PathId`.
+  - `frontend/src/features/pathfinder/pages.tsx`: add visual metadata for the ops/implementation path and shift algorithm/LLM to index 05.
+- Verification after the integration fix:
+  - `npm run test:safety` passed.
+  - `npm run lint` passed.
+  - `npm run build` passed.
+  - `E2E_BASE_URL=http://127.0.0.1:3016 npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 10/10.
+  - Browser smoke with real backend and frontend passed: interview answer -> signal draft -> confirm -> recommendation displayed multiple audited projects -> Chatwoot trial package generated -> trial page showed `Chatwoot` source and license boundary, not OpenDocuments.
+- Current status:
+  - FE-003 is merged into `codex/pathfinder-p1a-integration`.
+  - P1-C.1 frontend/backend/data path is now integrated enough for product-owner review.
+  - No push has been performed.
