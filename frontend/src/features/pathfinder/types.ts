@@ -11,6 +11,7 @@ export type PathId =
   | "industry-ai-product-assistant"
   | "industry-ai-solution-assistant"
   | "ai-data-evaluation-assistant"
+  | "ai-application-ops-implementation-assistant"
   | "algorithm-llm-engineer";
 
 export type PathVerdict =

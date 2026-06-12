@@ -26,6 +26,7 @@ import type {
   PortfolioDraft,
   InterviewPrep,
   PathId,
+  RolePathRecommendation,
   SubmitInterviewTurnResponse,
   TrailRecord,
   TrialAnswer,
@@ -40,6 +41,13 @@ const pathfinderGeneratePath = "/api/pathfinder/trial-packages/generate";
 const pathfinderInterviewSessionsPath = "/api/pathfinder/interview/sessions";
 const defaultPathfinderUserId = "pathfinder-p1-a-demo-user";
 const p1cSchemaVersion = "p1c.v1" as const;
+const rolePathTitleById: Partial<Record<PathId, string>> = {
+  "industry-ai-product-assistant": "行业 AI 应用产品助理",
+  "industry-ai-solution-assistant": "行业 AI 解决方案助理",
+  "ai-data-evaluation-assistant": "AI 数据评测助理",
+  "ai-application-ops-implementation-assistant": "AI 应用运营 / 实施助理",
+  "algorithm-llm-engineer": "算法工程 / 大模型研发",
+};
 
 type BackendInterviewMessage = {
   messageId: string;
@@ -103,6 +111,67 @@ export interface SavePathfinderResultResponse {
   status: PathfinderRecordStatus;
   markdownSnapshotSaved: boolean;
   updatedAt: string;
+}
+
+function compactTextList(...values: Array<string | undefined | null>): string[] {
+  return values.map((value) => value?.trim()).filter(Boolean) as string[];
+}
+
+function toBackendUserProfileInput(profile: UserProfileInput) {
+  return {
+    ...profile,
+    displayName: profile.displayName.trim() || undefined,
+    educationBackground: profile.professionalBackground.trim() || undefined,
+    industryBackground: compactTextList(profile.professionalBackground),
+    projectExperience: compactTextList(profile.projectExperience),
+    documentAndResearchExperience: compactTextList(profile.projectExperience),
+    technicalBasics: compactTextList(profile.technicalBasics),
+    aiToolUsage: compactTextList(profile.aiToolExperience),
+    targetDirections: compactTextList(profile.jobTarget),
+    careerConstraints: profile.constraints.trim()
+      ? [
+          {
+            type: "user_constraint",
+            description: profile.constraints.trim(),
+          },
+        ]
+      : [],
+    availableTimeWindow: profile.timeline.trim() || undefined,
+  };
+}
+
+function localizeRolePath(path: RolePathRecommendation): RolePathRecommendation {
+  return {
+    ...path,
+    title: rolePathTitleById[path.pathId] ?? path.title,
+  };
+}
+
+function localizeRecommendationResponse<T extends Omit<PathfinderRecommendationResponse, "source">>(
+  response: T,
+): T {
+  return {
+    ...response,
+    recommendationRun: {
+      ...response.recommendationRun,
+      paths: response.recommendationRun.paths.map(localizeRolePath),
+    },
+    paths: response.paths.map(localizeRolePath),
+  };
+}
+
+function localizeTrialPackageResponse<T extends Omit<GenerateTrialPackageResponse, "source">>(
+  response: T,
+): T {
+  return {
+    ...response,
+    trialPackageCandidate: {
+      ...response.trialPackageCandidate,
+      targetRolePath: localizeRolePath(
+        response.trialPackageCandidate.targetRolePath,
+      ),
+    },
+  };
 }
 
 function normalizeInterviewMessage(
@@ -414,12 +483,12 @@ export async function requestPathfinderRecommendations(params: {
       {
         method: "POST",
         body: JSON.stringify({
-          userProfile: params.userProfile,
+          userProfile: toBackendUserProfileInput(params.userProfile),
           ruleVersion: "p1b.frontend-contract.v1",
         }),
       },
     );
-    return { ...response, source: "api" };
+    return { ...localizeRecommendationResponse(response), source: "api" };
   } catch {
     return buildFallbackRecommendationResponse(params.userProfile);
   }
@@ -459,13 +528,13 @@ export async function generatePathfinderTrialPackage(params: {
         body: JSON.stringify({
           recommendationRunId:
             params.recommendationResponse.recommendationRun.recommendationRunId,
-          userProfileSnapshot: params.userProfile,
+          userProfileSnapshot: toBackendUserProfileInput(params.userProfile),
           selectedPathId: params.selectedPathId,
           selectedProjectId: params.selectedProjectId,
         }),
       },
     );
-    return { ...response, source: "api" };
+    return { ...localizeTrialPackageResponse(response), source: "api" };
   } catch {
     return buildFallbackTrialPackageResponse(params);
   }
@@ -478,8 +547,11 @@ export async function createPathfinderRecord(
     method: "POST",
     body: JSON.stringify({
       schemaVersion: pathfinderSchemaVersion,
-      trialPackageId: p1aTrialPackage.id,
-      trialPackageVersion: p1aTrialPackage.version,
+      trialPackageId:
+        record.trialPackageCandidate?.trialPackageId ?? p1aTrialPackage.id,
+      trialPackageVersion:
+        record.trialPackageCandidate?.trialPackageVersion ??
+        p1aTrialPackage.version,
       selectedPathId: record.selectedPathId,
       recommendationRunId: record.recommendationRunId,
       selectedProjectId: record.selectedProjectId,

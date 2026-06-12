@@ -145,8 +145,13 @@ const pathVisualMeta: Record<
     shortLabel: "评测线",
     panelClass: "border-violet-200 bg-violet-50",
   },
-  "algorithm-llm-engineer": {
+  "ai-application-ops-implementation-assistant": {
     index: "04",
+    shortLabel: "Ops",
+    panelClass: "border-cyan-200 bg-cyan-50",
+  },
+  "algorithm-llm-engineer": {
+    index: "05",
     shortLabel: "长期线",
     panelClass: "border-amber-200 bg-amber-50",
   },
