@@ -648,3 +648,30 @@ Main Agent follow-up order:
   - Pending worktree id: `local:3421b926-2b3b-4d85-8ba7-e81fe7efee8a`
   - Goal: align `p1c-project-library-matching.json` genericTrialTemplate back to stable six question ids and add backend tests proving generated non-OpenDocuments trial packages can be saved through the existing records API.
   - Expected commit: `fix: align pathfinder trial question ids`
+
+## BE-005 Status
+
+- Task ID: `BE-005`
+- Child role: `后端开发B`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\34db\ai-job-seeker`
+- Branch: `codex/pathfinder-be-005`
+- Baseline: created from `codex/pathfinder-p1a-integration` after `e138607 feat: load pathfinder audited project library`.
+- Delivered files:
+  - `data/pathfinder/project-matching/p1c-project-library-matching.json`
+  - `backend/tests/test_pathfinder.py`
+  - `docs/pathfinder-p0/p1-c-project-runtime-integration.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Contract decision: P1-C.1 generic trial templates reuse the stable records API six question IDs and do not add `mvp_plan` or `portfolio_boundary` to `TrialQuestionId`.
+- Final question ID list: `project_understanding`, `role_connection`, `scenario_gap`, `application_solution`, `portfolio_extension`, `ai_usage_explanation`.
+- Runtime compatibility: generic `requiredMarkdownSections` are kept on existing P1-A compatible section keys until backend and frontend both support a broader audited-project markdown schema.
+- Tests added/updated:
+  - non-OpenDocuments generated trial packages now assert the stable six IDs;
+  - generated Chatwoot trial package -> record creation -> `PATCH /records/{id}/trial-answers` regression confirms the generated IDs do not 422.
+- Validation:
+  - `python -m json.tool data/pathfinder/project-matching/p1c-project-library-matching.json > $null` passed.
+  - `cd backend && python -m pytest tests/test_pathfinder.py -q` passed: 26 passed.
+  - `cd backend && python -m pytest` passed: 92 passed.
+- Storage: no new table and no Alembic migration.
+- Scope guard: no GitHub Search, no live RAG, no scoring/probability/certification/employer screening/resume packaging, no frontend changes, no forbidden B-class files touched.
+- Remaining risks: frontend should render display labels from title/prompt while persisting the stable IDs; future audited-project markdown schema expansion must update backend and frontend together.
+- Review recommendation: Main Agent review recommended before merging because this closes a cross-FE/BE contract mismatch.

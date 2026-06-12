@@ -184,6 +184,23 @@ def answers_payload(complete: bool = True, empty_ids: set[str] | None = None) ->
     }
 
 
+def generated_answers_payload(trial_questions: list[dict]) -> dict:
+    return {
+        "schemaVersion": "p1-a.v1",
+        "changedQuestionId": trial_questions[-1]["questionId"],
+        "trialAnswers": [
+            {
+                "id": question["questionId"],
+                "answer": f"Answer for {question['questionId']}",
+                "status": "complete",
+                "questionSnapshot": question["title"],
+                "updatedAt": "2026-06-12T00:00:00Z",
+            }
+            for question in trial_questions
+        ],
+    }
+
+
 def anti_check_payload(
     *,
     status: str = "passed",
@@ -610,10 +627,64 @@ async def test_generate_trial_package_for_non_opendocuments_project(client: Asyn
         "project_understanding",
         "role_connection",
         "scenario_gap",
-        "mvp_plan",
-        "portfolio_boundary",
+        "application_solution",
+        "portfolio_extension",
         "ai_usage_explanation",
     ]
+
+
+@pytest.mark.asyncio()
+async def test_generated_non_opendocuments_trial_questions_save_to_records_api(client: AsyncClient) -> None:
+    recommendation_response = await client.post(
+        "/api/pathfinder/recommendations",
+        json=recommendation_payload(),
+        headers=auth_headers(),
+    )
+    assert recommendation_response.status_code == 200
+    run_id = recommendation_response.json()["recommendationRun"]["recommendationRunId"]
+
+    generate_response = await client.post(
+        "/api/pathfinder/trial-packages/generate",
+        json={
+            "recommendationRunId": run_id,
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+            "selectedPathId": "industry-ai-product-assistant",
+            "selectedProjectId": "chatwoot",
+        },
+        headers=auth_headers(),
+    )
+    assert generate_response.status_code == 200
+    candidate = generate_response.json()["trialPackageCandidate"]
+    question_ids = [question["questionId"] for question in candidate["trialQuestions"]]
+    assert question_ids == QUESTION_IDS
+
+    create_response = await client.post(
+        "/api/pathfinder/records",
+        json={
+            "schemaVersion": "p1-a.v1",
+            "trialPackageId": candidate["trialPackageId"],
+            "trialPackageVersion": candidate["trialPackageVersion"],
+            "selectedPathId": candidate["generatedFrom"]["selectedPathId"],
+            "selectedPath": {
+                "id": candidate["targetRolePath"]["pathId"],
+                "title": candidate["targetRolePath"]["title"],
+            },
+            "userProfileSnapshot": recommendation_payload()["userProfile"],
+            "trialPackageSnapshot": candidate,
+        },
+        headers=auth_headers(),
+    )
+    assert create_response.status_code == 201
+    record_id = create_response.json()["recordId"]
+
+    save_response = await client.patch(
+        f"/api/pathfinder/records/{record_id}/trial-answers",
+        json=generated_answers_payload(candidate["trialQuestions"]),
+        headers=auth_headers(),
+    )
+
+    assert save_response.status_code == 200
+    assert [answer["id"] for answer in save_response.json()["trialAnswers"]] == QUESTION_IDS
 
 
 @pytest.mark.asyncio()

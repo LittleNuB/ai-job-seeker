@@ -90,18 +90,18 @@
         "expectedOutputType": "scenario_gap"
       },
       {
-        "questionId": "mvp_plan",
+        "questionId": "application_solution",
         "title": "MVP 试航方案",
         "prompt": "你会如何设计一个 1-2 周低风险 MVP？包含范围、输入、输出、验收和不做事项。",
         "required": true,
-        "expectedOutputType": "mvp_plan"
+        "expectedOutputType": "application_solution"
       },
       {
-        "questionId": "portfolio_boundary",
+        "questionId": "portfolio_extension",
         "title": "作品集边界",
         "prompt": "如果把这次试航做成作品集草稿，你的真实贡献是什么？哪些能力或项目归属不可声称？",
         "required": true,
-        "expectedOutputType": "portfolio_boundary"
+        "expectedOutputType": "portfolio_extension"
       },
       {
         "questionId": "ai_usage_explanation",
@@ -123,13 +123,13 @@
     ],
     "requiredMarkdownSections": [
       "candidate_background",
-      "confirmed_user_signals",
       "path_conclusion",
-      "audited_project_source_license",
-      "audited_project_public_capabilities",
+      "sample_jd_note",
+      "opendocuments_source_license",
+      "opendocuments_original_capabilities",
       "user_trial_contribution",
       "forbidden_claims",
-      "fixed_question_answers",
+      "six_question_answers",
       "disclaimer"
     ],
     "forbiddenClaims": [

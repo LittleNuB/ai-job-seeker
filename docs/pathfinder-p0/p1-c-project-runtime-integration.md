@@ -45,14 +45,16 @@ The result is a rule-hit explanation. The backend does not use repository stars,
 
 ## Trial Package Generation
 
-OpenDocuments keeps the existing P1-A dedicated trial package fixture. Other approved projects use `genericTrialTemplate` from `p1c-project-library-matching.json`, producing the fixed six generic project questions:
+OpenDocuments keeps the existing P1-A dedicated trial package fixture. Other approved projects use `genericTrialTemplate` from `p1c-project-library-matching.json`, producing the fixed six records-compatible project questions:
 
 1. `project_understanding`
 2. `role_connection`
 3. `scenario_gap`
-4. `mvp_plan`
-5. `portfolio_boundary`
+4. `application_solution`
+5. `portfolio_extension`
 6. `ai_usage_explanation`
+
+P1-C.1 does not extend the records API `TrialQuestionId` enum. Generic project-specific wording may display `application_solution` as "应用方案 / MVP 试航方案" and `portfolio_extension` as "作品延展 / 作品集边界", but persisted `trialAnswers.id` values must remain the stable six IDs above. The generic template also keeps `requiredMarkdownSections` on the existing P1-A compatible keys until the backend and frontend support a broader audited-project markdown section schema.
 
 Generated candidates preserve the selected project as `sourceProject`, include project-level `forbiddenClaims`, and add license/source boundary text to `sampleJdDisclaimer`. This is especially important for Chatwoot, whose MIT Expat boundary excludes the separately licensed enterprise directory.
 
@@ -65,6 +67,7 @@ Backend tests cover:
 - role path and capability tag filters.
 - recommendation returns multiple project matches without `score`, `ranking`, or `probability` in the response JSON.
 - non-OpenDocuments trial package generation.
+- generated non-OpenDocuments trial package question IDs can be saved through `/records/{id}/trial-answers`.
 - Chatwoot license boundary retention.
 - unaudited project rejection.
 
