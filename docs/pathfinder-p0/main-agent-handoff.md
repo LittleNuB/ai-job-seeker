@@ -623,3 +623,28 @@ Main Agent follow-up order:
   - Prefer new worktree child threads with role-letter naming, such as `前端开发C`, `后端开发B`, `数据方案C`, `QA验证B`.
   - Reusing older child conversations is no longer the default and should only be done for an already in-flight task.
   - Do not create projectless threads for Pathfinder work.
+
+## FE-003 Review Blocker And BE-005 Dispatch
+
+- Date: 2026-06-12
+- FE-003 source commit reviewed: `1c25050 feat: add pathfinder agentic interview flow`
+- FE-003 merge status: not merged; returned to `前端开发B` for amend.
+- Blocker 1: multi-project dynamic source is incomplete.
+  - Trial page, result page, and Markdown still contain user-visible fixed OpenDocuments source/copy in several places.
+  - If the user selects RAGFlow, Chatwoot, Superset, Node-RED, OpenRefine, or Unstructured, exported trace materials could still say OpenDocuments.
+  - This breaks P1-C.1 product credibility and anti-packaging attribution boundaries.
+- Blocker 2: generic trial question ids are not compatible with the current records API.
+  - FE-003 introduced runtime ids `mvp_plan` and `portfolio_boundary`.
+  - Backend `TrialQuestionId` currently supports only the stable six ids: `project_understanding`, `role_connection`, `scenario_gap`, `application_solution`, `portfolio_extension`, and `ai_usage_explanation`.
+  - Sending `mvp_plan` / `portfolio_boundary` to `/api/pathfinder/records/{id}/trial-answers` would 422.
+- Product/technical decision:
+  - P1-C.1 should not expand the trial answer id schema.
+  - Generic trial packages should reuse the stable six ids and vary title/prompt only.
+- FE follow-up:
+  - Existing `前端开发B` thread `019ea0e6-23df-7442-af0c-6b6e2ac54dae` was instructed to amend FE-003.
+  - Required fixes: dynamic selected-project source in trial/result/Markdown, generic visible section titles, Chatwoot license boundary, no `mvp_plan` / `portfolio_boundary` runtime ids.
+- BE follow-up:
+  - New project-bound worktree task `BE-005` was created for `后端开发B`.
+  - Pending worktree id: `local:3421b926-2b3b-4d85-8ba7-e81fe7efee8a`
+  - Goal: align `p1c-project-library-matching.json` genericTrialTemplate back to stable six question ids and add backend tests proving generated non-OpenDocuments trial packages can be saved through the existing records API.
+  - Expected commit: `fix: align pathfinder trial question ids`
