@@ -800,3 +800,25 @@ Main Agent follow-up order:
   - `FE-004 / 前端开发C`: implement low-friction entry, 2.5D role star map, three pilot task entry cards, and result-page framing.
   - `DATA-004 / 数据方案C`: define 12 role star points, evidence wording, and three pilot task content packs.
   - `QA-004 / QA验证B`: regression plan and execution for P1-D Lite submission readiness.
+
+## DATA-004 Status
+
+- Task ID: `DATA-004`
+- Child role: `数据方案C`
+- Worktree: `C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-004`
+- Branch: `codex/pathfinder-data-004`
+- Baseline: rebased onto `codex/pathfinder-p1a-integration` at `6f2721c docs: lock pathfinder p1d lite scope`; prior duplicate P1-B fixture commit was skipped by rebase because the same patch already exists on integration.
+- Delivered files:
+  - `data/pathfinder/role-star-points/p1d-role-star-points.json`
+  - `data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json`
+  - `docs/pathfinder-p0/p1-d-lite-data-content.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Content baseline:
+  - Defines 12 role star points across product / solution, application development, data / evaluation, and operations growth star fields.
+  - Defines three pilot task packs: development open-source adaptation, product Vibe Coding prototype, and operations AI tool experience-camp.
+  - Marks simulated examples with `simulatedExample.isEvidence=false`.
+  - Keeps all JD wording as sample JD / current sample trend reference only.
+- Scope guard:
+  - No GitHub Search, no new scraping, no backend / frontend runtime logic, no migration, no scoring, no probabilities, no LLM-only role or project decisions.
+  - Forbidden expressions appear only in `notClaims`, `forbiddenClaims`, boundary, or non-scope contexts.
+- Commit: created after this status entry; see child delegation report for final local commit hash and validation results.

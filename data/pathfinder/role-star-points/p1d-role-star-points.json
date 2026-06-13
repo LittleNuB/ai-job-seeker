@@ -1,0 +1,932 @@
+{
+  "schemaVersion": "pathfinder-role-star-points.v1",
+  "recordType": "RoleStarPointSet",
+  "starPointSetId": "p1d-role-star-points",
+  "version": "1.0.0",
+  "createdAt": "2026-06-14",
+  "updatedAt": "2026-06-14",
+  "status": "active",
+  "scope": "P1-D Lite competition fixture for 12 user-facing role star points. Role star points are UI representations of JD-sample-supported role gaps, not employment judgments.",
+  "sourceBasis": {
+    "taxonomySource": {
+      "path": "data/ai_positions.json",
+      "summary": "7 AI role directions and 46 structured positions; used as controlled taxonomy, not as a market map."
+    },
+    "jdSampleSource": {
+      "path": "scraper/cleaned/cleaned_jds.json",
+      "recordCount": 2537,
+      "companySampleCount": 9,
+      "summary": "Current cleaned JD sample library; used only as sample JD / current sample trend reference."
+    },
+    "projectLibrarySources": [
+      "data/pathfinder/open-source-projects/*.json",
+      "data/pathfinder/project-matching/p1c-project-library-matching.json"
+    ],
+    "contentRules": [
+      "All JD language is sample JD / current sample trend reference only.",
+      "LLM-assisted or imagined examples must be stored under simulatedExample and must not be used as evidence.",
+      "No score, percentage, offer probability, certification, employer screening, resume packaging, or LLM-only final role decision is allowed."
+    ]
+  },
+  "starFields": [
+    {
+      "id": "product_solution",
+      "displayName": "产品与方案星域"
+    },
+    {
+      "id": "application_development",
+      "displayName": "应用开发星域"
+    },
+    {
+      "id": "data_evaluation",
+      "displayName": "数据与评测星域"
+    },
+    {
+      "id": "operations_growth",
+      "displayName": "运营增长星域"
+    }
+  ],
+  "pilotTaskTypes": [
+    "development_open_source_adaptation",
+    "product_vibe_coding_prototype",
+    "operations_ai_experience_camp"
+  ],
+  "roleStarPoints": [
+    {
+      "id": "ai-application-product-assistant",
+      "displayName": "AI 应用产品助理",
+      "starField": "product_solution",
+      "relatedRoleNames": [
+        "AI 产品经理",
+        "数据产品经理",
+        "AI 教育产品经理",
+        "行业 AI 产品助理"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，AI 应用产品类岗位常把用户场景、需求拆解、MVP 范围、验收指标、反馈闭环和 AI 工具边界放在同一组要求里；该星点用于解释产品试航入口，不代表市场全量。",
+      "commonTasks": [
+        "梳理业务资料、目标用户和核心使用场景",
+        "把用户问题转成 PRD 摘要、用户故事和验收口径",
+        "设计 AI 功能的输入、输出、失败兜底和人工复核节点",
+        "整理试用反馈并形成下一轮迭代清单"
+      ],
+      "commonDeliverables": [
+        "问题定义与用户场景页",
+        "MVP 范围表",
+        "用户流程或低保真原型",
+        "验收指标与风险边界说明",
+        "作品集一页纸草稿"
+      ],
+      "commonTools": [
+        "Figma",
+        "墨刀 / Axure",
+        "Notion / 飞书文档",
+        "ChatGPT / DeepSeek",
+        "Cursor / v0 / Lovable",
+        "Superset 或表格工具"
+      ],
+      "migrationEntrySignals": [
+        "写过需求文档、用户调研、流程说明或验收标准",
+        "做过业务资料整理、客户反馈整理或跨团队协作",
+        "能把一个具体场景拆成输入、输出、边界和指标",
+        "有 AI 工具辅助写作、搜索、原型或资料结构化经验"
+      ],
+      "riskSignals": [
+        "只会描述 AI 概念，缺少具体用户场景或流程证据",
+        "把工具演示写成完整产品交付",
+        "没有说明数据来源、人工复核和失败兜底",
+        "把模拟案例当成真实工作经历"
+      ],
+      "pilotTaskType": "product_vibe_coding_prototype",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联产品方向中的 AI 产品经理、数据产品经理、AI 商业化产品经理和 AI 交互设计师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "产品、用户、AI 应用、AIGC、指标、反馈等信号在当前样本标题或正文中出现；未复制原始 JD 文本。"
+        },
+        {
+          "source": "data/pathfinder/project-matching/p1c-project-library-matching.json",
+          "scope": "audited_fixture_reference",
+          "note": "文档问答、客服支持、看板分析等已审计项目规则可支撑产品原型试航。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如为企业知识库助手设计一个低保真流程和验收指标。该例子只用于前端演示，不作为 JD 证据。"
+      },
+      "notClaims": [
+        "不构成能力认证、岗位胜任证明或录用判断。",
+        "不预测 offer / 录用概率，不做企业筛选或候选人排序。",
+        "不把模拟示例、开源项目拆解或 AI 生成材料写成用户真实项目经历。"
+      ]
+    },
+    {
+      "id": "ai-product-manager-assistant",
+      "displayName": "AI 产品经理助理",
+      "starField": "product_solution",
+      "relatedRoleNames": [
+        "AI 产品经理",
+        "AI 商业化产品经理",
+        "数据产品经理",
+        "AI 交互设计师"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，AI 产品经理相关要求更强调需求优先级、产品闭环、跨角色沟通、数据指标和上线后复盘；该星点是产品经理方向的助理级试航入口，不表示可以替代完整 PM 经验。",
+      "commonTasks": [
+        "整理需求池、用户痛点和业务目标",
+        "拆分版本范围、验收条件和不做事项",
+        "协调研发、设计、运营或客户侧信息",
+        "追踪试用数据、用户反馈和迭代问题"
+      ],
+      "commonDeliverables": [
+        "PRD 摘要",
+        "需求优先级表",
+        "用户流程与验收清单",
+        "竞品 / 参考产品拆解",
+        "迭代复盘页"
+      ],
+      "commonTools": [
+        "飞书 / Notion",
+        "Figma",
+        "Jira / Trello",
+        "表格工具",
+        "ChatGPT / DeepSeek",
+        "v0 / Cursor"
+      ],
+      "migrationEntrySignals": [
+        "参与过需求收集、项目管理、用户反馈整理或运营复盘",
+        "能说明一个功能为什么做、先做什么、暂时不做什么",
+        "能把 AI 工具输出转成可检查的产品文档",
+        "对指标、体验和边界有基本表达能力"
+      ],
+      "riskSignals": [
+        "只有产品概念，没有可验证的流程、文档或协作材料",
+        "把低保真原型包装成上线产品",
+        "缺少验收指标和失败场景",
+        "把 AI 自动生成文档当成完整 PM 产出"
+      ],
+      "pilotTaskType": "product_vibe_coding_prototype",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联产品方向中的 AI 产品经理、数据产品经理、AI 商业化产品经理和 AI 交互设计师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "当前样本中产品、用户、需求、指标、增长、AIGC 等表达可作为趋势参考。"
+        },
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "P1-D Lite 明确产品类试航使用 Vibe Coding prototype pilot。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如用 Vibe Coding 工具生成一个可点击的客户反馈助手原型，并写清验收条件。该例子不是 JD 证据。"
+      },
+      "notClaims": [
+        "不声明用户已经具备完整 AI 产品经理能力。",
+        "不预测 offer / 录用概率，不做企业筛选。",
+        "不把 Vibe Coding 原型写成生产级上线交付或简历包装材料。"
+      ]
+    },
+    {
+      "id": "industry-ai-solution-assistant",
+      "displayName": "行业 AI 解决方案助理",
+      "starField": "product_solution",
+      "relatedRoleNames": [
+        "AI 解决方案架构师",
+        "行业 AI 产品助理",
+        "AI 应用运营实施助理",
+        "AI 商业化产品经理"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，行业 AI 方案类要求常围绕客户场景发现、PoC 范围、Demo 脚本、交付边界和跨团队沟通展开；该星点只支持方案试航，不承诺客户交付结果。",
+      "commonTasks": [
+        "梳理客户或业务场景、痛点和资料来源",
+        "撰写 PoC 范围、Demo 讲解路径和问题清单",
+        "把产品能力映射到行业流程和人工复核节点",
+        "整理风险、权限、数据和交付边界"
+      ],
+      "commonDeliverables": [
+        "场景调研摘要",
+        "PoC 范围 brief",
+        "Demo 脚本",
+        "交接清单",
+        "风险与边界说明"
+      ],
+      "commonTools": [
+        "PowerPoint / 飞书演示",
+        "Notion / 飞书文档",
+        "ChatGPT / DeepSeek",
+        "Node-RED",
+        "Chatwoot",
+        "OpenDocuments / RAGFlow 公开参考"
+      ],
+      "migrationEntrySignals": [
+        "有客户沟通、售前支持、实施、咨询或项目协调经验",
+        "能把行业流程说清楚，并指出资料、权限和复核需求",
+        "写过方案材料、培训材料、SOP 或项目交接文档",
+        "能明确公开参考项目与自己试航产出的归属边界"
+      ],
+      "riskSignals": [
+        "把 PoC brief 写成真实客户交付成果",
+        "承诺周期、成本、转化或生产效果",
+        "忽略安全、合规、权限和专业复核",
+        "把开源项目能力写成用户个人开发能力"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联产品方向中的 AI 解决方案架构师、AI 商业化产品经理，以及 P1-B role path 中的 industry-ai-solution-assistant。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "解决方案、客户场景、Demo、PoC、交付、工具等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/*.json",
+          "scope": "audited_fixture_reference",
+          "note": "OpenDocuments、RAGFlow、Chatwoot、Node-RED 等已审计公开项目可作为方案拆解参考。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如为客服知识库试点写一个 PoC brief、Demo 脚本和交接清单。该例子只用于任务说明。"
+      },
+      "notClaims": [
+        "不声明客户交付结果、生产上线、成本节省或销售转化。",
+        "不构成能力认证、岗位胜任证明或录用判断。",
+        "不暗示用户参与任何开源项目官方贡献。"
+      ]
+    },
+    {
+      "id": "rag-application-developer",
+      "displayName": "RAG 应用开发",
+      "starField": "application_development",
+      "relatedRoleNames": [
+        "RAG 工程师",
+        "AI 应用开发工程师",
+        "AI 全栈工程师",
+        "数据工程师"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，RAG 应用相关要求常出现文档解析、检索、引用展示、评测、权限和工程集成信号；该星点只支持开源参考项目拆解与场景改造试航，不代表真实 RAG 主链路已实现。",
+      "commonTasks": [
+        "拆解资料接入、切分、检索、生成和引用展示流程",
+        "设计一个低风险场景的输入、输出和复核规则",
+        "说明检索失败、幻觉、权限和数据更新边界",
+        "整理评测样例、错误分类和迭代记录"
+      ],
+      "commonDeliverables": [
+        "RAG 流程拆解图",
+        "场景改造方案",
+        "检索与引用边界说明",
+        "评测样例表",
+        "面试追问准备清单"
+      ],
+      "commonTools": [
+        "OpenDocuments",
+        "RAGFlow",
+        "Unstructured",
+        "LangChain / LlamaIndex",
+        "向量数据库",
+        "Python / TypeScript"
+      ],
+      "migrationEntrySignals": [
+        "有编程、脚本、数据处理或 Web 应用基础",
+        "处理过文档、知识库、搜索或客服资料",
+        "能解释数据来源、检索边界和人工复核",
+        "能阅读公开项目 README 并拆出模块职责"
+      ],
+      "riskSignals": [
+        "把公开项目阅读写成自己开发 RAG 系统",
+        "没有可运行或可解释的技术边界",
+        "忽略隐私、权限、引用和人工复核",
+        "用工具结果替代专业内容审核"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联工程方向 RAG 工程师，以及应用方向 AI 应用开发工程师、AI 全栈工程师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "RAG、LLM、Agent、应用、数据、评测等关键词在当前样本中出现；只作趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/opendocuments.json, data/pathfinder/open-source-projects/ragflow.json, data/pathfinder/open-source-projects/unstructured.json",
+          "scope": "audited_fixture_reference",
+          "note": "已审计项目提供公开能力、License 和不可声称边界，用于开发类试航。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如拆解一个文档问答流程，并写出行业资料接入的风险边界。该例子不证明 RAG 开发经历。"
+      },
+      "notClaims": [
+        "不声明当前版本执行真实 RAG 检索、实时仓库抓取或自动仓库分析。",
+        "不构成 RAG 工程能力认证或岗位胜任证明。",
+        "不把 OpenDocuments、RAGFlow 或 Unstructured 的能力写成用户个人开发成果。"
+      ]
+    },
+    {
+      "id": "agent-application-developer",
+      "displayName": "Agent 应用开发",
+      "starField": "application_development",
+      "relatedRoleNames": [
+        "AI 应用开发工程师",
+        "Prompt 工程师",
+        "AI 全栈工程师",
+        "AI 工具链开发"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，Agent 应用相关信号多围绕任务编排、工具调用、上下文管理、评测和人机协作边界；该星点用于解释应用试航，不把 LLM 生成内容当作最终决策。",
+      "commonTasks": [
+        "定义 Agent 目标、工具列表、输入输出和停止条件",
+        "设计任务流程、异常分支和人工确认节点",
+        "编写 prompt / tool schema / 测试样例",
+        "记录失败案例、改写策略和安全边界"
+      ],
+      "commonDeliverables": [
+        "Agent 任务流程表",
+        "工具调用清单",
+        "prompt 与测试样例",
+        "失败案例和人工复核规则",
+        "技术边界说明"
+      ],
+      "commonTools": [
+        "LangChain / LlamaIndex",
+        "OpenAI / DeepSeek API",
+        "Cursor",
+        "Node-RED",
+        "GitHub README",
+        "日志 / 表格工具"
+      ],
+      "migrationEntrySignals": [
+        "有脚本、自动化、低代码流程或 API 调用经验",
+        "能把复杂任务拆成步骤、状态和异常处理",
+        "有 prompt 调试、工具使用或工作流设计记录",
+        "能说明 AI 输出需要如何被人检查"
+      ],
+      "riskSignals": [
+        "把 Agent 设想写成可无人化替代专业流程",
+        "没有工具权限、错误处理或审计记录",
+        "使用 LLM 直接决定用户路径、项目或结论",
+        "缺少可复现的任务样例"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联应用方向 AI 应用开发工程师、Prompt 工程师、AI 全栈工程师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "Agent、LLM、应用、工具、评测等信号在当前样本标题或正文中出现。"
+        },
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "P1-D Lite 要求 LLM 不得替代 JD 证据或直接决定路径、项目、结论。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如设计一个资料整理 Agent 的工具调用流程和人工确认节点。该例子只用于说明试航任务。"
+      },
+      "notClaims": [
+        "不声明无人化、全自动或替代专业审核。",
+        "不把 LLM 模拟输出作为岗位或项目结论证据。",
+        "不构成能力认证、offer 概率预测或企业筛选。"
+      ]
+    },
+    {
+      "id": "ai-toolchain-developer",
+      "displayName": "AI 工具链开发",
+      "starField": "application_development",
+      "relatedRoleNames": [
+        "MLOps/AI 平台工程师",
+        "AI 基础设施工程师",
+        "模型部署/推理优化工程师",
+        "AI 全栈工程师"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，AI 工具链相关要求常涉及模型调用、数据处理、工作流、部署、监控、权限和开发效率；P1-D Lite 只把它作为工具链理解与小范围改造试航，不进入平台级承诺。",
+      "commonTasks": [
+        "梳理模型调用、数据输入、任务队列和结果记录流程",
+        "拆解一个公开工具或低代码流程的模块职责",
+        "设计轻量脚本、配置或工作流改造方案",
+        "说明监控、权限、成本、失败重试和人工接管边界"
+      ],
+      "commonDeliverables": [
+        "工具链模块拆解",
+        "流程自动化草图",
+        "配置 / 脚本说明",
+        "风险与运行边界",
+        "后续学习清单"
+      ],
+      "commonTools": [
+        "Python / TypeScript",
+        "Docker",
+        "Node-RED",
+        "GitHub Actions",
+        "API 文档",
+        "日志和监控工具"
+      ],
+      "migrationEntrySignals": [
+        "有编程、自动化、脚本、运维或内部工具经验",
+        "能阅读日志、API 文档或开源项目结构",
+        "能把流程中的输入、输出、异常和权限说清楚",
+        "能把一个大工具拆成可试航的小模块"
+      ],
+      "riskSignals": [
+        "把流程配置写成平台级工具链交付",
+        "缺少运行环境、权限、成本和失败处理说明",
+        "没有代码或流程证据，仅停留在工具名罗列",
+        "把开源项目元数据当作匹配评分"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联工程方向 MLOps/AI 平台工程师、AI 基础设施工程师、模型部署/推理优化工程师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "工具、平台、部署、应用、数据、LLM 等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/node-red.json",
+          "scope": "audited_fixture_reference",
+          "note": "Node-RED 可作为低代码流程和工作流自动化的公开参考项目。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如把一个客户反馈整理流程拆成输入、AI 处理、人工确认和记录四段。该例子不是工具链交付证据。"
+      },
+      "notClaims": [
+        "不声明完成生产级自动化平台或企业级工具链。",
+        "不输出复杂评分、匹配分或胜任分。",
+        "不构成能力认证、岗位胜任证明或录用判断。"
+      ]
+    },
+    {
+      "id": "ai-data-annotation-quality",
+      "displayName": "AI 数据标注与质检",
+      "starField": "data_evaluation",
+      "relatedRoleNames": [
+        "AI 标注经理",
+        "AI 训练师",
+        "数据治理工程师",
+        "数据分析师"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，数据标注与质检相关要求常出现标注规范、质检抽样、错误分类、训练数据、内容审核和反馈闭环；该星点用于设计数据质量试航，不代表模型质量结论。",
+      "commonTasks": [
+        "制定样本标注规则、边界样例和质检口径",
+        "整理错误类型、争议样本和复核流程",
+        "用表格或工具跟踪标注进度和质量问题",
+        "把质检结果转成改进建议和风险提示"
+      ],
+      "commonDeliverables": [
+        "标注指南",
+        "质检抽样表",
+        "错误分类表",
+        "复核流程说明",
+        "数据边界与隐私说明"
+      ],
+      "commonTools": [
+        "Excel / Google Sheets",
+        "OpenRefine",
+        "Label Studio",
+        "Superset",
+        "ChatGPT / DeepSeek",
+        "数据脱敏工具"
+      ],
+      "migrationEntrySignals": [
+        "做过内容审核、客服质检、测试、表格清洗或流程检查",
+        "能定义清晰规则并识别边界样本",
+        "有重复性任务、抽样检查或错误记录经验",
+        "能说明哪些数据不能直接使用或公开"
+      ],
+      "riskSignals": [
+        "把少量样本清洗说成市场全量分析",
+        "把质检表写成模型效果结论",
+        "处理真实隐私或企业敏感数据",
+        "缺少复核人、争议处理和删除策略"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联数据方向 AI 标注经理、数据治理工程师，以及应用方向 AI 训练师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "标注、质检、数据、评测、安全、内容审核等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/openrefine.json",
+          "scope": "audited_fixture_reference",
+          "note": "OpenRefine 可作为样本清洗和数据质量流程的公开参考项目。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如为 50 条公开样本设计错误分类和复核表。该例子只是任务样例。"
+      },
+      "notClaims": [
+        "不声明模型质量、训练效果或数据工程能力认证。",
+        "不把样本质检写成市场全量或企业真实数据结论。",
+        "不处理未脱敏个人敏感信息或企业内部资料。"
+      ]
+    },
+    {
+      "id": "llm-evaluation-assistant",
+      "displayName": "LLM 评测助理",
+      "starField": "data_evaluation",
+      "relatedRoleNames": [
+        "数据分析师",
+        "数据科学家",
+        "AI 训练师",
+        "AI 安全工程师"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，LLM 评测相关信号常围绕测试集、评价维度、人工复核、错误分析、安全边界和报告呈现；该星点只支持评测流程试航，不输出模型优劣或候选人能力分。",
+      "commonTasks": [
+        "定义评测任务、样例集、评价维度和记录格式",
+        "整理回答错误、风险输出和人工复核意见",
+        "对比不同 prompt 或工具版本的表现差异",
+        "撰写评测限制、复盘建议和下一步样本需求"
+      ],
+      "commonDeliverables": [
+        "评测任务说明",
+        "测试样例表",
+        "错误分析表",
+        "人工复核记录",
+        "评测边界与复盘报告"
+      ],
+      "commonTools": [
+        "Excel / Google Sheets",
+        "Superset",
+        "Promptfoo / Ragas",
+        "ChatGPT / DeepSeek",
+        "Python notebook",
+        "日志工具"
+      ],
+      "migrationEntrySignals": [
+        "做过测试、质检、数据分析、内容审核或表格复盘",
+        "能把好坏标准拆成可检查维度",
+        "能记录错误案例并给出复核意见",
+        "理解 LLM 输出不能替代专业判断"
+      ],
+      "riskSignals": [
+        "把小样本评测说成模型真实质量结论",
+        "输出模型排名、候选人评分或就业判断",
+        "缺少人工复核和风险分类",
+        "使用未授权业务数据做评测"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联数据方向数据分析师、数据科学家，以及应用方向 AI 训练师、工程方向 AI 安全工程师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "LLM、评测、测试、数据、安全、质量等信号在当前样本中出现。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/apache-superset.json",
+          "scope": "audited_fixture_reference",
+          "note": "Apache Superset 可作为评测指标看板和复盘材料的公开参考项目。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如为一个问答助手设计 20 条测试样例和错误分类表。该例子不作为模型质量证据。"
+      },
+      "notClaims": [
+        "不输出模型排名、复杂评分、胜任分或候选人排序。",
+        "不声明评测样本代表市场全量或模型真实质量。",
+        "不构成能力认证、岗位胜任证明或录用判断。"
+      ]
+    },
+    {
+      "id": "data-analysis-assistant",
+      "displayName": "数据分析助理",
+      "starField": "data_evaluation",
+      "relatedRoleNames": [
+        "数据分析师",
+        "数据产品经理",
+        "数据科学家",
+        "AI 运营/增长专家"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，数据分析助理类信号常围绕指标定义、看板、用户行为、业务复盘和问题定位；该星点用于数据复盘试航，不表达求职成功率或岗位匹配分。",
+      "commonTasks": [
+        "定义业务问题、指标口径和数据来源",
+        "清洗小样本数据并生成可解释表格或看板",
+        "识别异常、分组差异和下一步验证问题",
+        "把分析结果转成产品、运营或评测建议"
+      ],
+      "commonDeliverables": [
+        "指标口径表",
+        "数据清洗记录",
+        "基础看板",
+        "洞察摘要",
+        "复盘和下一步问题清单"
+      ],
+      "commonTools": [
+        "Excel / Google Sheets",
+        "SQL",
+        "Python notebook",
+        "Apache Superset",
+        "OpenRefine",
+        "ChatGPT / DeepSeek"
+      ],
+      "migrationEntrySignals": [
+        "做过表格、报表、运营复盘、测试记录或业务分析",
+        "能解释指标口径和数据限制",
+        "能用图表讲清一个问题，而不是只罗列数据",
+        "能区分样本观察和结论承诺"
+      ],
+      "riskSignals": [
+        "把小样本数据写成市场全量判断",
+        "用看板展示岗位匹配分、求职成功率或录用概率",
+        "没有说明数据来源、缺失和偏差",
+        "把 AI 自动分析结果不经复核直接输出"
+      ],
+      "pilotTaskType": "development_open_source_adaptation",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联数据方向数据分析师、数据科学家，以及产品方向数据产品经理。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "数据、指标、分析、用户、运营、看板等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/apache-superset.json",
+          "scope": "audited_fixture_reference",
+          "note": "Apache Superset 可作为数据探索与看板说明的公开参考项目。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如用一份脱敏体验营反馈表做指标口径和复盘看板。该例子只是前端展示样例。"
+      },
+      "notClaims": [
+        "不展示求职成功率、offer / 录用概率或岗位匹配分。",
+        "不把样本分析写成市场全量结论。",
+        "不构成能力认证、岗位胜任证明或企业筛选。"
+      ]
+    },
+    {
+      "id": "ai-content-operations",
+      "displayName": "AI 内容运营",
+      "starField": "operations_growth",
+      "relatedRoleNames": [
+        "AI 内容运营",
+        "AI 运营/增长专家",
+        "Prompt 工程师",
+        "AI 产品经理"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，AI 内容运营相关信号常包括内容选题、AIGC 生产流程、Prompt 模板、质量审核、分发节奏和数据复盘；该星点用于内容运营试航，不把内容结果写成平台增长承诺。",
+      "commonTasks": [
+        "确定目标受众、内容主题和 AI 工具使用边界",
+        "设计 prompt 模板、内容日历和审核流程",
+        "整理素材来源、版权风险和人工改写记录",
+        "复盘阅读、互动、反馈和下一轮选题"
+      ],
+      "commonDeliverables": [
+        "内容主题矩阵",
+        "Prompt 模板库",
+        "内容日历",
+        "审核与改写记录",
+        "复盘指标表"
+      ],
+      "commonTools": [
+        "ChatGPT / DeepSeek",
+        "即梦 / Midjourney / Canva",
+        "飞书文档",
+        "小红书 / 公众号 / B 站运营后台",
+        "表格工具"
+      ],
+      "migrationEntrySignals": [
+        "写过文章、脚本、课程材料、社媒内容或运营复盘",
+        "能说明 AI 参与了哪些环节以及自己如何审核修改",
+        "有选题、排期、分发或用户反馈经验",
+        "能处理版权、事实核验和平台规范边界"
+      ],
+      "riskSignals": [
+        "把 AI 生成内容直接当成个人原创成果",
+        "承诺流量、转化或商业结果",
+        "缺少事实核验、版权和人工改写说明",
+        "把内容运营写成简历包装"
+      ],
+      "pilotTaskType": "operations_ai_experience_camp",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联应用方向 AI 内容运营、产品方向 AI 运营/增长专家和 Prompt 工程师。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "运营、内容、AIGC、用户、增长、Prompt 等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "P1-D Lite 明确运营类试航为 AI tool experience-camp operations pilot。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如设计一周 AI 工具体验营的内容日历和审核流程。该例子不是内容增长证据。"
+      },
+      "notClaims": [
+        "不承诺流量、转化、商业收益或平台推荐结果。",
+        "不把 AI 生成内容直接写成未经审核的原创成果。",
+        "不构成能力认证、录用判断或简历包装。"
+      ]
+    },
+    {
+      "id": "ai-community-operations",
+      "displayName": "AI 社群运营",
+      "starField": "operations_growth",
+      "relatedRoleNames": [
+        "AI 运营/增长专家",
+        "AI 内容运营",
+        "AI 应用运营实施助理",
+        "AI 教育产品经理"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，社群运营相关信号常围绕用户分层、活动节奏、群内答疑、反馈收集、工具教学和转化复盘；该星点用于社群体验营试航，不承诺增长结果。",
+      "commonTasks": [
+        "定义社群人群、入群路径、分层标签和参与目标",
+        "设计 AI 工具体验任务、提醒节奏和答疑机制",
+        "收集用户问题、作品、反馈和流失原因",
+        "沉淀 FAQ、SOP 和复盘指标"
+      ],
+      "commonDeliverables": [
+        "社群用户画像",
+        "体验营节奏表",
+        "群内话术和 FAQ",
+        "反馈收集表",
+        "复盘与改进清单"
+      ],
+      "commonTools": [
+        "微信群 / 飞书群 / Discord",
+        "飞书多维表格",
+        "ChatGPT / DeepSeek",
+        "问卷工具",
+        "Chatwoot",
+        "Canva"
+      ],
+      "migrationEntrySignals": [
+        "做过社群、客服、课程助教、用户支持或活动执行",
+        "能把用户问题转成 FAQ、教程或流程改进",
+        "能记录参与、完成、反馈和复盘指标",
+        "能说明 AI 工具体验中的安全和版权边界"
+      ],
+      "riskSignals": [
+        "承诺社群增长、转化或留存结果",
+        "使用真实用户隐私数据做公开作品集",
+        "把群内 AI 答疑写成专业咨询替代",
+        "缺少审核、反馈和退出机制"
+      ],
+      "pilotTaskType": "operations_ai_experience_camp",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联产品方向 AI 运营/增长专家、应用方向 AI 内容运营，以及行业产品教育方向。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "运营、用户、社群、反馈、活动、增长等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "data/pathfinder/open-source-projects/chatwoot.json",
+          "scope": "audited_fixture_reference",
+          "note": "Chatwoot 可作为客服支持、反馈流转和知识库 SOP 的公开参考项目。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如设计一个 3 天 AI 写作工具社群体验营的任务和反馈表。该例子只是任务样例。"
+      },
+      "notClaims": [
+        "不承诺社群增长、转化、留存或商业结果。",
+        "不使用未经授权的真实用户隐私数据。",
+        "不构成能力认证、岗位胜任证明或企业筛选。"
+      ]
+    },
+    {
+      "id": "ai-event-operations",
+      "displayName": "AI 活动运营",
+      "starField": "operations_growth",
+      "relatedRoleNames": [
+        "AI 运营/增长专家",
+        "AI 教育产品经理",
+        "AI 商业化产品经理",
+        "AI 内容运营"
+      ],
+      "jdSignalSummary": "当前样例 JD / 当前样本趋势参考中，AI 活动运营相关信号常包括活动策划、工具体验设计、物料准备、讲师 / 嘉宾协同、报名到场数据和复盘；该星点用于 AI 工具体验营运营方案试航，不写成活动效果承诺。",
+      "commonTasks": [
+        "定义活动目标、人群、主题、节奏和参与门槛",
+        "设计 AI 工具体验任务、主持脚本和物料清单",
+        "准备报名、提醒、签到、反馈和复盘流程",
+        "总结完成率、反馈问题和下一轮优化"
+      ],
+      "commonDeliverables": [
+        "活动方案",
+        "体验任务卡",
+        "主持 / 助教脚本",
+        "内容日历",
+        "报名与反馈表",
+        "复盘指标页"
+      ],
+      "commonTools": [
+        "飞书 / 腾讯会议",
+        "问卷星 / 金数据",
+        "ChatGPT / DeepSeek",
+        "Canva",
+        "表格工具",
+        "自动化提醒工具"
+      ],
+      "migrationEntrySignals": [
+        "组织过线上活动、培训、课程、直播或工作坊",
+        "能把活动拆成前中后流程和执行清单",
+        "能设计参与任务、反馈表和复盘指标",
+        "能明确 AI 工具体验、版权、隐私和安全边界"
+      ],
+      "riskSignals": [
+        "承诺报名、到场、转化或收入结果",
+        "把体验营方案写成完整运营负责人履历",
+        "忽略参与者隐私、未成年人或平台规则",
+        "缺少复盘指标和风险预案"
+      ],
+      "pilotTaskType": "operations_ai_experience_camp",
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/ai_positions.json",
+          "scope": "taxonomy_reference",
+          "note": "关联产品方向 AI 运营/增长专家、AI 教育产品经理和 AI 商业化产品经理。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "运营、活动、用户、内容、增长、AI 工具等信号作为当前样本趋势参考。"
+        },
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "运营类任务被定义为 AI tool experience-camp operations pilot。"
+        }
+      ],
+      "simulatedExample": {
+        "type": "simulatedExample",
+        "isEvidence": false,
+        "text": "例如策划一场 90 分钟 AI 工具体验营，包含任务卡、主持脚本和反馈表。该例子不代表真实活动结果。"
+      },
+      "notClaims": [
+        "不承诺报名、到场、转化、收入或平台曝光结果。",
+        "不把方案写成真实已执行活动，除非用户提供确认信号。",
+        "不构成能力认证、录用判断或简历包装。"
+      ]
+    }
+  ]
+}

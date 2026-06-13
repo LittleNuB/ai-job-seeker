@@ -1,0 +1,284 @@
+{
+  "schemaVersion": "pathfinder-pilot-task-packs.v1",
+  "recordType": "PilotTaskPackSet",
+  "taskPackSetId": "p1d-pilot-task-packs",
+  "version": "1.0.0",
+  "createdAt": "2026-06-14",
+  "updatedAt": "2026-06-14",
+  "status": "active",
+  "scope": "P1-D Lite content baseline for three pilot task categories. These packs define task content only; they do not add generators, backend logic, migrations, GitHub Search, or scoring.",
+  "contentRules": [
+    "Tasks must be grounded in user-confirmed signals and sample JD trend references.",
+    "Audited open-source projects are reference_only and must preserve license and attribution boundaries.",
+    "Operations task pack is specifically an AI tool experience-camp operations pilot.",
+    "Outputs are pilot outcome package modules, not employment judgments or capability certification."
+  ],
+  "taskPacks": [
+    {
+      "id": "development_open_source_adaptation",
+      "displayName": "开源参考项目场景改造试航",
+      "applicableRoleStarPointIds": [
+        "industry-ai-solution-assistant",
+        "rag-application-developer",
+        "agent-application-developer",
+        "ai-toolchain-developer",
+        "ai-data-annotation-quality",
+        "llm-evaluation-assistant",
+        "data-analysis-assistant"
+      ],
+      "taskGoal": "围绕一个已审计公开项目，拆解公开能力、模块边界和场景适配方式，产出可追溯的场景改造方案、技术边界说明和面试追问准备。",
+      "userInputs": [
+        "用户确认的技术、数据、流程或行业场景信号",
+        "用户选择或系统呈现的已审计参考项目",
+        "目标岗位星点",
+        "可投入时间和工具熟悉度",
+        "不能使用的数据、权限或行业资料边界"
+      ],
+      "steps": [
+        {
+          "stepId": "reference_project_reading",
+          "title": "公开项目阅读",
+          "instruction": "阅读已审计项目的公开能力、License 和 forbiddenClaims，整理输入、输出、核心模块和不可声称内容。"
+        },
+        {
+          "stepId": "scenario_mapping",
+          "title": "场景映射",
+          "instruction": "把公开项目能力映射到用户确认的行业、文档、数据、客服或工具链场景，列出需要补充的资料、权限和人工复核。"
+        },
+        {
+          "stepId": "adaptation_scope",
+          "title": "改造范围",
+          "instruction": "定义 3-7 天低风险试航范围，明确要做、不做、输入、输出、验收和失败兜底。"
+        },
+        {
+          "stepId": "boundary_and_risk",
+          "title": "边界与风险",
+          "instruction": "记录来源、License、公开项目归属、隐私、专业复核、真实 RAG 和生产交付边界。"
+        },
+        {
+          "stepId": "interview_followup_prep",
+          "title": "追问准备",
+          "instruction": "准备面试或作品集解释材料，说明用户真实完成的是分析、拆解、方案和验证计划，而不是原项目开发。"
+        }
+      ],
+      "outputModules": [
+        "参考项目能力拆解",
+        "目标场景与用户背景连接",
+        "场景改造范围表",
+        "输入 / 输出 / 验收口径",
+        "技术和数据边界说明",
+        "风险与人工复核清单",
+        "面试追问准备",
+        "适航成果包摘要"
+      ],
+      "boundaryNotes": [
+        "只使用已审计项目库中的 reference_only 项目。",
+        "不调用 GitHub Search，不做实时仓库抓取，不把 stars、forks 或 commit 活跃度作为推荐证据。",
+        "公开项目能力必须与用户试航产出分开表述。",
+        "真实数据、客户资料、合同、内部规范和隐私信息不得进入作品集。"
+      ],
+      "forbiddenClaims": [
+        "不得声明用户开发、维护或官方贡献所选开源项目。",
+        "不得声明完成企业级交付、生产上线或完整系统复现。",
+        "不得声明真实 RAG 主链路、实时仓库分析或自动项目推荐已经运行。",
+        "不得输出能力认证、岗位胜任证明、offer / 录用概率、企业筛选、简历包装或复杂评分。"
+      ],
+      "reviewMetrics": [
+        "是否说清公开项目来源、License 和 reference_only 边界",
+        "是否把场景改造范围限制在低风险试航",
+        "是否有输入、输出、验收和失败兜底",
+        "是否区分用户真实贡献与公开项目能力",
+        "是否保留人工复核、隐私和专业边界",
+        "是否生成可用于适航成果包的结构化模块"
+      ],
+      "sampleEvidenceNotes": [
+        {
+          "source": "data/pathfinder/open-source-projects/*.json",
+          "scope": "audited_fixture_reference",
+          "note": "OpenDocuments、RAGFlow、Unstructured、Apache Superset、Chatwoot、Node-RED、OpenRefine 均已有 licenseVerificationStatus=verified。"
+        },
+        {
+          "source": "data/pathfinder/project-matching/p1c-project-library-matching.json",
+          "scope": "rule_fixture_reference",
+          "note": "P1-C fixture 禁止 GitHub Search、未审计项目主试航、评分和排名。"
+        }
+      ]
+    },
+    {
+      "id": "product_vibe_coding_prototype",
+      "displayName": "Vibe Coding 产品原型试航",
+      "applicableRoleStarPointIds": [
+        "ai-application-product-assistant",
+        "ai-product-manager-assistant"
+      ],
+      "taskGoal": "基于用户确认场景，用 Vibe Coding 或低代码原型工具产出一个可解释的 AI 功能原型概念、PRD 摘要、用户流程、验收指标和迭代清单。",
+      "userInputs": [
+        "用户确认的业务场景、目标用户和真实经历",
+        "希望解决的具体问题或流程缺口",
+        "可使用的公开样例数据或脱敏资料",
+        "可投入时间、原型工具熟悉度和展示方式",
+        "必须排除的隐私、版权、专业审核或生产交付边界"
+      ],
+      "steps": [
+        {
+          "stepId": "problem_frame",
+          "title": "问题定义",
+          "instruction": "把用户场景写成目标用户、现有痛点、期望变化、已知限制和不可做事项。"
+        },
+        {
+          "stepId": "prd_summary",
+          "title": "PRD 摘要",
+          "instruction": "形成目标、核心流程、角色、输入输出、验收指标、失败兜底和人工复核节点。"
+        },
+        {
+          "stepId": "prototype_prompt",
+          "title": "原型提示词",
+          "instruction": "为 Cursor、v0、Lovable 或类似工具准备原型提示词，并记录 AI 生成内容如何被人工修改。"
+        },
+        {
+          "stepId": "flow_and_acceptance",
+          "title": "流程与验收",
+          "instruction": "画出 3-5 步用户流程，列出验收指标、异常分支和用户反馈收集方式。"
+        },
+        {
+          "stepId": "iteration_checklist",
+          "title": "迭代清单",
+          "instruction": "根据边界、反馈和风险，整理下一轮需要补充的资料、角色访谈和验证问题。"
+        }
+      ],
+      "outputModules": [
+        "产品问题定义",
+        "PRD 摘要",
+        "用户流程",
+        "原型提示词与人工修改说明",
+        "验收指标",
+        "失败兜底和人工复核",
+        "迭代清单",
+        "适航成果包摘要"
+      ],
+      "boundaryNotes": [
+        "原型用于理解和表达场景，不代表真实上线产品。",
+        "Vibe Coding 生成内容必须标注 AI 使用、人工修改和核验方式。",
+        "脱敏样例数据只能用于演示，不得包含个人隐私或企业内部资料。",
+        "用户真实贡献是问题定义、场景拆解、原型约束和复盘，不是完整工程交付。"
+      ],
+      "forbiddenClaims": [
+        "不得把原型写成生产级上线系统或企业交付。",
+        "不得把 AI 生成界面写成用户独立开发完整产品。",
+        "不得输出能力认证、岗位胜任证明、offer / 录用概率、企业筛选、简历包装或复杂评分。",
+        "不得声称产品原型证明用户一定适合某岗位。"
+      ],
+      "reviewMetrics": [
+        "是否有明确用户、问题、场景和不做事项",
+        "是否有可点击或可讲解的低保真原型概念",
+        "是否有验收指标、失败兜底和人工复核节点",
+        "是否记录 AI 生成、人工修改和核验过程",
+        "是否把原型边界与真实生产交付区分开",
+        "是否能转成适航成果包中的产品模块"
+      ],
+      "sampleEvidenceNotes": [
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "P1-D Lite 明确产品类 pilot task 为 Vibe Coding prototype pilot。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "产品、用户、PRD、指标、AI 应用、AIGC 等信号仅作当前样本趋势参考。"
+        }
+      ]
+    },
+    {
+      "id": "operations_ai_experience_camp",
+      "displayName": "AI 工具体验营运营方案试航",
+      "applicableRoleStarPointIds": [
+        "ai-content-operations",
+        "ai-community-operations",
+        "ai-event-operations"
+      ],
+      "taskGoal": "设计一个低风险 AI 工具体验营运营方案，覆盖目标人群、活动节奏、内容日历、AI 工具任务、反馈闭环、复盘指标和风险边界。",
+      "userInputs": [
+        "用户确认的内容、社群、活动、客服、培训或运营经历",
+        "体验营目标人群和工具主题",
+        "可用渠道、活动周期、参与人数假设和素材来源",
+        "AI 工具清单、任务难度和参与者基础",
+        "隐私、版权、平台规则、未成年人或专业咨询边界"
+      ],
+      "steps": [
+        {
+          "stepId": "audience_and_goal",
+          "title": "人群与目标",
+          "instruction": "定义体验营目标人群、参与动机、入门门槛、活动目标和不承诺结果。"
+        },
+        {
+          "stepId": "rhythm_design",
+          "title": "节奏设计",
+          "instruction": "设计 1-7 天活动节奏，包含报名、预热、任务发布、答疑、提醒、提交和复盘。"
+        },
+        {
+          "stepId": "ai_tool_tasks",
+          "title": "AI 工具任务",
+          "instruction": "为每一天或每个环节设计 AI 工具体验任务、输入材料、完成标准和人工审核方式。"
+        },
+        {
+          "stepId": "content_calendar",
+          "title": "内容日历",
+          "instruction": "准备内容主题、发布渠道、话术、素材来源、版权说明和备选内容。"
+        },
+        {
+          "stepId": "feedback_loop",
+          "title": "反馈闭环",
+          "instruction": "设计报名、到场、任务完成、反馈提交、二次交流或复盘指标，说明这些指标只用于活动改进。"
+        },
+        {
+          "stepId": "risk_boundary",
+          "title": "风险边界",
+          "instruction": "列出隐私、版权、平台规则、专业建议、AI 事实核验和用户退出机制。"
+        }
+      ],
+      "outputModules": [
+        "目标人群与活动目标",
+        "体验营节奏表",
+        "AI 工具任务卡",
+        "内容日历",
+        "主持 / 助教话术",
+        "反馈表与复盘指标",
+        "风险边界和应急预案",
+        "适航成果包摘要"
+      ],
+      "boundaryNotes": [
+        "该任务是 AI 工具体验营运营方案试航，不是泛泛的运营方案。",
+        "复盘指标只用于活动设计和用户反馈改进，不代表商业转化承诺。",
+        "不得使用未经授权的真实用户隐私、社群聊天记录或客户资料。",
+        "AI 输出必须经过事实核验、版权检查和人工改写。"
+      ],
+      "forbiddenClaims": [
+        "不得承诺报名、到场、转化、留存、收入或平台曝光结果。",
+        "不得把未执行方案写成真实活动成绩。",
+        "不得把 AI 输出写成未经审核的原创内容或专业建议。",
+        "不得输出能力认证、岗位胜任证明、offer / 录用概率、企业筛选、简历包装或复杂评分。"
+      ],
+      "reviewMetrics": [
+        "是否明确体验营人群、目标和活动边界",
+        "是否有具体节奏、任务卡、内容日历和话术",
+        "是否设计反馈收集、复盘指标和下一轮改进",
+        "是否说明 AI 工具使用、人工审核和版权边界",
+        "是否避免承诺转化、增长或商业结果",
+        "是否能转成适航成果包中的运营模块"
+      ],
+      "sampleEvidenceNotes": [
+        {
+          "source": "docs/pathfinder-p0/p1-d-lite-scope.md",
+          "scope": "product_definition",
+          "note": "P1-D Lite 将运营类 pilot task 锁定为 AI tool experience-camp operations pilot。"
+        },
+        {
+          "source": "scraper/cleaned/cleaned_jds.json",
+          "scope": "sample_trend_reference_only",
+          "note": "运营、内容、社群、活动、用户、反馈、AIGC 等信号仅作当前样本趋势参考。"
+        }
+      ]
+    }
+  ]
+}
