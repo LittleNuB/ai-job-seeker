@@ -761,3 +761,42 @@ Main Agent follow-up order:
   - `cd frontend && npm run build` passed.
   - `E2E_BASE_URL=http://127.0.0.1:3010 npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 10/10.
   - Browser check passed on `/pathfinder/background`: existing English "Can you..." message was replaced by a Chinese staged question, with no console error/warn.
+
+## P1-D Lite Scope Lock
+
+- Date: 2026-06-14
+- Submission deadline: 2026-06-14 17:00.
+- Trigger: product owner review concluded the current Pathfinder still feels like a fixed workflow demo. The desired experience is a low-friction product where users upload a resume or talk with AI, then see a personal AI career star map and select a role-aligned pilot task.
+- Scope document: `docs/pathfinder-p0/p1-d-lite-scope.md`.
+- Updated glossary: `CONTEXT.md`.
+- Updated agent rules: `AGENTS.md`.
+- Core promise:
+  - Users do not start by filling many fields or choosing OpenDocuments.
+  - Users start with resume upload or open-ended AI interview.
+  - Pathfinder generates a personal AI career star map, highlights top role star points, and offers pilot tasks aligned with real JD sample signals.
+- Locked P1-D Lite decisions:
+  - Use 12 role star points grouped by star fields.
+  - Highlight top 3 role star points.
+  - Use `岗位裂隙` as the internal concept and `岗位星点` as user-facing language.
+  - Use a stable 2.5D star-map workstation before submission; defer full Three.js.
+  - Keep AI interview open-ended; user can stop and generate the star map at any time.
+  - Add self-awareness signals, but they only affect ranking/explanation, not standalone recommendations.
+  - Introduce three pilot task categories:
+    - development: audited open-source project reading and scenario adaptation;
+    - product: Vibe Coding prototype pilot;
+    - operations: AI tool experience-camp operations pilot.
+  - Rename/reframe result page as `适航成果包`; Markdown remains a secondary export format.
+- Explicit non-scope before submission:
+  - full Three.js star map;
+  - GitHub Search;
+  - real RAG retrieval;
+  - new database tables or Alembic migrations;
+  - full resume parser rewrite;
+  - full generators for all three pilot task types;
+  - scoring, percentages, offer probability, certification, employer screening, or resume packaging;
+  - LLM-only role or project decisions;
+  - unreviewed open-source projects as full pilot packages.
+- Next dispatch plan:
+  - `FE-004 / 前端开发C`: implement low-friction entry, 2.5D role star map, three pilot task entry cards, and result-page framing.
+  - `DATA-004 / 数据方案C`: define 12 role star points, evidence wording, and three pilot task content packs.
+  - `QA-004 / QA验证B`: regression plan and execution for P1-D Lite submission readiness.

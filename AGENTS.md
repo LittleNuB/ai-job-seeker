@@ -34,6 +34,17 @@ Pathfinder must avoid:
 
 ## Current Pathfinder Scope
 
+P1-D Lite competition scope, locked for 2026-06-14 17:00 submission:
+
+- Low-friction entry: resume upload entry plus open-ended AI interview entry.
+- The long manual background form should be demoted to signal editing or fallback, not the default first impression.
+- AI interview may continue until enough signal exists; the user can stop and generate the star map at any time.
+- Recommendation should read as a 2.5D personal AI career star map with 12 role star points and top 3 highlights.
+- Role star points are user-facing representations of JD-sample-supported `岗位裂隙`; LLM may help summarize, but cannot replace JD evidence.
+- Pilot task categories for this submission: development open-source-project pilot, product Vibe Coding prototype pilot, and operations AI tool experience-camp pilot.
+- Result page should be framed as an `适航成果包`; Markdown is only an export format.
+- Three.js, GitHub Search, full resume parser rewrite, full multi-task generators, new migrations, and P1-B/P2 platform features are deferred.
+
 P1-B.1 scope:
 
 - Real user background input
