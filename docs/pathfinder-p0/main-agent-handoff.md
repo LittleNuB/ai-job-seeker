@@ -862,3 +862,25 @@ Main Agent follow-up order:
   - Resume upload remains a frontend placeholder.
   - Product and operations pilots are presentation frames, not complete task generators.
   - Browser smoke without backend can show local save failure state; mocked E2E covers successful records API path.
+
+## QA-004 Plan Status
+
+- Date: 2026-06-14
+- Task ID: `QA-004`
+- Child role: `QA验证B`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\0039\ai-job-seeker`
+- Branch: `codex/pathfinder-qa-004`
+- Commit: `2475dd16390ec7f3445695a21d331e21bc052634 docs: add pathfinder p1d lite qa plan`
+- Baseline: created from `codex/pathfinder-p1a-integration`.
+- Delivered files:
+  - `docs/pathfinder-p0/p1-d-lite-qa-plan.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Scope:
+  - Added P1-D Lite QA plan for low-friction entry, open-ended Chinese AI follow-up, signal readiness, self-awareness boundaries, 12 role star points, Top 3 highlights, three pilot task categories, result-page outcome-package framing, Scope Guard, P1-C chain regression, 390px mobile, and live demo fallback.
+  - First phase is documentation-only; no frontend/backend runtime logic, tests, fixtures, migrations, or protected B-class dirty files changed.
+- Execution note:
+  - Full FE / BE regression should run only after FE-004 and DATA-004 are merged into the integration branch.
+  - First-phase validation is limited to `git diff --check` and `git status --short --branch` because this branch only adds QA documentation.
+- Remaining risks:
+  - Plan has not yet validated actual P1-D Lite UI/data behavior.
+  - 12 role star point evidence quality, product/operations task boundary wording, and 390px star-map layout require execution after implementation merge.
