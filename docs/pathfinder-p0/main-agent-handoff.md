@@ -807,6 +807,7 @@ Main Agent follow-up order:
 - Child role: `数据方案C`
 - Worktree: `C:\Users\LittleNub\ai-job-seeker-worktrees\pathfinder-data-004`
 - Branch: `codex/pathfinder-data-004`
+- Commit: `475d992386b291d73ad662d36290d51e77f5df06 data: add pathfinder p1d star point content`
 - Baseline: rebased onto `codex/pathfinder-p1a-integration` at `6f2721c docs: lock pathfinder p1d lite scope`; prior duplicate P1-B fixture commit was skipped by rebase because the same patch already exists on integration.
 - Delivered files:
   - `data/pathfinder/role-star-points/p1d-role-star-points.json`
@@ -821,4 +822,43 @@ Main Agent follow-up order:
 - Scope guard:
   - No GitHub Search, no new scraping, no backend / frontend runtime logic, no migration, no scoring, no probabilities, no LLM-only role or project decisions.
   - Forbidden expressions appear only in `notClaims`, `forbiddenClaims`, boundary, or non-scope contexts.
-- Commit: created after this status entry; see child delegation report for final local commit hash and validation results.
+
+## FE-004 Status
+
+- Task ID: `FE-004`
+- Child role: `前端开发C`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\0b24\ai-job-seeker`
+- Branch: `codex/pathfinder-fe-004`
+- Commit: `e2feb1b79dbfec0ee45679cf557e6173e3fdca1b feat: polish pathfinder p1d lite experience`
+- Delivered files:
+  - `frontend/src/features/pathfinder/p1d-pages.tsx`
+  - `frontend/src/features/pathfinder/components.tsx`
+  - `frontend/src/app/pathfinder/page.tsx`
+  - `frontend/src/app/pathfinder/background/page.tsx`
+  - `frontend/src/app/pathfinder/recommendation/page.tsx`
+  - `frontend/src/app/pathfinder/trial/page.tsx`
+  - `frontend/src/app/pathfinder/result/page.tsx`
+  - `frontend/src/app/pathfinder/layout.tsx`
+  - `frontend/e2e/pathfinder.spec.ts`
+  - `docs/pathfinder-p0/p1-d-lite-frontend-implementation.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Runtime behavior:
+  - `/pathfinder` now starts with resume-upload placeholder and open-ended AI interview entry.
+  - `/pathfinder/background` exposes open-ended interview, user stop-to-generate action, signal readiness, self-awareness signal prompts, and demoted manual fallback.
+  - `/pathfinder/recommendation` renders a stable 2.5D star-map workstation with 12 role star points, four star fields, Top 3 highlights, click-to-explore role details, and three pilot task entry cards.
+  - Existing audited open-source project trial generation remains runnable; product and operations cards are framed as guided pilot concepts only.
+  - `/pathfinder/result` is reframed as an `适航成果包` with role-star conclusion, outcome package, evidence/boundary, and 3/7 day polishing plan. Markdown remains a secondary export.
+- Validation:
+  - `cd frontend && npm run test:safety` passed.
+  - `cd frontend && npm run lint` passed.
+  - `cd frontend && npm run build` passed.
+  - `cd frontend && npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 8 passed.
+  - Browser smoke checked `/pathfinder`, `/pathfinder/background`, `/pathfinder/recommendation`, `/pathfinder/result`.
+  - 390px mobile star map check passed with `scrollWidth=375` and viewport width `390`.
+- Scope guard:
+  - No Three.js, GitHub Search, backend API, migration, RAG main path, scores, percentages, offer probability, capability certification, employer screening, or resume packaging added.
+  - No forbidden B-class dirty files touched.
+- Remaining risks:
+  - Resume upload remains a frontend placeholder.
+  - Product and operations pilots are presentation frames, not complete task generators.
+  - Browser smoke without backend can show local save failure state; mocked E2E covers successful records API path.

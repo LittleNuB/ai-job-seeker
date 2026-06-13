@@ -6,10 +6,10 @@ import type { ReactNode } from "react";
 
 const steps = [
   { href: "/pathfinder", label: "入口" },
-  { href: "/pathfinder/background", label: "背景" },
+  { href: "/pathfinder/background", label: "信号" },
   { href: "/pathfinder/recommendation", label: "星图" },
-  { href: "/pathfinder/trial", label: "试航" },
-  { href: "/pathfinder/result", label: "结果" },
+  { href: "/pathfinder/trial", label: "适航" },
+  { href: "/pathfinder/result", label: "成果包" },
 ];
 
 export function PathfinderShell({ children }: { children: ReactNode }) {
@@ -43,7 +43,7 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
             </span>
             <div>
               <div className="text-sm font-semibold text-teal-200">
-                实岗试航 · 作品集起点
+                真实背景 · 证据链试航
               </div>
               <div className="text-xl font-semibold tracking-normal text-white">
                 寻径星图
@@ -52,7 +52,7 @@ export function PathfinderShell({ children }: { children: ReactNode }) {
           </Link>
           <nav
             aria-label="寻径星图流程"
-            className="flex gap-2 overflow-x-auto pb-1 lg:pb-0"
+            className="flex flex-wrap gap-2"
           >
             {steps.map((step, index) => {
               const active = pathname === step.href;

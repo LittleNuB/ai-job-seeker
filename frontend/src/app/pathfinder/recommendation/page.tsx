@@ -1,4 +1,4 @@
-import { PathfinderRecommendationPage } from "@/features/pathfinder/pages";
+import { PathfinderRecommendationPage } from "@/features/pathfinder/p1d-pages";
 
 export default function Page() {
   return <PathfinderRecommendationPage />;
