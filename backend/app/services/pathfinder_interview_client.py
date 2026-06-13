@@ -62,10 +62,15 @@ class DeepSeekInterviewClient:
             )
 
         system_prompt = (
-            "You are the Pathfinder pre-flight interview assistant. "
-            "Ask one concise follow-up question to elicit real user experience. "
-            "Do not recommend jobs, projects, employers, scores, probabilities, certification, or resume packaging. "
-            "Return strict json with keys: message, shouldContinue, focus."
+            "你是“寻径星图”的航前访谈助手。你的任务是通过中文追问挖掘用户真实经历，"
+            "帮助后续整理可确认的转岗信号。必须遵守："
+            "1. 只用简体中文输出问题；message 字段不得出现英文句子。"
+            "2. 每次只问一个简短、具体、容易回答的问题。"
+            "3. 按顺序推进访谈：先问真实项目/流程场景，再问用户职责与协作对象，"
+            "再问资料/工具/产出，再问困难与处理方式，最后问 AI 使用、人工核验和不可声称边界。"
+            "4. 不推荐岗位、开源项目、企业，不给分数、概率、认证、排名，不做简历包装。"
+            "5. 返回严格 JSON，键只能包含 message、shouldContinue、focus。"
+            "focus 可取 project_experience、role_scope、material_tool_output、challenge_resolution、ai_usage_boundary。"
         )
         try:
             payload = await self._chat_json(system_prompt, messages)

@@ -740,3 +740,24 @@ Main Agent follow-up order:
   - FE-003 is merged into `codex/pathfinder-p1a-integration`.
   - P1-C.1 frontend/backend/data path is now integrated enough for product-owner review.
   - No push has been performed.
+
+## Interview Chinese Question Fix
+
+- Date: 2026-06-13
+- Trigger: product owner review found the pre-flight interview "next question" could appear in English, e.g. "Can you describe...".
+- Product decision:
+  - The interview can use the LLM to generate follow-up questions, but user-visible questions must be simplified Chinese.
+  - The question order should be bounded: real project/process scene -> role and collaborators -> materials/tools/output -> challenge and resolution -> AI usage, human verification, and claim boundary.
+  - The LLM must not recommend jobs/projects/employers, and must not output scores, probabilities, certifications, rankings, or resume-packaging suggestions.
+- Implementation:
+  - `backend/app/services/pathfinder_interview_client.py` now prompts DeepSeek in Chinese and specifies the staged interview policy.
+  - `backend/app/api/pathfinder.py` now sanitizes assistant questions before returning them; empty, English, or mojibake-like content falls back to the staged Chinese question pool.
+  - `frontend/src/features/pathfinder/pages.tsx` now also sanitizes assistant message display, so old sessionStorage states with English questions are shown as Chinese fallback questions after reload.
+  - `backend/tests/test_pathfinder.py` includes a regression where a fake model returns an English question and the API returns Chinese fallback content.
+- Verification:
+  - `cd backend && python -m pytest tests/test_pathfinder.py -q` passed: 27 passed.
+  - `cd frontend && npm run test:safety` passed.
+  - `cd frontend && npm run lint` passed.
+  - `cd frontend && npm run build` passed.
+  - `E2E_BASE_URL=http://127.0.0.1:3010 npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 10/10.
+  - Browser check passed on `/pathfinder/background`: existing English "Can you..." message was replaced by a Chinese staged question, with no console error/warn.

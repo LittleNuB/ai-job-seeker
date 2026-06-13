@@ -342,6 +342,8 @@ async def test_create_interview_session_uses_no_key_fallback_and_stores_analysis
     assert body["messages"][0]["role"] == "user"
     assert body["messages"][1]["role"] == "assistant"
     assert body["messages"][1]["modelStatus"] == "no_key"
+    assert "Can you" not in body["messages"][1]["content"]
+    assert "请" in body["messages"][1]["content"]
     assert "DEEPSEEK" not in json.dumps(body)
 
     async for session in app.dependency_overrides[get_db]():
@@ -352,6 +354,30 @@ async def test_create_interview_session_uses_no_key_fallback_and_stores_analysis
         assert record.match_score is None
         assert json.loads(record.input_text)["recordKind"] == "interview_session"
         assert json.loads(record.result)["schemaVersion"] == "p1c.v1"
+
+
+@pytest.mark.asyncio()
+async def test_interview_turn_replaces_english_model_question_with_chinese_fallback(client: AsyncClient) -> None:
+    override_interview_client(
+        FakeInterviewClient(
+            question_payload={
+                "message": "Can you describe a specific challenge you faced in your previous role and how you overcame it?",
+                "shouldContinue": True,
+                "focus": "challenge_resolution",
+            }
+        )
+    )
+    create_response = await client.post(
+        "/api/pathfinder/interview/sessions",
+        json={"schemaVersion": "p1c.v1", "initialUserInput": "我做过客服知识库整理和工单流程归类。"},
+        headers=auth_headers(),
+    )
+    assert create_response.status_code == 201
+
+    assistant_message = create_response.json()["messages"][1]
+    assert assistant_message["modelStatus"] == "ok"
+    assert "Can you" not in assistant_message["content"]
+    assert "请" in assistant_message["content"]
 
 
 @pytest.mark.asyncio()

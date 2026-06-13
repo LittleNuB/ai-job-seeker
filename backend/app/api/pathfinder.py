@@ -95,6 +95,21 @@ def get_interview_llm_client() -> DeepSeekInterviewClient:
 
 InterviewClientDep = Annotated[DeepSeekInterviewClient, Depends(get_interview_llm_client)]
 
+CHINESE_INTERVIEW_FALLBACK_QUESTIONS = [
+    (
+        "请先讲一个你亲自参与过的真实项目或流程场景：当时要解决什么问题，"
+        "你具体负责哪一部分？"
+    ),
+    "这个经历里你主要和谁协作？你需要理解或影响哪些人的需求、流程或决策？",
+    "你当时处理了哪些资料、数据、文档或工具？最后形成了什么可展示的产出？",
+    "这个过程中最难的一点是什么？你当时怎么判断、推进或调整？",
+    (
+        "如果把这段经历用于 AI 求职试航，哪些内容可以如实展示，"
+        "哪些内容需要脱敏、人工核验或明确不能声称？"
+    ),
+]
+MOJIBAKE_MARKERS = ("鎴", "璇", "鐢", "锛", "€", "涓")
+
 
 @router.post(
     "/interview/sessions",
@@ -606,12 +621,38 @@ async def _build_assistant_message(
         content = str(model_result.payload.get("message") or "").strip()
     if not content:
         content = "模型暂时不可用。请继续补充一个真实项目经历，我会记录后用于候选信号确认。"
+    content = _ensure_chinese_interview_question(content, messages)
     return _new_interview_message(
         "assistant",
         content,
         model_provider=model_result.provider,
         model_status=model_result.status if model_result.status in {"ok", "no_key", "error", "invalid_json"} else "fallback",
     )
+
+
+def _ensure_chinese_interview_question(content: str, messages: list[InterviewMessage]) -> str:
+    text = content.strip()
+    if not _is_usable_chinese_question(text):
+        return _fallback_interview_question(messages)
+    return text
+
+
+def _is_usable_chinese_question(text: str) -> bool:
+    if not text:
+        return False
+    if any(marker in text for marker in MOJIBAKE_MARKERS):
+        return False
+    cjk_count = sum(1 for char in text if "\u4e00" <= char <= "\u9fff")
+    ascii_letter_count = sum(1 for char in text if char.isascii() and char.isalpha())
+    if cjk_count < 6:
+        return False
+    return ascii_letter_count <= max(18, cjk_count)
+
+
+def _fallback_interview_question(messages: list[InterviewMessage]) -> str:
+    answered_turns = sum(1 for message in messages if message.role == "user")
+    index = min(max(answered_turns - 1, 0), len(CHINESE_INTERVIEW_FALLBACK_QUESTIONS) - 1)
+    return CHINESE_INTERVIEW_FALLBACK_QUESTIONS[index]
 
 
 def _build_signal_extraction(

@@ -157,6 +157,32 @@ const pathVisualMeta: Record<
   },
 };
 
+const interviewFallbackQuestions = [
+  "请先讲一个你亲自参与过的真实项目或流程场景：当时要解决什么问题，你具体负责哪一部分？",
+  "这个经历里你主要和谁协作？你需要理解或影响哪些人的需求、流程或决策？",
+  "你当时处理了哪些资料、数据、文档或工具？最后形成了什么可展示的产出？",
+  "这个过程中最难的一点是什么？你当时怎么判断、推进或调整？",
+  "如果把这段经历用于 AI 求职试航，哪些内容可以如实展示，哪些内容需要脱敏、人工核验或明确不能声称？",
+];
+
+function isUsableChineseInterviewQuestion(content: string): boolean {
+  const cjkCount = Array.from(content).filter(
+    (char) => char >= "\u4e00" && char <= "\u9fff",
+  ).length;
+  const asciiLetterCount = Array.from(content).filter(
+    (char) => /^[A-Za-z]$/.test(char),
+  ).length;
+  const hasMojibake = /[鎴璇鐢锛€]/.test(content);
+  return Boolean(content.trim()) && !hasMojibake && cjkCount >= 6 && asciiLetterCount <= Math.max(18, cjkCount);
+}
+
+function displayInterviewContent(content: string, index: number, role: string): string {
+  if (role !== "assistant" || isUsableChineseInterviewQuestion(content)) {
+    return content;
+  }
+  return interviewFallbackQuestions[Math.min(index, interviewFallbackQuestions.length - 1)];
+}
+
 export function PathfinderEntryPage() {
   return (
     <div>
@@ -347,7 +373,7 @@ export function PathfinderBackgroundPage() {
 
           <div className="mt-5 space-y-3">
             {state.interviewMessages.length ? (
-              state.interviewMessages.map((message) => (
+              state.interviewMessages.map((message, index) => (
                 <div
                   key={message.id}
                   className={`rounded-md border p-3 text-sm leading-6 ${
@@ -359,7 +385,7 @@ export function PathfinderBackgroundPage() {
                   <div className="mb-1 text-xs font-semibold text-slate-500">
                     {message.role === "user" ? "你的回答" : "下一问"}
                   </div>
-                  {message.content}
+                  {displayInterviewContent(message.content, index, message.role)}
                 </div>
               ))
             ) : (
