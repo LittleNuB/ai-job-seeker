@@ -103,6 +103,41 @@ class DeepSeekInterviewClient:
             return InterviewModelResult(status="error", payload={"signals": []}, model=self.model, error=_safe_error(exc))
         return InterviewModelResult(status="ok", payload=payload, model=self.model)
 
+    async def extract_resume_signals(self, resume_text: str) -> InterviewModelResult:
+        if not self.is_configured:
+            return InterviewModelResult(
+                status="no_key",
+                payload={"signals": [], "summary": "未配置模型密钥；将使用规则 fallback 提取有限背景信号。"},
+                model=self.model,
+                error="DEEPSEEK_API_KEY is not configured",
+            )
+
+        system_prompt = (
+            "你是“寻径星图”的简历信号整理助手。你的任务是把用户简历文本整理成可由用户确认的背景信号，"
+            "只允许返回严格 JSON。必须遵守："
+            "1. 只整理用户已经写出的真实经历、背景、工具接触、求职目标、约束或风险边界；"
+            "2. 不推荐岗位、项目或企业，不判断是否适合某岗位，不给任何分数、百分比、排序、offer 概率或认证；"
+            "3. 不做简历包装、改写、润色或夸大，不补写用户没有提供的经历；"
+            "4. signals 数组中的每项只能包含 signalId、category、label、evidenceText、sourceMessageIds、confidence、status；"
+            "5. category 只能取 industry_background、domain_material、project_experience、communication、data_handling、"
+            "ai_tool_usage、technical_foundation、career_constraint、risk、goal；"
+            "6. evidenceText 只能摘取或概括简历中的短证据，不要返回简历全文。"
+            "返回 JSON 形如 {\"summary\":\"短摘要\",\"signals\":[...]}。"
+        )
+        messages = [
+            {
+                "role": "user",
+                "content": f"请从以下简历文本中提取可确认背景信号：\n\n{resume_text}",
+            }
+        ]
+        try:
+            payload = await self._chat_json(system_prompt, messages)
+        except InterviewModelJSONError:
+            raise
+        except Exception as exc:
+            return InterviewModelResult(status="error", payload={"signals": []}, model=self.model, error=_safe_error(exc))
+        return InterviewModelResult(status="ok", payload=payload, model=self.model)
+
     async def _chat_json(self, system_prompt: str, messages: list[dict[str, str]]) -> dict[str, Any]:
         client = self._get_client()
         response = await client.chat.completions.create(

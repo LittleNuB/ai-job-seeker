@@ -5,6 +5,8 @@ from docx import Document
 
 from ..config import get_settings
 
+RESUME_TEXT_EXTENSIONS = {"txt", "md"}
+
 
 async def extract_text(content: bytes, filename: str) -> tuple[str, str]:
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -17,6 +19,39 @@ async def extract_text(content: bytes, filename: str) -> tuple[str, str]:
         return await _extract_image(content, filename), "image"
     else:
         raise ValueError(f"不支持的文件类型：.{ext}")
+
+
+async def extract_resume_text(content: bytes, filename: str) -> tuple[str, str]:
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext in RESUME_TEXT_EXTENSIONS:
+        return _decode_plain_text(content), ext
+    if ext == "doc":
+        try:
+            text, _ = await extract_text(content, filename)
+        except Exception:
+            text = _decode_plain_text(content)
+        return text, "doc"
+    text, parsed_type = await extract_text(content, filename)
+    return text, parsed_type
+
+
+def _decode_plain_text(content: bytes) -> str:
+    if not content:
+        raise ValueError("文本文件为空")
+
+    for encoding in ("utf-8-sig", "utf-16", "gb18030"):
+        try:
+            text = content.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        text = content.decode("utf-8", errors="replace")
+
+    text = text.replace("\x00", "").strip()
+    if not text:
+        raise ValueError("文本文件中未提取到内容")
+    return text
 
 
 def _extract_pdf(content: bytes) -> str:

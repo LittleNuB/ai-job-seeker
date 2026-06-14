@@ -1,4 +1,4 @@
-# 寻径星图主 Agent Handoff
+﻿# 寻径星图主 Agent Handoff
 
 更新时间：2026-06-07
 
@@ -901,3 +901,32 @@ Main Agent follow-up order:
   - No GitHub Search.
   - No real RAG.
   - No score, percentage, offer probability, certification, employer screening, resume packaging, or LLM-only final role/project decision.
+## BE-006 Status
+
+- Task ID: `BE-006`
+- Child role: `后端开发C`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\54f7\ai-job-seeker`
+- Branch: `codex/pathfinder-be-006`
+- Commit: `577a9e6a966e178be493746396d740c6e669d45d feat: add pathfinder resume parsing API`
+- Scope: Added a minimal Pathfinder resume parsing backend API for P1-D Lite upload entry.
+- Delivered files:
+  - `backend/app/api/pathfinder.py`
+  - `backend/app/schemas/pathfinder.py`
+  - `backend/app/services/pathfinder_interview_client.py`
+  - `backend/app/services/file_parser.py`
+  - `backend/tests/test_pathfinder.py`
+  - `docs/pathfinder-p0/p1-d-lite-resume-parsing-backend.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- API: `POST /api/pathfinder/resume/parse`, multipart `file` plus optional `source=resume_upload`.
+- Response: returns `source`, `fileName`, `fileType`, `textLength`, `modelStatus`, `signals`, `readiness`, `missingSignalTypes`, and `userMessage`.
+- Safety behavior: does not return or persist full resume text; signals remain `candidate`; forbidden model fields trigger safe fallback.
+- LLM behavior: uses the existing DeepSeek/OpenAI-compatible client path with `DEEPSEEK_API_KEY` / `LLM_API_KEY`; invalid JSON, no key, API errors, forbidden fields, or invalid schema output downgrade to rule fallback instead of 500.
+- Storage: no new table and no Alembic migration.
+- Scope guard: no GitHub Search, no RAG, no scoring, no percentage, no offer probability, no certification, no employer screening, no resume packaging, no frontend changes.
+- Validation:
+  - `cd backend && python -m pytest tests/test_pathfinder.py -q` passed: 33 passed.
+  - `cd backend && python -m pytest` passed: 99 passed.
+  - `git diff --check` passed; Git printed CRLF normalization warnings only.
+  - `git ls-files --others --exclude-standard backend/alembic/versions` returned no files.
+- Review recommendation: Main Agent review recommended before merging because this introduces the real upload-entry backend contract for FE integration.
+

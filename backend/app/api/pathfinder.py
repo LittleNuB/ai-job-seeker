@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Response, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -44,6 +44,7 @@ from app.schemas.pathfinder import (
     PathfinderRecordStatus,
     PathfinderRecommendationRequest,
     PathfinderRecommendationResponse,
+    PathfinderResumeParseResponse,
     PathfinderResultRequest,
     PathfinderResultResponse,
     PathfinderTrialAnswersResponse,
@@ -62,6 +63,7 @@ from app.schemas.pathfinder import (
     pydantic_to_json,
 )
 from app.services.pathfinder_interview_client import DeepSeekInterviewClient, InterviewModelJSONError, InterviewModelResult
+from app.services.file_parser import extract_resume_text
 from app.services.pathfinder_project_service import list_approved_projects
 from app.services.pathfinder_recommendation_service import SCOPE_DISCLAIMER, build_recommendation_run
 from app.services.pathfinder_trial_package_service import generate_trial_package_candidate
@@ -95,6 +97,41 @@ def get_interview_llm_client() -> DeepSeekInterviewClient:
 
 InterviewClientDep = Annotated[DeepSeekInterviewClient, Depends(get_interview_llm_client)]
 
+RESUME_PARSE_ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "txt", "md"}
+RESUME_PARSE_MAX_FILE_SIZE = 10 * 1024 * 1024
+RESUME_PARSE_MIN_TEXT_LENGTH = 80
+RESUME_PARSE_MODEL_TEXT_LIMIT = 30000
+RESUME_SIGNAL_EVIDENCE_LIMIT = 180
+RESUME_REQUIRED_SIGNAL_TYPES = (
+    "background_source",
+    "real_experience",
+    "concrete_action",
+    "tool_exposure",
+    "career_goal",
+    "constraint_or_self_awareness",
+)
+RESUME_ACTION_KEYWORDS = (
+    "负责",
+    "参与",
+    "主导",
+    "搭建",
+    "开发",
+    "设计",
+    "整理",
+    "分析",
+    "推进",
+    "优化",
+    "交付",
+    "built",
+    "developed",
+    "implemented",
+    "led",
+    "owned",
+    "managed",
+    "analyzed",
+    "created",
+)
+
 CHINESE_INTERVIEW_FALLBACK_QUESTIONS = [
     (
         "请先讲一个你亲自参与过的真实项目或流程场景：当时要解决什么问题，"
@@ -109,6 +146,83 @@ CHINESE_INTERVIEW_FALLBACK_QUESTIONS = [
     ),
 ]
 MOJIBAKE_MARKERS = ("鎴", "璇", "鐢", "锛", "€", "涓")
+
+
+@router.post("/resume/parse", response_model=PathfinderResumeParseResponse)
+async def parse_pathfinder_resume(
+    user_id: UserIdDep,
+    llm_client: InterviewClientDep,
+    file: UploadFile = File(...),
+    source: str = Form(default="resume_upload"),
+) -> PathfinderResumeParseResponse:
+    _ = user_id
+    if source != "resume_upload":
+        raise HTTPException(status_code=422, detail="source must be resume_upload")
+
+    filename = file.filename or "resume"
+    ext = _file_extension(filename)
+    if ext not in RESUME_PARSE_ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="请上传 PDF、Word、TXT 或 Markdown 简历文件")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="上传文件为空")
+    if len(content) > RESUME_PARSE_MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="简历文件不能超过 10MB")
+
+    try:
+        resume_text, file_type = await extract_resume_text(content, filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="简历解析失败，请转换为 PDF、DOCX、TXT 或 Markdown 后重试") from exc
+
+    resume_text = _normalize_resume_text(resume_text)
+    text_length = len(resume_text)
+    if text_length < RESUME_PARSE_MIN_TEXT_LENGTH:
+        raise HTTPException(status_code=400, detail="简历文本太短，暂时无法整理背景信号，请补充项目经历、工具使用和求职目标后重试")
+
+    model_text = resume_text[:RESUME_PARSE_MODEL_TEXT_LIMIT]
+    model_status = "fallback"
+    model_provider = "deepseek"
+    model_name = getattr(llm_client, "model", None)
+    signals: list[ExtractedProfileSignal] = []
+
+    try:
+        model_result = await llm_client.extract_resume_signals(model_text)
+    except InterviewModelJSONError:
+        model_result = InterviewModelResult(status="invalid_json", payload={}, error="invalid_json")
+    except Exception:
+        model_result = InterviewModelResult(status="error", payload={}, error="model_error")
+
+    model_provider = model_result.provider
+    model_name = model_result.model
+    if model_result.status == "ok":
+        try:
+            signals = _resume_signals_from_model_result(model_result)
+        except ValueError:
+            signals = []
+        else:
+            model_status = "ok" if signals else "fallback"
+
+    if not signals:
+        signals = _fallback_resume_signals(model_text)
+        model_status = "fallback"
+
+    readiness, missing_signal_types = _compute_resume_readiness(signals)
+    return PathfinderResumeParseResponse(
+        source="resume_upload",
+        fileName=filename,
+        fileType=file_type if file_type in RESUME_PARSE_ALLOWED_EXTENSIONS else ext,
+        textLength=text_length,
+        modelProvider=model_provider,
+        modelName=model_name,
+        modelStatus=model_status,
+        signals=signals,
+        readiness=readiness,
+        missingSignalTypes=missing_signal_types,
+        userMessage=_resume_user_message(model_status, readiness, missing_signal_types, text_length),
+    )
 
 
 @router.post(
@@ -600,6 +714,247 @@ async def _get_owned_interview_record(
     if input_payload.get("recordKind") != "interview_session" and result_payload.get("recordKind") != "interview_session":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
     return record
+
+
+def _file_extension(filename: str | None) -> str:
+    if not filename or "." not in filename:
+        return ""
+    return filename.rsplit(".", 1)[-1].lower()
+
+
+def _normalize_resume_text(text: str) -> str:
+    lines = [line.strip() for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    return "\n".join(line for line in lines if line)
+
+
+def _resume_signals_from_model_result(model_result: InterviewModelResult) -> list[ExtractedProfileSignal]:
+    forbidden = find_forbidden_keys(model_result.payload)
+    if forbidden:
+        raise ValueError("forbidden model field")
+
+    raw_signals = model_result.payload.get("signals") if isinstance(model_result.payload, dict) else []
+    if not isinstance(raw_signals, list):
+        raise ValueError("signals must be a list")
+
+    signals: list[ExtractedProfileSignal] = []
+    for index, raw_signal in enumerate(raw_signals, start=1):
+        if not isinstance(raw_signal, dict):
+            raise ValueError("signal must be an object")
+        label = str(raw_signal.get("label") or "").strip()
+        evidence = str(raw_signal.get("evidenceText") or "").strip()
+        if not label or not evidence:
+            continue
+        source_message_ids = raw_signal.get("sourceMessageIds")
+        if not isinstance(source_message_ids, list) or not all(isinstance(item, str) for item in source_message_ids):
+            source_message_ids = ["resume_upload"]
+        signal_payload = {
+            "signalId": str(raw_signal.get("signalId") or f"resume-sig-{index}"),
+            "category": raw_signal.get("category"),
+            "label": _truncate_resume_text(label, 80),
+            "evidenceText": _truncate_resume_text(evidence, RESUME_SIGNAL_EVIDENCE_LIMIT),
+            "sourceMessageIds": source_message_ids or ["resume_upload"],
+            "confidence": raw_signal.get("confidence") or "needs_user_review",
+            "status": "candidate",
+        }
+        try:
+            signals.append(ExtractedProfileSignal.model_validate(signal_payload))
+        except ValidationError as exc:
+            raise ValueError("invalid signal") from exc
+    return signals[:12]
+
+
+def _fallback_resume_signals(text: str) -> list[ExtractedProfileSignal]:
+    lines = _candidate_resume_lines(text)
+    candidates: list[tuple[str, str, str, tuple[str, ...]]] = [
+        (
+            "resume-background",
+            "industry_background",
+            "背景来源",
+            (
+                "专业",
+                "本科",
+                "硕士",
+                "学校",
+                "教育",
+                "行业",
+                "engineering",
+                "university",
+                "master",
+                "bachelor",
+                "background",
+            ),
+        ),
+        (
+            "resume-project",
+            "project_experience",
+            "真实项目或流程经历",
+            (
+                "项目",
+                "实习",
+                "工作",
+                "负责",
+                "参与",
+                "主导",
+                "project",
+                "intern",
+                "worked",
+                "led",
+                "built",
+                "developed",
+                "implemented",
+            ),
+        ),
+        (
+            "resume-communication",
+            "communication",
+            "协作或沟通信号",
+            ("沟通", "协作", "客户", "用户", "stakeholder", "collaborat", "customer", "user"),
+        ),
+        (
+            "resume-data",
+            "data_handling",
+            "资料或数据处理",
+            ("资料", "数据", "表格", "分析", "调研", "excel", "sql", "dashboard", "research", "report"),
+        ),
+        (
+            "resume-technical",
+            "technical_foundation",
+            "技术或工具基础",
+            ("python", "sql", "javascript", "typescript", "react", "api", "docker", "git", "tableau", "figma"),
+        ),
+        (
+            "resume-ai-tool",
+            "ai_tool_usage",
+            "AI 工具接触",
+            ("chatgpt", "copilot", "deepseek", "llm", "ai", "prompt", "提示词", "大模型", "智能体", "agent"),
+        ),
+        (
+            "resume-goal",
+            "goal",
+            "求职目标",
+            ("目标", "求职", "应聘", "转型", "方向", "希望", "target", "seeking", "apply", "looking for"),
+        ),
+        (
+            "resume-constraint",
+            "career_constraint",
+            "约束或自我认知",
+            ("时间", "城市", "远程", "约束", "限制", "脱敏", "隐私", "边界", "remote", "part-time", "constraint"),
+        ),
+    ]
+
+    signals: list[ExtractedProfileSignal] = []
+    for signal_id, category, label, keywords in candidates:
+        line = _first_resume_line(lines, keywords)
+        if line is None:
+            continue
+        signals.append(
+            _make_resume_signal(
+                signal_id=signal_id,
+                category=category,
+                label=label,
+                evidence=line,
+            )
+        )
+    return signals
+
+
+def _candidate_resume_lines(text: str) -> list[str]:
+    lines: list[str] = []
+    for raw_line in text.split("\n"):
+        line = " ".join(raw_line.strip().split())
+        if len(line) < 6:
+            continue
+        if "@" in line:
+            continue
+        digits = sum(1 for char in line if char.isdigit())
+        if digits >= 8 and digits > len(line) // 3:
+            continue
+        lines.append(_truncate_resume_text(line, RESUME_SIGNAL_EVIDENCE_LIMIT))
+    return lines
+
+
+def _first_resume_line(lines: list[str], keywords: tuple[str, ...]) -> str | None:
+    for line in lines:
+        if _line_contains(line, keywords):
+            return line
+    return None
+
+
+def _line_contains(line: str, keywords: tuple[str, ...]) -> bool:
+    lower_line = line.casefold()
+    return any(keyword.casefold() in lower_line for keyword in keywords)
+
+
+def _make_resume_signal(
+    *,
+    signal_id: str,
+    category: str,
+    label: str,
+    evidence: str,
+) -> ExtractedProfileSignal:
+    return ExtractedProfileSignal.model_validate(
+        {
+            "signalId": signal_id,
+            "category": category,
+            "label": label,
+            "evidenceText": evidence,
+            "sourceMessageIds": ["resume_upload"],
+            "confidence": "needs_user_review",
+            "status": "candidate",
+        }
+    )
+
+
+def _truncate_resume_text(text: str, limit: int) -> str:
+    text = " ".join(text.strip().split())
+    if len(text) <= limit:
+        return text
+    return f"{text[: limit - 3]}..."
+
+
+def _compute_resume_readiness(signals: list[ExtractedProfileSignal]) -> tuple[str, list[str]]:
+    present = _present_resume_signal_types(signals)
+    missing = [signal_type for signal_type in RESUME_REQUIRED_SIGNAL_TYPES if signal_type not in present]
+    if "real_experience" in missing or "concrete_action" in missing:
+        return "insufficient", missing
+    if missing:
+        return "suggested_more", missing
+    return "ready", []
+
+
+def _present_resume_signal_types(signals: list[ExtractedProfileSignal]) -> set[str]:
+    present: set[str] = set()
+    for signal in signals:
+        if signal.category in {"industry_background", "domain_material", "technical_foundation"}:
+            present.add("background_source")
+        if signal.category == "project_experience":
+            present.add("real_experience")
+        if signal.category in {"ai_tool_usage", "technical_foundation", "data_handling"}:
+            present.add("tool_exposure")
+        if signal.category == "goal":
+            present.add("career_goal")
+        if signal.category in {"career_constraint", "risk"}:
+            present.add("constraint_or_self_awareness")
+        if _has_action_signal(signal):
+            present.add("concrete_action")
+    return present
+
+
+def _has_action_signal(signal: ExtractedProfileSignal) -> bool:
+    text = f"{signal.label} {signal.evidenceText}".casefold()
+    return any(keyword.casefold() in text for keyword in RESUME_ACTION_KEYWORDS)
+
+
+def _resume_user_message(model_status: str, readiness: str, missing_signal_types: list[str], text_length: int) -> str:
+    prefix = "已通过模型整理出可确认背景信号。" if model_status == "ok" else "模型暂不可用或输出未被采纳，已用规则整理有限背景信号。"
+    length_note = "简历较长，已优先处理前段核心文本。" if text_length > RESUME_PARSE_MODEL_TEXT_LIMIT else ""
+    if readiness == "ready":
+        readiness_note = "这些信号足够生成第一版星图，请先核对并确认。"
+    elif readiness == "suggested_more":
+        readiness_note = f"可以先生成星图，但建议补充：{', '.join(missing_signal_types)}。"
+    else:
+        readiness_note = "当前仍缺少真实经历或具体动作，请继续 AI 访谈补充后再生成星图。"
+    return " ".join(part for part in (prefix, readiness_note, length_note) if part)
 
 
 async def _build_assistant_message(

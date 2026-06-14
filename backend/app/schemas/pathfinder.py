@@ -411,6 +411,28 @@ class SignalExtractionResult(P1ABaseModel):
     createdAt: str
 
 
+class PathfinderResumeParseResponse(P1ABaseModel):
+    schemaVersion: Literal["p1d-resume.v1"] = "p1d-resume.v1"
+    source: Literal["resume_upload"] = "resume_upload"
+    fileName: str
+    fileType: Literal["pdf", "doc", "docx", "txt", "md"]
+    textLength: int
+    modelProvider: str = "deepseek"
+    modelName: str | None = None
+    modelStatus: Literal["ok", "fallback", "error"]
+    signals: list[ExtractedProfileSignal] = Field(default_factory=list)
+    readiness: Literal["ready", "suggested_more", "insufficient"]
+    missingSignalTypes: list[str] = Field(default_factory=list)
+    userMessage: str
+
+    @model_validator(mode="after")
+    def reject_forbidden_resume_parse_fields(self) -> "PathfinderResumeParseResponse":
+        forbidden = _find_forbidden_keys(self.model_dump(mode="json"))
+        if forbidden:
+            raise ValueError(_format_forbidden_fields_error("P1-D resume parse response", forbidden))
+        return self
+
+
 class SignalConfirmation(P1ABaseModel):
     signalId: str
     category: ExtractedProfileSignal.model_fields["category"].annotation

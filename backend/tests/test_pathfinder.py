@@ -78,7 +78,10 @@ class FakeInterviewClient:
         question_payload: dict | None = None,
         extraction_status: str = "ok",
         extraction_payload: dict | None = None,
+        resume_status: str = "ok",
+        resume_payload: dict | None = None,
         raise_invalid_json: bool = False,
+        raise_resume_invalid_json: bool = False,
     ) -> None:
         self.question_status = question_status
         self.question_payload = question_payload or {
@@ -108,7 +111,54 @@ class FakeInterviewClient:
                 },
             ],
         }
+        self.resume_status = resume_status
+        self.resume_payload = resume_payload or {
+            "summary": "Extracted resume background, project action, AI tool, goal, and constraints.",
+            "signals": [
+                {
+                    "signalId": "resume-background-1",
+                    "category": "industry_background",
+                    "label": "Engineering education and SaaS operations background",
+                    "evidenceText": "Mechanical engineering background with SaaS operations internship.",
+                    "sourceMessageIds": ["resume_upload"],
+                    "confidence": "medium",
+                },
+                {
+                    "signalId": "resume-project-1",
+                    "category": "project_experience",
+                    "label": "Built an internal knowledge base workflow",
+                    "evidenceText": "Built a Python and Notion workflow for customer FAQ triage.",
+                    "sourceMessageIds": ["resume_upload"],
+                    "confidence": "medium",
+                },
+                {
+                    "signalId": "resume-ai-1",
+                    "category": "ai_tool_usage",
+                    "label": "Used AI tools with manual review",
+                    "evidenceText": "Used ChatGPT to draft FAQ categories and manually reviewed the final output.",
+                    "sourceMessageIds": ["resume_upload"],
+                    "confidence": "medium",
+                },
+                {
+                    "signalId": "resume-goal-1",
+                    "category": "goal",
+                    "label": "AI product operations target",
+                    "evidenceText": "Target direction is AI product operations or AI solution assistant.",
+                    "sourceMessageIds": ["resume_upload"],
+                    "confidence": "medium",
+                },
+                {
+                    "signalId": "resume-constraint-1",
+                    "category": "career_constraint",
+                    "label": "Three-month transition window",
+                    "evidenceText": "Available time window is three months with remote preference.",
+                    "sourceMessageIds": ["resume_upload"],
+                    "confidence": "medium",
+                },
+            ],
+        }
         self.raise_invalid_json = raise_invalid_json
+        self.raise_resume_invalid_json = raise_resume_invalid_json
 
     async def next_question(self, messages: list[dict[str, str]]) -> InterviewModelResult:
         return InterviewModelResult(status=self.question_status, payload=self.question_payload, model="fake-deepseek")
@@ -119,6 +169,15 @@ class FakeInterviewClient:
         return InterviewModelResult(
             status=self.extraction_status,
             payload=self.extraction_payload,
+            model="fake-deepseek",
+        )
+
+    async def extract_resume_signals(self, resume_text: str) -> InterviewModelResult:
+        if self.raise_resume_invalid_json:
+            raise InterviewModelJSONError("invalid json")
+        return InterviewModelResult(
+            status=self.resume_status,
+            payload=self.resume_payload,
             model="fake-deepseek",
         )
 
@@ -319,6 +378,146 @@ async def save_answers(client: AsyncClient, record_id: str, *, complete: bool = 
     )
     assert response.status_code == 200
     return response.json()
+
+
+def sample_resume_text() -> str:
+    return "\n".join(
+        [
+            "Mechanical engineering background with SaaS operations internship.",
+            "Project: built a Python and Notion workflow for customer FAQ triage and weekly operations review.",
+            "Worked with support, product, and customer success stakeholders to classify user feedback.",
+            "Used Excel, SQL basics, and dashboard notes to analyze repeated support issues.",
+            "Used ChatGPT to draft FAQ categories, then manually reviewed every final label.",
+            "Target direction: AI product operations or AI solution assistant.",
+            "Constraint: three-month transition window, remote preference, and privacy boundary for customer data.",
+            "PRIVATE_RAW_RESUME_SHOULD_NOT_RETURN",
+        ]
+    )
+
+
+def resume_upload_files(filename: str = "resume.txt", content: str | bytes | None = None) -> dict:
+    raw_content = sample_resume_text() if content is None else content
+    if isinstance(raw_content, str):
+        raw_content = raw_content.encode("utf-8")
+    return {"file": (filename, raw_content, "text/plain")}
+
+
+@pytest.mark.asyncio()
+async def test_resume_parse_txt_upload_success_with_mock_llm(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient())
+
+    response = await client.post(
+        "/api/pathfinder/resume/parse",
+        files=resume_upload_files(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["schemaVersion"] == "p1d-resume.v1"
+    assert body["source"] == "resume_upload"
+    assert body["fileName"] == "resume.txt"
+    assert body["fileType"] == "txt"
+    assert body["textLength"] == len(sample_resume_text())
+    assert body["modelStatus"] == "ok"
+    assert body["readiness"] == "ready"
+    assert body["missingSignalTypes"] == []
+    assert len(body["signals"]) >= 5
+    assert {signal["status"] for signal in body["signals"]} == {"candidate"}
+    assert all(signal["sourceMessageIds"] == ["resume_upload"] for signal in body["signals"])
+    response_text = json.dumps(body)
+    assert "PRIVATE_RAW_RESUME_SHOULD_NOT_RETURN" not in response_text
+    assert sample_resume_text() not in response_text
+    assert "score" not in response_text.lower()
+    assert "offerProbability" not in response_text
+    assert "resumePackaging" not in response_text
+    assert "certification" not in response_text
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("resume_status", ["no_key", "error"])
+async def test_resume_parse_llm_unavailable_uses_fallback_without_500(
+    client: AsyncClient,
+    resume_status: str,
+) -> None:
+    override_interview_client(FakeInterviewClient(resume_status=resume_status, resume_payload={"signals": []}))
+
+    response = await client.post(
+        "/api/pathfinder/resume/parse",
+        files=resume_upload_files(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["modelStatus"] == "fallback"
+    assert body["signals"]
+    assert body["readiness"] in {"ready", "suggested_more"}
+
+
+@pytest.mark.asyncio()
+async def test_resume_parse_forbidden_model_fields_are_safely_downgraded(client: AsyncClient) -> None:
+    override_interview_client(
+        FakeInterviewClient(
+            resume_payload={
+                "offerProbability": 0.91,
+                "signals": [
+                    {
+                        "signalId": "bad-resume-signal",
+                        "category": "project_experience",
+                        "label": "Bad model output",
+                        "evidenceText": "Built a workflow.",
+                        "sourceMessageIds": ["resume_upload"],
+                        "confidence": "high",
+                        "score": 99,
+                        "resumePackaging": "rewrite as senior AI PM",
+                        "certification": "certified",
+                    }
+                ],
+            }
+        )
+    )
+
+    response = await client.post(
+        "/api/pathfinder/resume/parse",
+        files=resume_upload_files(),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    response_text = json.dumps(body)
+    assert body["modelStatus"] == "fallback"
+    assert "offerProbability" not in response_text
+    assert "resumePackaging" not in response_text
+    assert "certification" not in response_text
+    assert "score" not in response_text.lower()
+
+
+@pytest.mark.asyncio()
+async def test_resume_parse_rejects_too_short_text(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient())
+
+    response = await client.post(
+        "/api/pathfinder/resume/parse",
+        files=resume_upload_files(content="too short"),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio()
+async def test_resume_parse_rejects_unsupported_file_type(client: AsyncClient) -> None:
+    override_interview_client(FakeInterviewClient())
+
+    response = await client.post(
+        "/api/pathfinder/resume/parse",
+        files=resume_upload_files(filename="resume.exe"),
+        headers=auth_headers(),
+    )
+
+    assert response.status_code == 400
 
 
 @pytest.mark.asyncio()
