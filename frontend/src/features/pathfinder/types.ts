@@ -79,6 +79,37 @@ export type AiInterviewStatus =
 
 export type PathfinderApiSource = "api" | "fallback_mock";
 
+export type ResumeUploadStatus = "idle" | "uploading" | "parsed" | "error";
+
+export type ResumeSignalReadiness =
+  | "ready"
+  | "suggested_more"
+  | "insufficient";
+
+export interface ResumeParseState {
+  status: ResumeUploadStatus;
+  fileName?: string;
+  fileType?: string;
+  textLength?: number;
+  modelStatus?: string;
+  readiness?: ResumeSignalReadiness;
+  missingSignalTypes: string[];
+  userMessage?: string;
+  error?: string;
+}
+
+export interface ParsePathfinderResumeResponse {
+  source: string;
+  fileName: string;
+  fileType?: string;
+  textLength: number;
+  modelStatus: string;
+  signals: ExtractedProfileSignal[];
+  readiness: ResumeSignalReadiness;
+  missingSignalTypes: string[];
+  userMessage: string;
+}
+
 export type RecommendationDecision =
   | "priority_trial"
   | "explore"
@@ -560,6 +591,7 @@ export interface PathfinderState {
   extractedSignals: ExtractedProfileSignal[];
   signalConfirmationStatus: SignalConfirmationStatus;
   aiInterviewStatus: AiInterviewStatus;
+  resumeParse: ResumeParseState;
   recommendationResponse?: PathfinderRecommendationResponse;
   trialPackageResponse?: GenerateTrialPackageResponse;
   trailRecord: TrailRecord;

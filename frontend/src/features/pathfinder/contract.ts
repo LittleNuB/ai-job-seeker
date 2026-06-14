@@ -22,6 +22,7 @@ import type {
   PathfinderState,
   PortfolioDraft,
   RequiredMarkdownSection,
+  ResumeParseState,
   TrailRecord,
   TrialAnswer,
   TrialPackage,
@@ -37,6 +38,11 @@ export const legacyPathfinderStateStorageKey = "pathfinder-p0-state";
 
 export const initialBackendSyncState: BackendSyncState = {
   status: "local_only",
+};
+
+export const initialResumeParseState: ResumeParseState = {
+  status: "idle",
+  missingSignalTypes: [],
 };
 
 export const requiredTrialQuestionIds = trialQuestions.map(
@@ -89,6 +95,7 @@ export function createInitialPathfinderState(): PathfinderState {
     extractedSignals: [],
     signalConfirmationStatus: "not_started",
     aiInterviewStatus: "idle",
+    resumeParse: initialResumeParseState,
     recommendationResponse: undefined,
     trialPackageResponse: undefined,
     trailRecord: createTrailRecord(),
@@ -565,6 +572,7 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
       value.aiInterviewStatus === "confirmed"
         ? value.aiInterviewStatus
         : "idle",
+    resumeParse: normalizeResumeParseState(value.resumeParse),
     recommendationResponse: value.recommendationResponse,
     trialPackageResponse: value.trialPackageResponse,
     trailRecord: normalizeTrailRecord(value.trailRecord),
@@ -579,6 +587,7 @@ export function normalizeStoredPathfinderState(value: unknown): PathfinderState 
       extractedSignals: [],
       signalConfirmationStatus: "not_started",
       aiInterviewStatus: "idle",
+      resumeParse: initialResumeParseState,
       trailRecord: createTrailRecord({
         selectedPathId: value.selectedPathId,
         trialAnswers: value.trialAnswers,
@@ -606,6 +615,7 @@ export function createPathfinderStateFromTrailRecord(
     extractedSignals: [],
     signalConfirmationStatus: "not_started",
     aiInterviewStatus: "idle",
+    resumeParse: initialResumeParseState,
     recommendationResponse: buildFallbackRecommendationResponse(
       record.userProfileSnapshot,
     ),
@@ -667,6 +677,44 @@ function normalizeBackendSyncState(value: unknown): BackendSyncState {
     status,
     lastSavedAt: typeof lastSavedAt === "string" ? lastSavedAt : undefined,
     error: typeof error === "string" ? error : undefined,
+  };
+}
+
+function normalizeResumeParseState(value: unknown): ResumeParseState {
+  if (typeof value !== "object" || value === null || !("status" in value)) {
+    return initialResumeParseState;
+  }
+
+  const input = value as Partial<Record<keyof ResumeParseState, unknown>>;
+  const status =
+    input.status === "uploading" ||
+    input.status === "parsed" ||
+    input.status === "error"
+      ? input.status
+      : "idle";
+  const readiness =
+    input.readiness === "ready" ||
+    input.readiness === "suggested_more" ||
+    input.readiness === "insufficient"
+      ? input.readiness
+      : undefined;
+
+  return {
+    status,
+    fileName: typeof input.fileName === "string" ? input.fileName : undefined,
+    fileType: typeof input.fileType === "string" ? input.fileType : undefined,
+    textLength: typeof input.textLength === "number" ? input.textLength : undefined,
+    modelStatus:
+      typeof input.modelStatus === "string" ? input.modelStatus : undefined,
+    readiness,
+    missingSignalTypes: Array.isArray(input.missingSignalTypes)
+      ? input.missingSignalTypes.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : [],
+    userMessage:
+      typeof input.userMessage === "string" ? input.userMessage : undefined,
+    error: typeof input.error === "string" ? input.error : undefined,
   };
 }
 

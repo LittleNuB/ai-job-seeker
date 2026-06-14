@@ -977,8 +977,8 @@ const p1bRuleVersion = {
   projectLibraryVersion: "p1b.open-source-projects.v1",
   antiPackagingRuleVersion: "p1-a.frontend-rules.v1",
   notes: [
-    "FE-003 fallback mock; used only when BE-003 endpoints are unavailable.",
-    "No LLM is used in this fallback.",
+    "服务不可用时使用内置规则结果。",
+    "不会用 AI 直接决定岗位、项目或结论。",
   ],
 };
 
@@ -1190,7 +1190,7 @@ export function buildFallbackRecommendationResponse(
     paths,
     projectMatches,
     scopeDisclaimer:
-      "本地规则兜底：服务不可用时使用前端规则结果；AI 不直接决定路径，不做外部项目搜索。",
+      "本地规则兜底：服务不可用时使用内置规则结果；AI 不直接决定路径，不做外部项目搜索。",
     source: "fallback_mock",
   };
 }

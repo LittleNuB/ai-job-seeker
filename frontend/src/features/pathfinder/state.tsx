@@ -19,6 +19,7 @@ import {
   generatePathfinderTrialPackage,
   getPathfinderRecord,
   isPathfinderApiEnabled,
+  parsePathfinderResume,
   requestPathfinderRecommendations,
   savePathfinderResult,
   submitPathfinderInterviewTurn,
@@ -43,10 +44,12 @@ import type {
   GenerateTrialPackageResponse,
   ExtractedProfileSignal,
   MarkdownSnapshot,
+  ParsePathfinderResumeResponse,
   PathfinderInterviewSession,
   PathfinderRecommendationResponse,
   PathfinderState,
   PathId,
+  ResumeParseState,
   TrailRecord,
   TrialQuestionId,
   UserProfileInput,
@@ -65,6 +68,14 @@ type PathfinderAction =
   | {
       type: "set_ai_interview_status";
       status: PathfinderState["aiInterviewStatus"];
+    }
+  | {
+      type: "set_resume_parse";
+      resumeParse: Partial<ResumeParseState>;
+    }
+  | {
+      type: "attach_resume_parse_result";
+      response: ParsePathfinderResumeResponse;
     }
   | {
       type: "update_extracted_signal";
@@ -103,6 +114,7 @@ interface PathfinderContextValue {
   startInterviewSession: () => Promise<void>;
   answerInterviewQuestion: (answer: string) => Promise<void>;
   extractInterviewSignals: () => Promise<void>;
+  parseResumeFile: (file: File) => Promise<boolean>;
   updateExtractedSignal: (signalId: string, value: string) => void;
   confirmExtractedSignals: () => Promise<void>;
   submitUserProfile: () => void;
@@ -145,6 +157,36 @@ function reducer(
       return {
         ...state,
         aiInterviewStatus: action.status,
+      };
+    case "set_resume_parse":
+      return {
+        ...state,
+        resumeParse: {
+          ...state.resumeParse,
+          ...action.resumeParse,
+        },
+      };
+    case "attach_resume_parse_result":
+      return {
+        ...state,
+        profileSubmitted: false,
+        recommendationResponse: undefined,
+        trialPackageResponse: undefined,
+        extractedSignals: action.response.signals,
+        signalConfirmationStatus: action.response.signals.length
+          ? "pending_confirmation"
+          : "not_started",
+        resumeParse: {
+          status: "parsed",
+          fileName: action.response.fileName,
+          fileType: action.response.fileType,
+          textLength: action.response.textLength,
+          modelStatus: action.response.modelStatus,
+          readiness: action.response.readiness,
+          missingSignalTypes: action.response.missingSignalTypes,
+          userMessage: action.response.userMessage,
+          error: undefined,
+        },
       };
     case "update_extracted_signal":
       return {
@@ -494,6 +536,41 @@ export function PathfinderProvider({
     state.interviewMessages,
     state.interviewSessionId,
   ]);
+  const parseResumeFile = useCallback(async (file: File) => {
+    skipAutoSyncAfterRemoteHydrationRef.current = false;
+    dispatch({
+      type: "set_resume_parse",
+      resumeParse: {
+        status: "uploading",
+        fileName: file.name,
+        fileType: file.type || undefined,
+        textLength: undefined,
+        modelStatus: undefined,
+        readiness: undefined,
+        missingSignalTypes: [],
+        userMessage: "正在读取简历里的经历线索。",
+        error: undefined,
+      },
+    });
+    try {
+      const response = await parsePathfinderResume(file);
+      dispatch({ type: "attach_resume_parse_result", response });
+      return true;
+    } catch {
+      dispatch({
+        type: "set_resume_parse",
+        resumeParse: {
+          status: "error",
+          fileName: file.name,
+          fileType: file.type || undefined,
+          userMessage:
+            "暂时没能读取这份文件。可以换一份简历，或继续用 AI 访谈补充经历线索。",
+          error: "resume_parse_failed",
+        },
+      });
+      return false;
+    }
+  }, []);
   const updateExtractedSignal = useCallback((signalId: string, value: string) => {
     dispatch({ type: "update_extracted_signal", signalId, value });
   }, []);
@@ -510,7 +587,10 @@ export function PathfinderProvider({
       status: state.aiInterviewStatus,
       messages: state.interviewMessages,
       extractedSignals: editableSignals,
-      source: state.aiInterviewStatus === "fallback" ? "fallback_mock" : "api",
+      source:
+        state.interviewSessionId && state.aiInterviewStatus !== "fallback"
+          ? "api"
+          : "fallback_mock",
     };
     dispatch({ type: "set_ai_interview_status", status: "extracting" });
     try {
@@ -614,6 +694,7 @@ export function PathfinderProvider({
       startInterviewSession,
       answerInterviewQuestion,
       extractInterviewSignals,
+      parseResumeFile,
       updateExtractedSignal,
       confirmExtractedSignals,
       submitUserProfile,
@@ -631,6 +712,7 @@ export function PathfinderProvider({
       startInterviewSession,
       answerInterviewQuestion,
       extractInterviewSignals,
+      parseResumeFile,
       updateExtractedSignal,
       confirmExtractedSignals,
       submitUserProfile,

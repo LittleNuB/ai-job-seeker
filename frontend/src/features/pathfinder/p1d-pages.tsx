@@ -118,7 +118,7 @@ const roleStarPoints: RoleStarPoint[] = [
     title: "大模型应用工程助理",
     pathId: "algorithm-llm-engineer",
     aliases: ["LLM 应用开发", "AI 应用工程助理", "Prompt 工程助理"],
-    jdSignals: ["API 调用", "Prompt 调试", "日志观察", "异常兜底", "接口联调"],
+    jdSignals: ["模型调用流程", "Prompt 调试", "日志观察", "异常兜底", "接口联调"],
     deliverables: ["小型原型", "调用流程", "测试记录", "边界说明"],
     migrationEntries: ["Python/JS 基础", "自动化脚本", "低代码工具", "技术文档阅读"],
     highlightReason: "如果你已有可运行代码或工具集成经验，可把它作为工程试航入口。",
@@ -212,7 +212,7 @@ const roleStarPoints: RoleStarPoint[] = [
     deliverables: ["选题表", "内容脚本", "渠道计划", "复盘框架"],
     migrationEntries: ["新媒体运营", "课程内容", "用户增长", "案例撰写"],
     highlightReason: "适合用内容和用户教育经验做 AI 工具采用试航。",
-    nonHighlightReason: "该星点本轮只提供框架，不生成完整试航工单。",
+    nonHighlightReason: "该星点当前适合作为探索方向，暂不生成完整试航工单。",
     pilotType: "operations",
   },
   {
@@ -498,10 +498,20 @@ function PilotTypeTag({ type }: { type: PilotType }) {
 }
 
 export function PathfinderEntryPage() {
-  const [resumeFileName, setResumeFileName] = useState("");
+  const router = useRouter();
+  const { state, parseResumeFile } = usePathfinder();
+  const resumeParse = state.resumeParse;
+  const isUploadingResume = resumeParse.status === "uploading";
 
-  function onResumeSelected(event: ChangeEvent<HTMLInputElement>) {
-    setResumeFileName(event.target.files?.[0]?.name ?? "");
+  async function onResumeSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file || isUploadingResume) return;
+    const parsed = await parseResumeFile(file);
+    if (parsed) {
+      router.push("/pathfinder/background");
+      return;
+    }
+    event.currentTarget.value = "";
   }
 
   return (
@@ -520,32 +530,45 @@ export function PathfinderEntryPage() {
                 上传简历生成星图
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                本轮是前端占位：上传后会作为本地入口提示，下一步仍会整理为可确认背景信号，由你确认后再进入星图。
+                上传后，系统会先整理你的经历线索；你确认或修改后再生成星图。
               </p>
             </div>
           </div>
           <label
             htmlFor="resume-upload"
-            className="mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-teal-300 bg-teal-50 px-4 py-6 text-center transition hover:border-teal-500 hover:bg-teal-100"
+            className={`mt-5 flex min-h-40 flex-col items-center justify-center rounded-md border border-dashed border-teal-300 bg-teal-50 px-4 py-6 text-center transition hover:border-teal-500 hover:bg-teal-100 ${
+              isUploadingResume ? "cursor-wait opacity-80" : "cursor-pointer"
+            }`}
           >
             <FileText className="h-8 w-8 text-teal-700" aria-hidden="true" />
             <span className="mt-3 text-sm font-semibold text-slate-950">
-              选择 PDF / DOCX / TXT 简历
+              {isUploadingResume ? "正在读取简历里的经历线索" : "选择 PDF / DOCX / TXT 简历"}
             </span>
             <span className="mt-1 text-xs leading-5 text-slate-600">
-              不新增后端解析 API；当前只建立低摩擦入口和确认信号心智。
+              支持常见简历文件。敏感信息可以先自行删去。
             </span>
             <input
               id="resume-upload"
               type="file"
               accept=".pdf,.doc,.docx,.txt"
               className="sr-only"
+              disabled={isUploadingResume}
               onChange={onResumeSelected}
             />
           </label>
-          {resumeFileName ? (
-            <Notice title="已选择简历" tone="teal">
-              {resumeFileName} 已放入本地占位流程。继续到背景页后，请确认系统整理出的信号，或手动补充缺口。
+          {resumeParse.status === "uploading" ? (
+            <Notice title="正在读取简历里的经历线索" tone="teal">
+              完成后会进入背景页，你可以逐条确认、删除或补充。
+            </Notice>
+          ) : null}
+          {resumeParse.status === "parsed" ? (
+            <Notice title="已整理简历线索" tone="teal">
+              {resumeParse.fileName ?? "这份简历"} 已整理为 {state.extractedSignals.length} 条可确认线索。请进入背景页确认后再生成星图。
+            </Notice>
+          ) : null}
+          {resumeParse.status === "error" ? (
+            <Notice title="暂时没能读取这份简历" tone="amber">
+              {resumeParse.userMessage ?? "可以换一份文件，或继续用 AI 访谈补充经历线索。"}
             </Notice>
           ) : null}
           <div className="mt-5 flex flex-wrap gap-3">
@@ -630,6 +653,10 @@ export function PathfinderBackgroundPage() {
   const ready = isUserProfileReady(userProfile);
   const hasUserTurns = state.interviewMessages.some((message) => message.role === "user");
   const hasPendingSignals = state.extractedSignals.length > 0;
+  const resumeParse = state.resumeParse;
+  const hasResumeSignals = state.extractedSignals.some(
+    (signal) => signal.sourceField === "resume",
+  );
   const canConfirmSignals = state.extractedSignals.some((signal) =>
     signal.userEditableText.trim(),
   );
@@ -789,6 +816,17 @@ export function PathfinderBackgroundPage() {
           <Notice title={`信号完整度：${readiness.label}`} tone={readinessTone(readiness.level)}>
             {readiness.detail}
           </Notice>
+          {resumeParse.status === "parsed" ? (
+            <Notice title="简历线索已整理" tone="teal">
+              {resumeParse.userMessage ??
+                "请逐条确认这些经历线索。确认前不会生成岗位星图。"}
+            </Notice>
+          ) : null}
+          {resumeParse.status === "error" ? (
+            <Notice title="简历读取未完成" tone="amber">
+              可以换一份文件，或直接通过访谈补充真实经历。
+            </Notice>
+          ) : null}
           <Panel>
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
               <Sparkles className="h-4 w-4 text-teal-700" aria-hidden="true" />
@@ -811,7 +849,7 @@ export function PathfinderBackgroundPage() {
           <Panel>
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
               <PencilLine className="h-4 w-4 text-teal-700" aria-hidden="true" />
-              可确认背景信号
+              {hasResumeSignals ? "来自简历的经历线索" : "可确认背景信号"}
             </div>
             {hasPendingSignals ? (
               <div className="mt-4 space-y-3">
@@ -827,6 +865,9 @@ export function PathfinderBackgroundPage() {
                         }
                         tone={signal.confirmationStatus === "user_confirmed" ? "teal" : "amber"}
                       />
+                      {signal.sourceField === "resume" ? (
+                        <StatusPill label="来自简历" tone="slate" />
+                      ) : null}
                     </span>
                     <textarea
                       value={signal.userEditableText}
@@ -847,7 +888,7 @@ export function PathfinderBackgroundPage() {
               </div>
             ) : (
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                回答后点击“整理信号草稿”，这里会出现可编辑信号。确认前不会进入推荐或试航任务。
+                上传简历或回答访谈后，这里会出现可编辑信号。确认前不会进入推荐或试航任务。
               </p>
             )}
           </Panel>
@@ -887,7 +928,7 @@ export function PathfinderBackgroundPage() {
           </div>
           <div className="grid content-start gap-4">
             <Notice title={ready ? "可生成星图" : "建议补齐必填信号"} tone={ready ? "teal" : "amber"}>
-              手动补充是 fallback，不再作为默认第一步。保存后仍只进入证据链和星图，不产生录用判断。
+              手动补充用于修正或补齐信号。保存后只进入证据链和星图，不产生录用判断。
             </Notice>
             <div className="flex flex-wrap gap-3">
               <ActionButton type="submit" disabled={!ready}>
@@ -1124,7 +1165,7 @@ export function PathfinderRecommendationPage() {
 
       <Section
         title="适航任务入口"
-        description="开发岗保留现有已核验开源项目试航链路；产品和运营本轮先作为提交版框架，不伪装成完整 generator。"
+        description="开发岗可生成已核验开源项目试航任务；产品和运营先提供可提交的任务框架，不伪装成完整成果。"
       >
         <div className="grid gap-4 lg:grid-cols-3">
           <PilotCard

@@ -930,3 +930,42 @@ Main Agent follow-up order:
   - `git ls-files --others --exclude-standard backend/alembic/versions` returned no files.
 - Review recommendation: Main Agent review recommended before merging because this introduces the real upload-entry backend contract for FE integration.
 
+
+## FE-005 Status
+
+- Task ID: `FE-005`
+- Child role: `前端开发D`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\d1e4\ai-job-seeker`
+- Branch: `codex/pathfinder-fe-005`
+- Scope:
+  - Cleaned routed Pathfinder P1-D user-visible copy that still described implementation details.
+  - Added frontend resume parse client for `POST /api/pathfinder/resume/parse`.
+  - Connected homepage resume upload to parsed signal confirmation on `/pathfinder/background`.
+  - Added static and E2E coverage for resume upload and forbidden engineering terms in visible Pathfinder pages.
+- Delivered files:
+  - `frontend/src/features/pathfinder/api.ts`
+  - `frontend/src/features/pathfinder/contract.ts`
+  - `frontend/src/features/pathfinder/data.ts`
+  - `frontend/src/features/pathfinder/p1d-pages.tsx`
+  - `frontend/src/features/pathfinder/state.tsx`
+  - `frontend/src/features/pathfinder/types.ts`
+  - `frontend/scripts/pathfinder-static-tests.ts`
+  - `frontend/e2e/pathfinder.spec.ts`
+  - `docs/pathfinder-p0/p1-d-lite-copy-and-resume-frontend.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Runtime behavior:
+  - Uploading a resume shows user-facing loading text, parses the file through the agreed endpoint, writes returned signals into `extractedSignals`, and routes the user to signal confirmation.
+  - Parsed signals must be confirmed or edited before star map generation.
+  - Parse failures do not expose technical details and direct users to retry upload or continue with AI interview.
+- Validation:
+  - `cd frontend && npm run test:safety` passed.
+  - `cd frontend && npm run lint` passed.
+  - `cd frontend && npm run build` passed.
+  - `cd frontend && E2E_BASE_URL=http://127.0.0.1:3025 npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 9 passed.
+  - `git diff --check` passed.
+  - Browser spot check passed on `/pathfinder`, `/pathfinder/background`, `/pathfinder/recommendation`, and 390px recommendation viewport (`scrollWidth=375`).
+  - Default Playwright `localhost:3000` was occupied by an older running app instance, so E2E validation used the isolated FE-005 server on port 3025.
+- Scope guard:
+  - No backend implementation, migration, GitHub Search, real RAG, scoring, offer probability, certification, employer screening, or resume packaging added.
+  - Forbidden B-class files were not touched.
+

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   buildConfirmedUserProfileFromSignals,
   buildFallbackInterviewSession,
@@ -40,6 +41,77 @@ import type {
   TrialQuestionId,
   UserProfileInput,
 } from "../src/features/pathfinder/types";
+
+const userVisibleEngineeringPatterns: Array<{ label: string; pattern: RegExp }> = [
+  { label: "API", pattern: /\bAPI\b/ },
+  { label: "后端", pattern: /后端/ },
+  { label: "前端", pattern: /前端/ },
+  { label: "不新增", pattern: /不新增/ },
+  { label: "占位", pattern: /占位/ },
+  { label: "fallback", pattern: /fallback/i },
+  { label: "mock", pattern: /mock/i },
+  { label: "schema", pattern: /schema/i },
+  { label: "fixture", pattern: /fixture/i },
+  { label: "P1-D", pattern: /P1-D/i },
+  { label: "P1-C", pattern: /P1-C/i },
+  { label: "实现范围", pattern: /实现范围/ },
+  { label: "低摩擦入口心智", pattern: /低摩擦入口心智/ },
+  { label: "低摩擦", pattern: /低摩擦/ },
+  { label: "本轮", pattern: /本轮/ },
+  { label: "运行逻辑", pattern: /运行逻辑/ },
+  { label: "migration", pattern: /migration/i },
+];
+
+function assertNoUserVisibleEngineeringTerms(copy: string, context: string) {
+  const failures = copy
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) =>
+      userVisibleEngineeringPatterns
+        .filter(({ pattern }) => pattern.test(line))
+        .map(({ label }) => `${label}: ${line}`),
+    );
+
+  assert.deepEqual(
+    failures,
+    [],
+    `${context} contains user-visible engineering terms`,
+  );
+}
+
+function extractPotentialVisibleCopyFromSource(source: string): string {
+  const fragments: string[] = [];
+  const stringPattern = /(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g;
+  let stringMatch: RegExpExecArray | null;
+  while ((stringMatch = stringPattern.exec(source)) !== null) {
+    const fragment = stringMatch[2]
+      .replace(/\\n/g, "\n")
+      .replace(/\\"/g, '"')
+      .replace(/\\'/g, "'");
+    if (/[\u4e00-\u9fffA-Za-z]/.test(fragment)) {
+      fragments.push(fragment);
+    }
+  }
+
+  const jsxTextPattern = />\s*([^<>{}\n][^<>{}]*)\s*</g;
+  let jsxMatch: RegExpExecArray | null;
+  while ((jsxMatch = jsxTextPattern.exec(source)) !== null) {
+    const fragment = jsxMatch[1].replace(/\s+/g, " ").trim();
+    if (/[\u4e00-\u9fffA-Za-z]/.test(fragment)) {
+      fragments.push(fragment);
+    }
+  }
+
+  return fragments.join("\n");
+}
+
+const routedPathfinderCopy = [
+  "src/features/pathfinder/p1d-pages.tsx",
+  "src/features/pathfinder/components.tsx",
+].map((filePath) =>
+  extractPotentialVisibleCopyFromSource(readFileSync(filePath, "utf8")),
+).join("\n");
 
 const expectedQuestions: Array<{ id: TrialQuestionId; prompt: string }> = [
   {
@@ -150,6 +222,10 @@ assert.deepEqual(createInitialPathfinderState().interviewMessages, []);
 assert.deepEqual(createInitialPathfinderState().extractedSignals, []);
 assert.equal(createInitialPathfinderState().signalConfirmationStatus, "not_started");
 assert.equal(createInitialPathfinderState().aiInterviewStatus, "idle");
+assert.deepEqual(createInitialPathfinderState().resumeParse, {
+  status: "idle",
+  missingSignalTypes: [],
+});
 assert.deepEqual(createInitialPathfinderState().trailRecord.userProfileSnapshot, emptyUserProfile);
 assert.deepEqual(
   createInitialPathfinderState().trailRecord.trialAnswers.map((answer) => answer.answer),
@@ -320,6 +396,7 @@ if (complete.ok) {
   assert.equal(complete.snapshot.content, complete.markdown);
   assert.ok(complete.snapshot.templateVersion.includes("p1-a"));
   assertSafePathfinderCopy(complete.markdown);
+  assertNoUserVisibleEngineeringTerms(complete.markdown, "default markdown");
 }
 
 const chatwootMarkdown = generatePathfinderMarkdown(
@@ -342,6 +419,10 @@ if (chatwootMarkdown.ok) {
   assert.ok(!chatwootMarkdown.markdown.includes("试航对象：OpenDocuments"));
   assert.ok(!chatwootMarkdown.markdown.includes("## OpenDocuments 来源与 License"));
   assert.ok(!chatwootMarkdown.markdown.includes("## OpenDocuments 公开能力"));
+  assertNoUserVisibleEngineeringTerms(
+    chatwootMarkdown.markdown,
+    "Chatwoot markdown",
+  );
 }
 
 const answerPackage = createTrialAnswers({
@@ -405,6 +486,14 @@ assert.equal(visibleDefaultCopy.includes("GitHub Search"), false);
 assert.equal(visibleDefaultCopy.includes("DeepSeek"), false);
 assert.equal(visibleDefaultCopy.includes("DEEPSEEK_API_KEY"), false);
 assert.equal(visibleDefaultCopy.includes("Key.txt"), false);
+assertNoUserVisibleEngineeringTerms(
+  visibleDefaultCopy,
+  "Pathfinder data and markdown copy",
+);
+assertNoUserVisibleEngineeringTerms(
+  routedPathfinderCopy,
+  "routed Pathfinder page copy",
+);
 
 for (const unsafeCopy of [
   "我已经可以胜任这个岗位。",

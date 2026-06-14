@@ -20,6 +20,7 @@ import type {
   GenerateTrialPackageResponse,
   PathfinderInterviewSession,
   MarkdownSnapshot,
+  ParsePathfinderResumeResponse,
   PathfinderProjectsResponse,
   PathfinderRecommendationResponse,
   PathfinderRecordStatus,
@@ -27,6 +28,7 @@ import type {
   InterviewPrep,
   PathId,
   RolePathRecommendation,
+  ResumeSignalReadiness,
   SubmitInterviewTurnResponse,
   TrailRecord,
   TrialAnswer,
@@ -39,6 +41,7 @@ const pathfinderRecommendationsPath = "/api/pathfinder/recommendations";
 const pathfinderProjectsPath = "/api/pathfinder/projects";
 const pathfinderGeneratePath = "/api/pathfinder/trial-packages/generate";
 const pathfinderInterviewSessionsPath = "/api/pathfinder/interview/sessions";
+const pathfinderResumeParsePath = "/api/pathfinder/resume/parse";
 const defaultPathfinderUserId = "pathfinder-p1-a-demo-user";
 const p1cSchemaVersion = "p1c.v1" as const;
 const rolePathTitleById: Partial<Record<PathId, string>> = {
@@ -97,6 +100,18 @@ type BackendSignalExtractionResult = {
   summary?: string | null;
   fallbackReason?: string | null;
   createdAt: string;
+};
+
+type BackendResumeParseResponse = {
+  source?: string;
+  fileName?: string;
+  fileType?: string;
+  textLength?: number;
+  modelStatus?: string;
+  signals?: BackendExtractedProfileSignal[];
+  readiness?: ResumeSignalReadiness;
+  missingSignalTypes?: string[];
+  userMessage?: string;
 };
 
 export interface UpdateTrialAnswersResponse {
@@ -188,6 +203,7 @@ function normalizeInterviewMessage(
 
 function normalizeSignal(
   signal: BackendExtractedProfileSignal,
+  sourceField: ExtractedProfileSignal["sourceField"] = "interview",
 ): ExtractedProfileSignal {
   const confirmed =
     signal.status === "confirmed" || signal.status === "edited";
@@ -195,7 +211,7 @@ function normalizeSignal(
     signalId: signal.signalId,
     category: signal.category,
     label: signal.label,
-    sourceField: "interview",
+    sourceField,
     evidenceText: signal.evidenceText,
     confidence: signal.confidence,
     confirmationStatus: confirmed ? "user_confirmed" : "pending_confirmation",
@@ -234,7 +250,7 @@ function normalizeInterviewSession(
     sessionId: session.sessionId,
     status: normalizeInterviewStatus(session),
     messages,
-    extractedSignals: signals.map(normalizeSignal),
+    extractedSignals: signals.map((signal) => normalizeSignal(signal)),
     nextQuestion: lastAssistantMessage?.content,
     source,
   };
@@ -250,8 +266,23 @@ function normalizeExtractedSignalsIntoSession(params: {
     ...params.session,
     status: source === "fallback_mock" ? "fallback" : "idle",
     source,
-    extractedSignals: params.extraction.signals.map(normalizeSignal),
+    extractedSignals: params.extraction.signals.map((signal) =>
+      normalizeSignal(signal),
+    ),
   };
+}
+
+function normalizeResumeReadiness(
+  readiness: BackendResumeParseResponse["readiness"],
+): ResumeSignalReadiness {
+  if (
+    readiness === "ready" ||
+    readiness === "suggested_more" ||
+    readiness === "insufficient"
+  ) {
+    return readiness;
+  }
+  return "suggested_more";
 }
 
 function confirmedSignalPayload(
@@ -272,6 +303,56 @@ function confirmedSignalPayload(
 
 export function isPathfinderApiEnabled() {
   return process.env.NEXT_PUBLIC_PATHFINDER_API_ENABLED !== "false";
+}
+
+export async function parsePathfinderResume(
+  file: File,
+): Promise<ParsePathfinderResumeResponse> {
+  if (!isPathfinderApiEnabled()) {
+    throw new Error("Pathfinder resume parsing is unavailable.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(pathfinderResumeParsePath, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "X-User-Id":
+        process.env.NEXT_PUBLIC_PATHFINDER_USER_ID ?? defaultPathfinderUserId,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Pathfinder resume parse failed: ${response.status}`);
+  }
+
+  const parsed = (await response.json()) as BackendResumeParseResponse;
+  const signals = Array.isArray(parsed.signals)
+    ? parsed.signals.map((signal) => normalizeSignal(signal, "resume"))
+    : [];
+
+  return {
+    source: parsed.source ?? "api",
+    fileName: parsed.fileName?.trim() || file.name,
+    fileType: parsed.fileType?.trim() || file.type || undefined,
+    textLength:
+      typeof parsed.textLength === "number" && Number.isFinite(parsed.textLength)
+        ? parsed.textLength
+        : 0,
+    modelStatus: parsed.modelStatus ?? "unknown",
+    signals,
+    readiness: normalizeResumeReadiness(parsed.readiness),
+    missingSignalTypes: Array.isArray(parsed.missingSignalTypes)
+      ? parsed.missingSignalTypes.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : [],
+    userMessage:
+      parsed.userMessage?.trim() ||
+      "已整理出可确认的经历线索，请逐条确认后再生成星图。",
+  };
 }
 
 export async function createPathfinderInterviewSession(params?: {

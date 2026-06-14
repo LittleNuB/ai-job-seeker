@@ -24,6 +24,9 @@ const requiredMarkdownSections = [
   "disclaimer",
 ];
 
+const forbiddenVisibleCopyPattern =
+  /API|后端|前端|占位|fallback|mock|schema|fixture|P1-D|P1-C|migration|不新增|低摩擦入口心智|实现范围|运行逻辑/;
+
 const profile = {
   displayName: "tester",
   professionalBackground: "机械工程背景，做过设备资料整理和项目协作。",
@@ -406,6 +409,57 @@ async function mockRecommendationAndProjectApi(
   });
 }
 
+async function mockResumeParseApi(page: Page, requests: ApiRequestLog[]) {
+  await page.route("**/api/pathfinder/resume/parse", async (route) => {
+    const request = route.request();
+    requests.push({
+      method: request.method(),
+      url: request.url(),
+      headers: request.headers(),
+      body: {
+        multipartLength: request.postDataBuffer()?.length ?? 0,
+      },
+    });
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        source: "resume_parser",
+        fileName: "resume.txt",
+        fileType: "text/plain",
+        textLength: 128,
+        modelStatus: "ok",
+        readiness: "ready",
+        missingSignalTypes: ["technical_foundation"],
+        userMessage: "已从简历中整理出 2 条经历线索，请确认后生成星图。",
+        signals: [
+          {
+            signalId: "resume-sig-1",
+            category: "project_experience",
+            label: "简历项目经历",
+            evidenceText:
+              "参与客服知识库资料整理，把常见问题、处理流程和用户反馈归类。",
+            sourceMessageIds: [],
+            confidence: "needs_user_review",
+            status: "candidate",
+          },
+          {
+            signalId: "resume-sig-2",
+            category: "ai_tool_usage",
+            label: "简历 AI 工具经历",
+            evidenceText:
+              "使用 AI 工具辅助整理初稿，并由本人进行人工确认和改写。",
+            sourceMessageIds: [],
+            confidence: "needs_user_review",
+            status: "candidate",
+          },
+        ],
+      }),
+    });
+  });
+}
+
 async function mockInterviewApi(page: Page, requests: ApiRequestLog[]) {
   const createdAt = "2026-06-14T00:00:00Z";
   const assistantMessage = {
@@ -535,6 +589,12 @@ async function fillAnswers(page: Page, values = answers) {
   }
 }
 
+async function expectNoUserVisibleEngineeringCopy(page: Page) {
+  await expect(page.locator("body")).not.toContainText(
+    forbiddenVisibleCopyPattern,
+  );
+}
+
 test("guards recommendation when real background is missing", async ({ page }) => {
   await page.goto("/pathfinder/recommendation");
 
@@ -555,6 +615,7 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   await expect(page.getByText("AI 聊聊我的经历")).toBeVisible();
   await expect(page.getByRole("link", { name: "AI Job Copilot" })).toHaveCount(0);
   await expect(page.getByText("GitHub Search")).toHaveCount(0);
+  await expectNoUserVisibleEngineeringCopy(page);
 
   await page.getByRole("link", { name: "开始航前访谈" }).click();
   await fillProfile(page);
@@ -575,6 +636,7 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   await expect(page.getByText("GitHub Search")).toHaveCount(0);
   await expect(page.getByText("score")).toHaveCount(0);
   await expect(page.getByText("probability")).toHaveCount(0);
+  await expectNoUserVisibleEngineeringCopy(page);
   await expect(
     page
       .getByText(
@@ -606,6 +668,7 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   await expect(
     page.getByRole("heading", { name: "4. 下一步 3/7 天打磨计划" }),
   ).toBeVisible();
+  await expectNoUserVisibleEngineeringCopy(page);
 
   const markdownPreview = page.locator("textarea").last();
   await expect(markdownPreview).toHaveValue(/Chatwoot/);
@@ -622,6 +685,51 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   const serializedRequests = JSON.stringify(requests);
   expect(serializedRequests).not.toContain("DEEPSEEK");
   expect(serializedRequests).not.toContain("api_key");
+});
+
+test("uploads resume, confirms extracted signals, and reaches star map", async ({
+  page,
+}) => {
+  const requests: ApiRequestLog[] = [];
+  await mockResumeParseApi(page, requests);
+  await mockRecommendationAndProjectApi(page, requests);
+  await mockPathfinderApi(page, requests);
+
+  await page.goto("/pathfinder");
+  await page.locator("#resume-upload").setInputFiles({
+    name: "resume.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(
+      "参与客服知识库资料整理，把常见问题、处理流程和用户反馈归类，并用 AI 工具辅助整理初稿。",
+      "utf8",
+    ),
+  });
+
+  await expect(page).toHaveURL(/\/pathfinder\/background$/);
+  await expect(page.getByText("来自简历的经历线索")).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: /简历项目经历/ }),
+  ).toBeVisible();
+  await expect(page.getByText("来自简历").first()).toBeVisible();
+  await expectNoUserVisibleEngineeringCopy(page);
+
+  await page
+    .getByRole("textbox", { name: /简历项目经历/ })
+    .fill("我确认参与过客服知识库资料整理、流程归类和用户反馈整理。");
+  await page.getByRole("button", { name: "确认信号并查看星图" }).click();
+
+  await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
+  await expect(page.getByText("Top 1")).toBeVisible();
+  await expect(page.getByText("2.5D 岗位星图工作台")).toBeVisible();
+  await expectNoUserVisibleEngineeringCopy(page);
+
+  await expect
+    .poll(() =>
+      requests.some((request) =>
+        request.url.endsWith("/api/pathfinder/resume/parse"),
+      ),
+    )
+    .toBe(true);
 });
 
 test("runs AI interview, lets user stop, confirm signals, and reach star map", async ({
