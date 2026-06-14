@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>寻径星图作品说明</title>
+  <style>
+    :root {
+      --ink: #101820;
+      --muted: #5a6673;
+      --paper: #f7f3ea;
+      --paper-2: #fffdf8;
+      --teal: #0f766e;
+      --teal-2: #14b8a6;
+      --gold: #d99a2b;
+      --line: rgba(16, 24, 32, .13);
+      --night: #07111f;
+      --cyan: #7dd3fc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+      line-height: 1.6;
+    }
+    p { margin: 0 0 12px; }
+    ul { margin: 0; padding-left: 1.2em; }
+    li { margin: 0 0 8px; }
+    .eyebrow {
+      color: var(--teal);
+      font-weight: 700;
+      letter-spacing: .08em;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .muted { color: var(--muted); }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,.68);
+      font-size: 12px;
+      margin: 0 8px 8px 0;
+    }
+    .screenshot {
+      display: block;
+      width: 100%;
+      border: 1px solid rgba(15, 118, 110, .18);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(7, 17, 31, .16);
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      background: rgba(255, 253, 248, .88);
+      box-shadow: 0 16px 44px rgba(16, 24, 32, .08);
+    }
+    .dark-panel {
+      color: white;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(20,184,166,.25), transparent 26%),
+        radial-gradient(circle at 78% 12%, rgba(125,211,252,.20), transparent 22%),
+        linear-gradient(135deg, #07111f 0%, #0d1f2f 55%, #102b2c 100%);
+      border: 1px solid rgba(125, 211, 252, .2);
+      box-shadow: 0 24px 80px rgba(7, 17, 31, .24);
+    }
+    .dark-panel .muted { color: rgba(255,255,255,.72); }
+    .starfield {
+      position: relative;
+      overflow: hidden;
+    }
+    .starfield::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.65) 0 1px, transparent 1.6px),
+        linear-gradient(rgba(125,211,252,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125,211,252,.08) 1px, transparent 1px);
+      background-size: 34px 34px, 72px 72px, 72px 72px;
+      opacity: .42;
+      mask-image: linear-gradient(120deg, black, transparent 78%);
+    }
+    .starfield > * { position: relative; z-index: 1; }
+    
+    @page { size: A4; margin: 0; }
+    .brief-page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 18mm;
+      page-break-after: always;
+      background:
+        linear-gradient(120deg, rgba(20,184,166,.07), transparent 42%),
+        var(--paper);
+    }
+    .brief-page:last-child { page-break-after: auto; }
+    .cover {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 22px;
+      padding: 18mm;
+    }
+    h1 { font-size: 58px; line-height: 1; margin: 14px 0 12px; letter-spacing: 0; }
+    h2 { font-size: 31px; line-height: 1.2; margin: 10px 0 14px; letter-spacing: 0; }
+    h3 { font-size: 18px; margin: 0 0 8px; }
+    .lead { font-size: 22px; color: rgba(255,255,255,.82); margin-bottom: 20px; }
+    .cover-copy { max-width: 680px; color: rgba(255,255,255,.82); font-size: 13px; }
+    .cover-shot { width: 100%; border-radius: 24px; border: 1px solid rgba(255,255,255,.2); box-shadow: 0 28px 80px rgba(0,0,0,.35); }
+    .chips { margin-top: 20px; }
+    .page-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: 24px; align-items: center; }
+    .page-grid.three { grid-template-columns: 1.15fr 1fr 1fr; gap: 14px; align-items: stretch; }
+    .page-grid.three > :first-child { grid-row: span 2; }
+    .hero-shot { margin-top: 18px; }
+    .task-shot { margin-top: 18px; max-height: 126mm; object-fit: cover; object-position: top; }
+  
+  </style>
+</head>
+<body>
+
+  <main class="brief">
+    <section class="brief-page cover starfield dark-panel">
+      <div>
+        <div class="eyebrow">AI + 求职 / 参赛作品</div>
+        <h1>寻径星图</h1>
+        <p class="lead">帮学生和早期求职者找到 AI 岗位切入点</p>
+        <div class="cover-copy"><p>很多学生和早期求职者想进入 AI 行业，但并不清楚自己的专业、项目和实习经历能对应哪些岗位，也不知道该做什么准备来应对求职。</p>
+<p>寻径星图从这个问题出发：用户可以上传简历，也可以和 AI 聊自己的真实经历。系统会把经历整理成可确认的背景线索，再生成一张个人 AI 求职星图。星图里有基于真实 JD 样本提炼出的 AI 岗位星点，覆盖产品、开发、数据评测和运营增长等方向。用户可以看到当前更值得探索的几个岗位，也可以点开其他星点了解岗位任务、常见工作内容和适合的准备方式。</p>
+<p>在确定方向后，产品会给出对应的适航任务。开发方向可以从开源项目拆解开始，产品方向可以用 Vibe Coding 做一个原型，运营方向可以设计一次 AI 工具体验营。最后生成一份试航成果包，帮助用户把这次探索沉淀成岗位理解、任务产出和后续打磨计划。</p></div>
+        <div class="chips">
+          <span class="chip">简历上传</span>
+          <span class="chip">AI 追问</span>
+          <span class="chip">岗位星图</span>
+          <span class="chip">适航任务</span>
+          <span class="chip">成果包</span>
+        </div>
+      </div>
+      <img class="cover-shot" src="screenshots/01-entry.png" alt="寻径星图首页截图" />
+    </section>
+
+    <section class="brief-page">
+      <div class="page-grid">
+        <div>
+          <div class="eyebrow">01 / 用户问题</div>
+          <h2>他们缺的不是一句建议，而是一条能走下去的路径</h2>
+          <p>很多早期求职者有课程项目、实习、活动或工具使用经历，却很难判断这些经历能连接到哪些 AI 岗位。寻径星图把入口放在真实经历上，让用户先确认自己的背景线索，再进入岗位探索。</p>
+          <div class="panel">
+            <ul><li>上传简历，或通过 AI 访谈补充真实经历。</li><li>系统整理候选背景线索，用户可以编辑和确认。</li><li>确认后的线索用于生成个人 AI 求职星图。</li><li>结果只用于求职准备，不做能力认证和录用预测。</li></ul>
+          </div>
+        </div>
+        <img class="screenshot" src="screenshots/02-resume-signals.png" alt="背景线索确认页" />
+      </div>
+    </section>
+
+    <section class="brief-page star-map-page">
+      <div class="eyebrow">02 / 星图探索</div>
+      <h2>把 AI 岗位变成可以点击、比较和试航的星点</h2>
+      <p>星图里的岗位星点来自当前样例 JD 和样本趋势参考，覆盖产品、开发、数据评测和运营增长等方向。用户可以看到 Top 3 探索方向，也可以点开其他星点理解岗位任务和准备方式。</p>
+      <img class="screenshot hero-shot" src="screenshots/03-star-map.png" alt="岗位星图页" />
+    </section>
+
+    <section class="brief-page">
+      <div class="page-grid three">
+        <div>
+          <div class="eyebrow">03 / 适航任务</div>
+          <h2>方向确定后，给用户一件能继续打磨的任务</h2>
+          <p>适航任务不局限于开源项目。开发、产品、运营方向分别对应不同准备方式，让用户把岗位理解落到具体产出上。</p>
+        </div>
+        <div class="panel">
+          <h3>开发方向</h3>
+          <p>从已审计开源项目拆解和场景改造开始，形成项目理解、技术边界和面试追问准备。</p>
+        </div>
+        <div class="panel">
+          <h3>产品方向</h3>
+          <p>用 Vibe Coding 做一个可讲清楚的产品原型，沉淀用户流程、PRD 摘要和验收指标。</p>
+        </div>
+        <div class="panel">
+          <h3>运营方向</h3>
+          <p>设计一次 AI 工具体验营，覆盖目标人群、活动节奏、内容日历和复盘指标。</p>
+        </div>
+      </div>
+      <img class="screenshot task-shot" src="screenshots/04-trial-task.png" alt="适航任务页" />
+    </section>
+
+    <section class="brief-page">
+      <div class="page-grid">
+        <div>
+          <div class="eyebrow">04 / 适航成果包</div>
+          <h2>把一次探索沉淀成岗位理解、任务产出和后续计划</h2>
+          <ul><li>岗位星点结论：当前更值得探索的方向。</li><li>证据链：来自用户确认线索、样例 JD 和任务材料。</li><li>任务产出：围绕开发、产品或运营方向形成可继续打磨的材料。</li><li>边界说明：不包装经历，不声称开源项目归属，不预测录用结果。</li></ul>
+        </div>
+        <div class="panel outcome-card">
+          <h3>适航成果包包含什么</h3>
+          <ul><li>岗位理解：用户为什么值得从这个方向开始探索。</li><li>任务产出：本次试航可以沉淀哪些作品集材料。</li><li>证据链：用户背景、样例 JD 和试航任务如何对应。</li><li>边界说明：哪些内容不能写成个人原创、认证或录用承诺。</li><li>打磨计划：未来 3 天和 7 天继续完善的动作。</li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
