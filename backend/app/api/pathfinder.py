@@ -110,6 +110,14 @@ RESUME_REQUIRED_SIGNAL_TYPES = (
     "career_goal",
     "constraint_or_self_awareness",
 )
+RESUME_MISSING_SIGNAL_LABELS = {
+    "background_source": "专业、行业或学习/工作阶段",
+    "real_experience": "一段真实项目、实习、工作或活动经历",
+    "concrete_action": "你在经历中具体做了什么",
+    "tool_exposure": "使用过的 AI、数据、协作或开发工具",
+    "career_goal": "你想探索的 AI 岗位方向",
+    "constraint_or_self_awareness": "时间安排、偏好、排斥项或学习意愿",
+}
 RESUME_ACTION_KEYWORDS = (
     "负责",
     "参与",
@@ -946,12 +954,16 @@ def _has_action_signal(signal: ExtractedProfileSignal) -> bool:
 
 
 def _resume_user_message(model_status: str, readiness: str, missing_signal_types: list[str], text_length: int) -> str:
-    prefix = "已通过模型整理出可确认背景信号。" if model_status == "ok" else "模型暂不可用或输出未被采纳，已用规则整理有限背景信号。"
+    prefix = "已整理出可确认的经历线索。" if model_status == "ok" else "已先从简历中整理出明显的经历线索。"
     length_note = "简历较长，已优先处理前段核心文本。" if text_length > RESUME_PARSE_MODEL_TEXT_LIMIT else ""
+    missing_labels = [
+        RESUME_MISSING_SIGNAL_LABELS.get(signal_type, signal_type)
+        for signal_type in missing_signal_types
+    ]
     if readiness == "ready":
         readiness_note = "这些信号足够生成第一版星图，请先核对并确认。"
     elif readiness == "suggested_more":
-        readiness_note = f"可以先生成星图，但建议补充：{', '.join(missing_signal_types)}。"
+        readiness_note = f"可以先生成星图，但建议继续补充：{'、'.join(missing_labels)}。"
     else:
         readiness_note = "当前仍缺少真实经历或具体动作，请继续 AI 访谈补充后再生成星图。"
     return " ".join(part for part in (prefix, readiness_note, length_note) if part)

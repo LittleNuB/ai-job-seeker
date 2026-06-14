@@ -453,6 +453,8 @@ async def test_resume_parse_llm_unavailable_uses_fallback_without_500(
     assert body["modelStatus"] == "fallback"
     assert body["signals"]
     assert body["readiness"] in {"ready", "suggested_more"}
+    assert "_" not in body["userMessage"]
+    assert "模型暂不可用" not in body["userMessage"]
 
 
 @pytest.mark.asyncio()
