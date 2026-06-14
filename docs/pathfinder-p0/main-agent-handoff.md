@@ -884,3 +884,20 @@ Main Agent follow-up order:
 - Remaining risks:
   - Plan has not yet validated actual P1-D Lite UI/data behavior.
   - 12 role star point evidence quality, product/operations task boundary wording, and 390px star-map layout require execution after implementation merge.
+
+## P1-D Lite Resume Parsing And User Copy Dispatch
+
+- Date: 2026-06-14
+- Trigger: product owner review found that some visible Pathfinder copy still speaks to builders rather than users, for example "不新增后端解析 API；当前只建立低摩擦入口和确认信号心智。"
+- Product decision:
+  - All user-visible Pathfinder copy must be written for end users and evaluators, not as implementation notes.
+  - Internal terms such as API, backend, frontend, placeholder, fallback, schema, fixture, P1-D, P1-C, and implementation scope should not appear in the user-facing flow unless they are inside developer documentation or tests.
+  - The resume-upload entry must become a real product capability before submission. It may call the LLM, but it must only extract and organize user-confirmable background signals. It must not recommend jobs, projects, employers, scores, offer probability, certification, or resume packaging.
+- Dispatch plan:
+  - `BE-006 / 后端开发C`: implement Pathfinder resume parsing API using existing file text extraction plus LLM-assisted signal extraction, with no new migration.
+  - `FE-005 / 前端开发D`: replace engineering-style visible copy and connect resume upload to the parsing API, showing extracted signals for user confirmation.
+- Scope guard:
+  - No new database tables or migrations.
+  - No GitHub Search.
+  - No real RAG.
+  - No score, percentage, offer probability, certification, employer screening, resume packaging, or LLM-only final role/project decision.
