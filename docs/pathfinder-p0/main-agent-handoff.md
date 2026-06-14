@@ -968,4 +968,3 @@ Main Agent follow-up order:
 - Scope guard:
   - No backend implementation, migration, GitHub Search, real RAG, scoring, offer probability, certification, employer screening, or resume packaging added.
   - Forbidden B-class files were not touched.
-
