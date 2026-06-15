@@ -15,7 +15,14 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type ChangeEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   ActionButton,
   BulletList,
@@ -63,178 +70,271 @@ interface RoleStarPoint {
   field: "AI 产品 / 应用" | "AI 开发 / 工程" | "AI 数据 / 评测" | "AI 运营 / 增长";
   title: string;
   pathId?: PathId;
+  orbit: 1 | 2 | 3 | 4;
+  x: number;
+  y: number;
   aliases: string[];
   jdSignals: string[];
   deliverables: string[];
   migrationEntries: string[];
+  workSummary: string;
+  firstScenes: string[];
+  fitJudgement: string;
   highlightReason: string;
   nonHighlightReason: string;
+  distanceLabel: string;
   pilotType: PilotType;
 }
 
 const roleStarPoints: RoleStarPoint[] = [
   {
-    id: "ai-product-assistant",
+    id: "ai-product-manager",
     field: "AI 产品 / 应用",
-    title: "行业 AI 应用产品助理",
+    title: "AI 产品经理（AI应用方向）",
     pathId: "industry-ai-product-assistant",
-    aliases: ["AI 产品助理", "知识库产品助理", "行业应用产品专员"],
+    orbit: 1,
+    x: 360,
+    y: 188,
+    aliases: ["AI 应用产品经理", "行业 AI 产品经理", "知识库产品经理"],
     jdSignals: ["需求拆解", "PRD 草稿", "问答样例", "验收口径", "Demo 测试"],
     deliverables: ["场景说明", "用户流程", "MVP 范围", "验收清单"],
     migrationEntries: ["行业资料整理", "用户访谈", "流程梳理", "AI 工具使用记录"],
+    workSummary: "把一个真实业务场景拆成 AI 应用需求、用户流程、原型范围和验收口径。",
+    firstScenes: ["企业知识库问答产品", "AI 简历助手产品", "客服问答质检产品"],
+    fitJudgement: "优先探索：已有资料整理、流程拆解或跨角色沟通信号时，可以先从小场景试航。",
     highlightReason: "你的背景里如果有资料整理、流程拆解或跨角色沟通，优先从这里形成作品集起点。",
     nonHighlightReason: "如果还缺少真实业务场景或用户问题，可以先补充一段具体项目经历。",
+    distanceLabel: "近场：适合先完成一轮轻量试航",
     pilotType: "product",
   },
   {
-    id: "knowledge-base-product",
+    id: "data-product-manager",
     field: "AI 产品 / 应用",
-    title: "AI 知识库产品助理",
-    pathId: "industry-ai-product-assistant",
-    aliases: ["知识库运营产品", "RAG 产品助理", "企业问答产品助理"],
-    jdSignals: ["资料源盘点", "引用展示", "失败兜底", "人工复核", "反馈闭环"],
-    deliverables: ["资料范围表", "问答样例集", "引用规则", "风险边界"],
-    migrationEntries: ["客服知识库", "内部文档", "培训材料", "FAQ 维护"],
-    highlightReason: "适合把文档、知识库、客服或培训资料经验转成可解释的 AI 应用材料。",
-    nonHighlightReason: "如果没有资料治理或问答场景，可先作为探索星点。",
+    title: "数据产品经理（AI数据方向）",
+    pathId: "ai-data-evaluation-assistant",
+    orbit: 1,
+    x: 270,
+    y: 250,
+    aliases: ["AI 数据产品经理", "评测数据产品经理", "样例库产品经理"],
+    jdSignals: ["数据口径", "样例库", "标注流程", "质检规则", "反馈闭环"],
+    deliverables: ["数据需求说明", "样例字段表", "标注规范", "质量看板"],
+    migrationEntries: ["表格整理", "数据治理", "内容审核", "流程协同"],
+    workSummary: "把数据、样例、标注和反馈流程组织成能支持 AI 产品迭代的产品机制。",
+    firstScenes: ["问答样例库设计", "标注质检流程", "用户反馈归因看板"],
+    fitJudgement: "优先探索：有数据整理、审核、表格分析或流程管理经历时，可以先做样例库试航。",
+    highlightReason: "适合把数据、质检、审核或测试经历转成可复核材料。",
+    nonHighlightReason: "如果还缺少样例或质检动作，建议再补充一段数据处理经历线索。",
+    distanceLabel: "近场：可用已有数据整理经验切入",
     pilotType: "product",
   },
   {
-    id: "solution-assistant",
+    id: "ai-ops-growth-specialist",
+    field: "AI 运营 / 增长",
+    title: "AI运营/增长专家",
+    pathId: "ai-application-ops-implementation-assistant",
+    orbit: 1,
+    x: 448,
+    y: 276,
+    aliases: ["AI 工具运营", "AI 用户增长", "AI 体验营负责人"],
+    jdSignals: ["工具选型", "使用教程", "体验任务", "反馈表", "复盘指标"],
+    deliverables: ["体验营方案", "任务卡", "内容日历", "反馈闭环"],
+    migrationEntries: ["社群运营", "培训组织", "内容策划", "工具体验"],
+    workSummary: "围绕 AI 工具采用、用户教育、活动节奏和反馈复盘推动试用与增长。",
+    firstScenes: ["3 天 AI 工具体验营", "新用户上手任务卡", "社群反馈复盘"],
+    fitJudgement: "优先探索：有运营、培训、社群、内容或用户反馈经历时，可以先做体验营试航。",
+    highlightReason: "适合把运营、培训、社群或内容经验连接到 AI 工具落地。",
+    nonHighlightReason: "如果缺少组织或内容材料，可以先做一次小范围工具体验记录。",
+    distanceLabel: "近场：非技术背景也能先体验小场景",
+    pilotType: "operations",
+  },
+  {
+    id: "ai-solution-architect",
     field: "AI 产品 / 应用",
-    title: "AI 解决方案助理",
+    title: "AI解决方案架构师",
     pathId: "industry-ai-solution-assistant",
-    aliases: ["售前方案助理", "PoC 方案助理", "行业解决方案专员"],
+    orbit: 2,
+    x: 506,
+    y: 204,
+    aliases: ["AI 售前方案架构师", "AI PoC 方案负责人", "行业 AI 解决方案顾问"],
     jdSignals: ["客户访谈纪要", "痛点整理", "PoC 范围", "Demo 脚本", "交付边界"],
     deliverables: ["方案大纲", "PoC 清单", "角色分工", "风险假设"],
     migrationEntries: ["客户沟通", "方案 PPT", "项目协调", "交付复盘"],
-    highlightReason: "适合有沟通、方案材料或项目协调经历的用户试航。",
-    nonHighlightReason: "如果缺少客户或业务侧沟通证据，先补充协作细节。",
+    workSummary: "把客户问题、业务流程、数据边界和技术可行性整理成可沟通的 AI 方案。",
+    firstScenes: ["知识库 PoC 范围说明", "客服场景 Demo 脚本", "内部流程自动化方案"],
+    fitJudgement: "可以先体验：完整岗位门槛较高，但可以先从一个小场景的 PoC 范围和边界说明开始。",
+    highlightReason: "适合有沟通、方案材料或项目协调经历的用户先试一个小场景。",
+    nonHighlightReason: "如果缺少客户或业务侧沟通证据，建议再补充协作细节。",
+    distanceLabel: "中近场：先体验方案中的小场景",
     pilotType: "product",
   },
   {
     id: "llm-app-engineer",
     field: "AI 开发 / 工程",
-    title: "大模型应用工程助理",
+    title: "大模型应用工程师",
     pathId: "algorithm-llm-engineer",
-    aliases: ["LLM 应用开发", "AI 应用工程助理", "Prompt 工程助理"],
+    orbit: 3,
+    x: 136,
+    y: 302,
+    aliases: ["LLM 应用开发", "AI 应用工程师", "Prompt 工程师"],
     jdSignals: ["模型调用流程", "Prompt 调试", "日志观察", "异常兜底", "接口联调"],
     deliverables: ["小型原型", "调用流程", "测试记录", "边界说明"],
     migrationEntries: ["Python/JS 基础", "自动化脚本", "低代码工具", "技术文档阅读"],
+    workSummary: "把模型能力接入业务流程，处理提示词、调用链路、日志观察和异常兜底。",
+    firstScenes: ["文本分类小工具", "知识问答调用链", "批量资料整理脚本"],
+    fitJudgement: "可以先了解：如果已经有代码或工具集成记录，可以向工程试航靠近；否则建议先补充可运行材料。",
     highlightReason: "如果你已有可运行代码或工具集成经验，可把它作为工程试航入口。",
     nonHighlightReason: "如果缺少代码或实验记录，短期不把它作为主攻结论。",
+    distanceLabel: "外场：需要可运行代码或实验记录",
     pilotType: "development",
   },
   {
-    id: "rag-engineering",
+    id: "rag-engineer",
     field: "AI 开发 / 工程",
-    title: "RAG 应用工程助理",
+    title: "RAG 应用工程师",
     pathId: "algorithm-llm-engineer",
-    aliases: ["知识库工程助理", "检索增强应用开发", "文档问答工程助理"],
+    orbit: 2,
+    x: 350,
+    y: 374,
+    aliases: ["知识库工程师", "检索增强应用开发", "文档问答工程师"],
     jdSignals: ["文档切分", "向量检索", "引用返回", "召回调试", "权限边界"],
     deliverables: ["项目拆解", "检索流程图", "测试样例", "改造建议"],
     migrationEntries: ["公开项目阅读", "数据清洗", "文档系统", "搜索体验"],
+    workSummary: "围绕文档处理、检索、引用展示和问答质量调试搭建知识库应用链路。",
+    firstScenes: ["公开项目阅读拆解", "文档问答流程图", "引用展示验收清单"],
+    fitJudgement: "可以先体验：有技术基础时可做开源项目拆解；没有工程基础时先做产品或运营试航更稳。",
     highlightReason: "适合用已核验开源项目做阅读和场景改造，不声称参与原项目。",
     nonHighlightReason: "如果没有工程基础，可先做产品或运营类试航，再补代码材料。",
+    distanceLabel: "中近场：可通过已核验项目阅读切入",
     pilotType: "development",
   },
   {
-    id: "implementation-engineer",
+    id: "ai-implementation-consultant",
     field: "AI 开发 / 工程",
-    title: "AI 应用实施助理",
+    title: "AI 应用实施顾问",
     pathId: "ai-application-ops-implementation-assistant",
-    aliases: ["AI 实施顾问助理", "系统配置助理", "交付支持助理"],
+    orbit: 3,
+    x: 578,
+    y: 312,
+    aliases: ["AI 实施顾问", "系统配置工程师", "交付支持顾问"],
     jdSignals: ["环境配置", "需求确认", "权限检查", "用户培训", "问题记录"],
     deliverables: ["实施清单", "验收表", "培训脚本", "问题台账"],
     migrationEntries: ["SaaS 实施", "客户成功", "运维支持", "流程培训"],
+    workSummary: "把 AI 工具或系统带入真实团队使用，处理配置、培训、验收和问题反馈。",
+    firstScenes: ["工具配置清单", "用户培训脚本", "试点问题台账"],
+    fitJudgement: "可以先了解：有实施、培训、支持或工具落地经历时更靠近；否则建议补一次工具配置记录。",
     highlightReason: "适合有工具落地、培训、支持或跨团队推进经验的用户。",
     nonHighlightReason: "如果缺少真实交付流程，先补充一次工具配置或体验营记录。",
+    distanceLabel: "外场：需要更多交付现场证据",
     pilotType: "development",
   },
   {
-    id: "data-evaluation",
+    id: "ai-data-evaluation-engineer",
     field: "AI 数据 / 评测",
-    title: "AI 数据评测助理",
+    title: "AI 数据评测工程师",
     pathId: "ai-data-evaluation-assistant",
-    aliases: ["模型评测助理", "数据质检助理", "问答评测专员"],
+    orbit: 2,
+    x: 216,
+    y: 204,
+    aliases: ["模型评测工程师", "数据质检专员", "问答评测专员"],
     jdSignals: ["样例构造", "标注规范", "抽检记录", "错误归因", "复核流程"],
     deliverables: ["评测样例表", "错误分类", "质检流程", "复盘记录"],
     migrationEntries: ["数据整理", "内容审核", "测试记录", "表格分析"],
+    workSummary: "设计样例、记录错误、维护质检流程，帮助判断 AI 输出在具体场景里的问题类型。",
+    firstScenes: ["问答样例评测表", "错误归因清单", "人工复核流程"],
+    fitJudgement: "可以先体验：有数据、质检、审核或测试经历时，可以先做一版样例评测材料。",
     highlightReason: "适合把数据、质检、审核或测试经历转成可复核材料。",
     nonHighlightReason: "如果没有样例或质检动作，建议先补充一段数据处理经历。",
+    distanceLabel: "中近场：适合补成可复核材料",
     pilotType: "operations",
   },
   {
-    id: "annotation-qc",
+    id: "annotation-qc-specialist",
     field: "AI 数据 / 评测",
-    title: "标注质检与样例库运营",
+    title: "数据标注质检专家",
     pathId: "ai-data-evaluation-assistant",
-    aliases: ["标注运营", "样例库维护", "质检流程助理"],
+    orbit: 3,
+    x: 236,
+    y: 404,
+    aliases: ["标注运营", "样例库维护", "质检流程专员"],
     jdSignals: ["口径维护", "批次管理", "一致性检查", "反馈闭环", "人员协同"],
     deliverables: ["标注口径", "样例库目录", "质检表", "协作 SOP"],
     migrationEntries: ["内容运营", "客服质检", "审核流程", "培训材料"],
+    workSummary: "维护标注口径、质检流程、协作规则和样例库，让 AI 数据生产更稳定。",
+    firstScenes: ["标注口径整理", "批次抽检记录", "协作 SOP 草稿"],
+    fitJudgement: "可以先了解：如果有审核、培训或流程协作经历，可先补一份标注质检样例。",
     highlightReason: "适合把重复流程和质量管理经验转成 AI 数据侧试航材料。",
     nonHighlightReason: "如果缺少流程复盘，先补一次人工审核或样例整理。",
+    distanceLabel: "外场：需要流程和协作证据",
     pilotType: "operations",
   },
   {
     id: "feedback-analyst",
     field: "AI 数据 / 评测",
-    title: "模型反馈分析助理",
+    title: "模型反馈分析师",
     pathId: "ai-data-evaluation-assistant",
-    aliases: ["用户反馈分析", "问答失败分析", "AI 体验分析助理"],
+    orbit: 3,
+    x: 484,
+    y: 406,
+    aliases: ["用户反馈分析", "问答失败分析", "AI 体验分析师"],
     jdSignals: ["反馈收集", "问题归类", "失败案例", "改进建议", "复测记录"],
     deliverables: ["反馈看板", "失败案例库", "改进清单", "复测说明"],
     migrationEntries: ["用户运营", "客服反馈", "产品体验", "数据复盘"],
+    workSummary: "把用户反馈和失败案例整理成可复测、可归因、可推动产品迭代的材料。",
+    firstScenes: ["用户反馈归类", "失败案例库", "改进建议清单"],
+    fitJudgement: "可以先了解：有用户反馈、客服、产品体验或表格复盘经历时更容易靠近。",
     highlightReason: "适合有用户反馈、表格整理或体验复盘经历的用户。",
     nonHighlightReason: "如果没有用户反馈材料，先从一次工具体验记录开始。",
+    distanceLabel: "外场：需要反馈样本和复盘动作",
     pilotType: "operations",
   },
   {
-    id: "ai-tool-ops",
-    field: "AI 运营 / 增长",
-    title: "AI 工具运营助理",
+    id: "ai-agent-engineer",
+    field: "AI 开发 / 工程",
+    title: "AI Agent 应用工程师",
+    pathId: "algorithm-llm-engineer",
+    orbit: 4,
+    x: 640,
+    y: 166,
+    aliases: ["Agent 工程师", "工作流智能体工程师", "AI 自动化工程师"],
+    jdSignals: ["工具调用", "任务编排", "状态管理", "权限边界", "异常回退"],
+    deliverables: ["Agent 流程图", "工具清单", "测试任务集", "风险边界"],
+    migrationEntries: ["自动化脚本", "工作流工具", "代码项目", "系统集成"],
+    workSummary: "把模型、工具、流程和权限组合成能完成特定任务的智能体应用。",
+    firstScenes: ["资料整理 Agent", "客服工单分流 Agent", "报告初稿工作流"],
+    fitJudgement: "建议长期准备：需要代码、流程编排和异常处理证据；当前可先了解小任务工作流。",
+    highlightReason: "如果你已有自动化脚本或系统集成经验，可以作为中长期工程试航方向。",
+    nonHighlightReason: "信号不足时建议先了解，不急于把它写成主攻方向。",
+    distanceLabel: "远场：需要长期准备和更多工程证据",
+    pilotType: "development",
+  },
+  {
+    id: "ai-project-manager-delivery",
+    field: "AI 产品 / 应用",
+    title: "AI 项目经理（交付方向）",
     pathId: "ai-application-ops-implementation-assistant",
-    aliases: ["AI 工具体验运营", "用户教育运营", "工具落地助理"],
-    jdSignals: ["工具选型", "使用教程", "体验任务", "反馈表", "复盘指标"],
-    deliverables: ["体验营方案", "任务卡", "内容日历", "反馈闭环"],
-    migrationEntries: ["社群运营", "培训组织", "内容策划", "工具体验"],
-    highlightReason: "适合把运营、培训、社群或内容经验连接到 AI 工具落地。",
-    nonHighlightReason: "如果缺少组织或内容材料，可以先做一个 3 天体验营方案。",
-    pilotType: "operations",
-  },
-  {
-    id: "ai-content-growth",
-    field: "AI 运营 / 增长",
-    title: "AI 内容增长助理",
-    aliases: ["AI 内容运营", "增长内容策划", "产品教育内容助理"],
-    jdSignals: ["用户画像", "内容选题", "工具案例", "渠道节奏", "反馈数据"],
-    deliverables: ["选题表", "内容脚本", "渠道计划", "复盘框架"],
-    migrationEntries: ["新媒体运营", "课程内容", "用户增长", "案例撰写"],
-    highlightReason: "适合用内容和用户教育经验做 AI 工具采用试航。",
-    nonHighlightReason: "该星点当前适合作为探索方向，暂不生成完整试航工单。",
-    pilotType: "operations",
-  },
-  {
-    id: "ai-experience-camp",
-    field: "AI 运营 / 增长",
-    title: "AI 工具体验营策划",
-    aliases: ["AI 训练营运营", "工具上手活动策划", "用户教育项目助理"],
-    jdSignals: ["活动节奏", "任务设计", "用户分层", "答疑机制", "复盘指标"],
-    deliverables: ["3 天体验营", "任务手册", "答疑 SOP", "复盘表"],
-    migrationEntries: ["活动运营", "社群陪跑", "培训执行", "课程助教"],
-    highlightReason: "适合把组织、陪跑、内容和反馈能力组合成低门槛试航。",
-    nonHighlightReason: "如果没有活动经验，可从一次小范围工具体验记录开始。",
-    pilotType: "operations",
+    orbit: 4,
+    x: 86,
+    y: 166,
+    aliases: ["AI 交付项目经理", "AI 项目协调负责人", "AI 试点推进经理"],
+    jdSignals: ["范围管理", "里程碑", "角色协同", "风险记录", "验收材料"],
+    deliverables: ["试点计划", "进度表", "风险清单", "验收纪要"],
+    migrationEntries: ["项目管理", "跨团队协作", "交付复盘", "会议纪要"],
+    workSummary: "把 AI 试点从需求、范围、协作到验收推进成可复盘的交付过程。",
+    firstScenes: ["两周 PoC 推进计划", "风险与边界清单", "试点验收纪要"],
+    fitJudgement: "建议再补充经历线索：如果已有项目协调、交付复盘或会议推进经历，可以逐步靠近。",
+    highlightReason: "适合有跨团队协调和交付推进经验的用户作为后续拓展方向。",
+    nonHighlightReason: "如果缺少项目推进证据，可以先补一份小范围试点计划。",
+    distanceLabel: "远场：更依赖交付现场和协作证据",
+    pilotType: "product",
   },
 ];
 
 const roleByPathId: Partial<Record<PathId, string>> = {
-  "industry-ai-product-assistant": "ai-product-assistant",
-  "industry-ai-solution-assistant": "solution-assistant",
-  "ai-data-evaluation-assistant": "data-evaluation",
-  "ai-application-ops-implementation-assistant": "ai-tool-ops",
-  "algorithm-llm-engineer": "rag-engineering",
+  "industry-ai-product-assistant": "ai-product-manager",
+  "industry-ai-solution-assistant": "ai-solution-architect",
+  "ai-data-evaluation-assistant": "ai-data-evaluation-engineer",
+  "ai-application-ops-implementation-assistant": "ai-ops-growth-specialist",
+  "algorithm-llm-engineer": "rag-engineer",
 };
 
 const pilotTypeLabels: Record<PilotType, string> = {
@@ -426,6 +526,43 @@ function readinessTone(level: SignalReadinessLevel) {
   return "rose";
 }
 
+const starmapOrbitBands: Array<{
+  orbit: RoleStarPoint["orbit"];
+  rx: number;
+  ry: number;
+  label: string;
+}> = [
+  { orbit: 1, rx: 104, ry: 66, label: "近场试航" },
+  { orbit: 2, rx: 178, ry: 112, label: "可先体验" },
+  { orbit: 3, rx: 254, ry: 158, label: "建议补证据" },
+  { orbit: 4, rx: 322, ry: 204, label: "长期准备" },
+];
+
+const starmapFieldColors: Record<RoleStarPoint["field"], string> = {
+  "AI 产品 / 应用": "#2dd4bf",
+  "AI 开发 / 工程": "#f59e0b",
+  "AI 数据 / 评测": "#38bdf8",
+  "AI 运营 / 增长": "#a3e635",
+};
+
+function roleTitleLines(title: string) {
+  if (title.includes("（")) {
+    return title.replace("）", "").split("（");
+  }
+  if (title.length <= 8) return [title];
+  return [title.slice(0, 8), title.slice(8)];
+}
+
+function pilotActionCopy(type: PilotType) {
+  if (type === "development") {
+    return "下方可选择已审计公开项目，生成一份岗位试航任务。";
+  }
+  if (type === "product") {
+    return "下方提供产品试航框架，可先整理原型、流程和验收材料。";
+  }
+  return "下方提供运营试航框架，可先整理体验营节奏、任务卡和复盘材料。";
+}
+
 function highlightedRoleIds(responsePaths?: Array<{ pathId: PathId; decision: string }>) {
   const fromResponse =
     responsePaths
@@ -435,9 +572,9 @@ function highlightedRoleIds(responsePaths?: Array<{ pathId: PathId; decision: st
   return Array.from(
     new Set([
       ...fromResponse,
-      "ai-product-assistant",
-      "solution-assistant",
-      "data-evaluation",
+      "ai-product-manager",
+      "ai-solution-architect",
+      "ai-data-evaluation-engineer",
     ]),
   ).slice(0, 3);
 }
@@ -949,8 +1086,11 @@ export function PathfinderRecommendationPage() {
   const { state, userProfile, generateTrialPackage } = usePathfinder();
   const router = useRouter();
   const recommendation = state.recommendationResponse;
-  const topRoleIds = highlightedRoleIds(recommendation?.paths);
-  const [selectedRoleId, setSelectedRoleId] = useState<string>(topRoleIds[0] ?? roleStarPoints[0].id);
+  const topRoleIds = useMemo(
+    () => highlightedRoleIds(recommendation?.paths),
+    [recommendation?.paths],
+  );
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(roleStarPoints[0].id);
   const selectedRole =
     roleStarPoints.find((role) => role.id === selectedRoleId) ?? roleStarPoints[0];
   const selectedPathId = selectedRole.pathId ?? priorityPathId;
@@ -980,7 +1120,11 @@ export function PathfinderRecommendationPage() {
   }, []);
 
   useEffect(() => {
-    setSelectedRoleId((current) => current || topRoleIds[0] || roleStarPoints[0].id);
+    setSelectedRoleId((current) =>
+      roleStarPoints.some((role) => role.id === current)
+        ? current
+        : topRoleIds[0] || roleStarPoints[0].id,
+    );
   }, [topRoleIds]);
 
   useEffect(() => {
@@ -1024,143 +1168,52 @@ export function PathfinderRecommendationPage() {
     <div>
       <PageHeader
         title={`${profileName(userProfile)}的 AI 求职星图`}
-        description="12 个岗位星点按星域展开，Top 3 代表当前更值得试航的方向；它们不是录用判断，只是有证据链的探索入口。"
+        description="12 个岗位星点围绕你的位置展开。越靠近中心，代表越适合先做一轮小场景试航；越远，代表需要更长期的经历线索和作品材料。"
       />
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-3">
-        {topRoleIds.map((roleId, index) => {
-          const role = roleStarPoints.find((item) => item.id === roleId);
-          if (!role) return null;
-          return (
-            <button
-              key={role.id}
-              type="button"
-              onClick={() => setSelectedRoleId(role.id)}
-              className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-left transition hover:border-teal-400"
-            >
-              <div className="text-xs font-semibold text-teal-700">Top {index + 1}</div>
-              <div className="mt-2 text-base font-semibold text-slate-950">
-                {role.title}
-              </div>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                {role.highlightReason}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_410px]">
         <div className="rounded-lg border border-slate-800 bg-[#10171c] p-4 text-slate-100 shadow-sm sm:p-5">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-teal-200">
-                2.5D 岗位星图工作台
+                岗位星图导航盘
               </div>
               <p className="mt-1 text-sm text-slate-400">
-                点击任意星点查看 JD 信号、迁移入口和适航任务类型。
+                点击任意星点查看岗位内容、靠近原因和试航入口。
               </p>
             </div>
             <div className="rounded-md border border-slate-600 bg-slate-900/70 px-3 py-2 text-xs font-semibold text-slate-200">
-              证据链展示，不呈现量化结论
+              金色星点代表当前重点试航方向
             </div>
           </div>
 
-          <div
-            className="rounded-lg border border-slate-700/80 p-4"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 18% 24%, rgba(45,212,191,0.22) 0 1px, transparent 3px), radial-gradient(circle at 70% 18%, rgba(251,191,36,0.18) 0 1px, transparent 3px), radial-gradient(circle at 40% 75%, rgba(125,211,252,0.18) 0 1px, transparent 3px), linear-gradient(rgba(148,163,184,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.12) 1px, transparent 1px)",
-              backgroundSize: "180px 160px, 220px 180px, 260px 210px, 44px 44px, 44px 44px",
-            }}
-          >
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {(["AI 产品 / 应用", "AI 开发 / 工程", "AI 数据 / 评测", "AI 运营 / 增长"] as const).map(
-                (field) => (
-                  <div key={field} className="min-w-0 rounded-lg border border-slate-700 bg-slate-950/55 p-3">
-                    <div className="mb-3 text-sm font-semibold text-slate-200">
-                      {field}
-                    </div>
-                    <div className="grid gap-3">
-                      {roleStarPoints
-                        .filter((role) => role.field === field)
-                        .map((role) => {
-                          const selected = role.id === selectedRole.id;
-                          const highlighted = topRoleIds.includes(role.id);
-                          return (
-                            <button
-                              key={role.id}
-                              type="button"
-                              onClick={() => setSelectedRoleId(role.id)}
-                              className={`group min-h-24 rounded-md border p-3 text-left transition ${
-                                selected
-                                  ? "border-teal-300 bg-teal-300/15"
-                                  : highlighted
-                                    ? "border-amber-300/70 bg-amber-300/10 hover:border-amber-200"
-                                    : "border-slate-700 bg-slate-900/75 hover:border-slate-500"
-                              }`}
-                            >
-                              <div className="flex items-start gap-2">
-                                <span
-                                  className={`mt-1 h-3 w-3 shrink-0 rounded-full ${
-                                    highlighted ? "bg-amber-200 shadow-[0_0_18px_rgba(251,191,36,0.75)]" : "bg-slate-400"
-                                  }`}
-                                />
-                                <div className="min-w-0">
-                                  <div className="text-sm font-semibold text-white">
-                                    {role.title}
-                                  </div>
-                                  <div className="mt-2">
-                                    <PilotTypeTag type={role.pilotType} />
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                ),
-              )}
+          <div className="rounded-lg border border-slate-700/80 bg-[#0c1317] p-2 sm:p-4">
+            <PathfinderStarmap
+              roles={roleStarPoints}
+              selectedRoleId={selectedRole.id}
+              highlightedRoleIds={topRoleIds}
+              onSelectRole={setSelectedRoleId}
+            />
+            <div className="mt-3 flex flex-wrap gap-2 px-1 text-xs text-slate-300">
+              {starmapOrbitBands.map((band) => (
+                <span
+                  key={band.orbit}
+                  className="rounded-md border border-slate-700 bg-slate-950/60 px-2 py-1"
+                >
+                  {band.label}
+                </span>
+              ))}
             </div>
           </div>
         </div>
 
-        <Panel>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusPill label={selectedRole.field} tone="slate" />
-            {topRoleIds.includes(selectedRole.id) ? (
-              <StatusPill label="Top 3 高亮" tone="teal" />
-            ) : (
-              <StatusPill label="可探索" tone="amber" />
-            )}
-          </div>
-          <h2 className="mt-3 text-xl font-semibold text-slate-950">
-            {selectedRole.title}
-          </h2>
-          <div className="mt-4 space-y-4">
-            <InfoBlock title="相关岗位叫法" items={selectedRole.aliases} />
-            <InfoBlock title="样例 JD 信号" items={selectedRole.jdSignals} />
-            <InfoBlock title="常见交付物" items={selectedRole.deliverables} />
-            <InfoBlock title="迁移入口" items={selectedRole.migrationEntries} />
-            <InfoBlock
-              title="为什么高亮 / 未高亮"
-              items={[
-                topRoleIds.includes(selectedRole.id)
-                  ? selectedRole.highlightReason
-                  : selectedRole.nonHighlightReason,
-              ]}
-            />
-            <div>
-              <h3 className="text-sm font-semibold text-slate-950">
-                对应适航任务类型
-              </h3>
-              <div className="mt-2">
-                <PilotTypeTag type={selectedRole.pilotType} />
-              </div>
-            </div>
-          </div>
-        </Panel>
+        <RoleDetailPanel
+          role={selectedRole}
+          highlighted={topRoleIds.includes(selectedRole.id)}
+          canGeneratePackage={canGeneratePackage}
+          isGenerating={isGenerating}
+          onGenerateTrialPackage={onGenerateTrialPackage}
+        />
       </div>
 
       <Section
@@ -1236,6 +1289,256 @@ export function PathfinderRecommendationPage() {
         </div>
       </Section>
     </div>
+  );
+}
+
+function PathfinderStarmap({
+  roles,
+  selectedRoleId,
+  highlightedRoleIds,
+  onSelectRole,
+}: {
+  roles: RoleStarPoint[];
+  selectedRoleId: string;
+  highlightedRoleIds: string[];
+  onSelectRole: (roleId: string) => void;
+}) {
+  return (
+    <svg
+      role="img"
+      aria-label="个人 AI 求职岗位星图"
+      viewBox="0 0 720 520"
+      className="block h-auto w-full max-w-full"
+    >
+      <defs>
+        <radialGradient id="pathfinder-user-glow" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#ccfbf1" stopOpacity="0.95" />
+          <stop offset="65%" stopColor="#14b8a6" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
+        </radialGradient>
+        <filter id="pathfinder-star-glow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect width="720" height="520" rx="18" fill="#0c1317" />
+      <path
+        d="M62 458C164 376 227 346 360 350C492 354 555 318 662 230"
+        fill="none"
+        stroke="#5eead4"
+        strokeDasharray="7 9"
+        strokeOpacity="0.24"
+        strokeWidth="2"
+      />
+      {starmapOrbitBands.map((band) => (
+        <g key={band.orbit}>
+          <ellipse
+            cx="360"
+            cy="260"
+            rx={band.rx}
+            ry={band.ry}
+            fill="none"
+            stroke="#94a3b8"
+            strokeDasharray={band.orbit === 1 ? "0" : "8 10"}
+            strokeOpacity={band.orbit === 1 ? "0.45" : "0.26"}
+            strokeWidth="1.3"
+          />
+          <text
+            x={360 + band.rx - 16}
+            y={260 - band.ry + 6}
+            fill="#94a3b8"
+            fontSize="12"
+            textAnchor="end"
+          >
+            {band.label}
+          </text>
+        </g>
+      ))}
+
+      <g aria-label="用户当前位置">
+        <circle cx="360" cy="260" r="54" fill="url(#pathfinder-user-glow)" />
+        <circle cx="360" cy="260" r="25" fill="#0f766e" stroke="#99f6e4" strokeWidth="2" />
+        <text x="360" y="255" fill="#ecfeff" fontSize="13" fontWeight="700" textAnchor="middle">
+          你的位置
+        </text>
+        <text x="360" y="274" fill="#ccfbf1" fontSize="11" textAnchor="middle">
+          已确认背景
+        </text>
+      </g>
+
+      {roles.map((role) => (
+        <RoleStarNode
+          key={role.id}
+          role={role}
+          selected={selectedRoleId === role.id}
+          highlighted={highlightedRoleIds.includes(role.id)}
+          onSelectRole={onSelectRole}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function RoleStarNode({
+  role,
+  selected,
+  highlighted,
+  onSelectRole,
+}: {
+  role: RoleStarPoint;
+  selected: boolean;
+  highlighted: boolean;
+  onSelectRole: (roleId: string) => void;
+}) {
+  const accent = highlighted ? "#fbbf24" : starmapFieldColors[role.field];
+  const labelLines = roleTitleLines(role.title);
+  const labelAbove = role.y < 260;
+  const labelY = role.y + (labelAbove ? -28 : 34);
+  const hitY = labelAbove ? role.y - 58 : role.y - 18;
+
+  function onKeyDown(event: KeyboardEvent<SVGGElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelectRole(role.id);
+    }
+  }
+
+  return (
+    <g
+      role="button"
+      tabIndex={0}
+      aria-label={`查看${role.title}`}
+      aria-pressed={selected}
+      onClick={() => onSelectRole(role.id)}
+      onKeyDown={onKeyDown}
+      className="cursor-pointer outline-none"
+    >
+      <rect
+        x={role.x - 76}
+        y={hitY}
+        width="152"
+        height={labelLines.length > 1 ? "78" : "62"}
+        fill="transparent"
+        pointerEvents="all"
+      />
+      <line
+        x1="360"
+        y1="260"
+        x2={role.x}
+        y2={role.y}
+        stroke={accent}
+        strokeOpacity={highlighted || selected ? "0.44" : "0.14"}
+        strokeWidth={highlighted || selected ? "1.8" : "1"}
+      />
+      <circle
+        cx={role.x}
+        cy={role.y}
+        r={highlighted ? 16 : 12}
+        fill={selected ? "#ecfeff" : accent}
+        fillOpacity={selected ? "1" : highlighted ? "0.95" : "0.78"}
+        stroke={selected ? accent : "#0f172a"}
+        strokeWidth={selected ? "3" : "1.6"}
+        filter={highlighted ? "url(#pathfinder-star-glow)" : undefined}
+      />
+      <circle
+        cx={role.x}
+        cy={role.y}
+        r={highlighted ? 28 : 21}
+        fill="none"
+        stroke={accent}
+        strokeOpacity={selected ? "0.6" : highlighted ? "0.32" : "0.12"}
+        strokeWidth="1.4"
+      />
+      <text
+        x={role.x}
+        y={labelY}
+        fill={selected ? "#f8fafc" : "#dbeafe"}
+        fontSize="12"
+        fontWeight={selected || highlighted ? "700" : "600"}
+        textAnchor="middle"
+      >
+        {labelLines.map((line, index) => (
+          <tspan key={line} x={role.x} dy={index === 0 ? 0 : 14}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
+
+function RoleDetailPanel({
+  role,
+  highlighted,
+  canGeneratePackage,
+  isGenerating,
+  onGenerateTrialPackage,
+}: {
+  role: RoleStarPoint;
+  highlighted: boolean;
+  canGeneratePackage: boolean;
+  isGenerating: boolean;
+  onGenerateTrialPackage: () => void;
+}) {
+  return (
+    <Panel>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusPill label={role.field} tone="slate" />
+        <StatusPill
+          label={highlighted ? "重点试航星点" : "可以先了解"}
+          tone={highlighted ? "teal" : "amber"}
+        />
+      </div>
+      <h2 className="mt-3 text-xl font-semibold text-slate-950">{role.title}</h2>
+      <div className="mt-4 space-y-4">
+        <InfoBlock title="岗位做什么" items={[role.workSummary]} />
+        <InfoBlock
+          title="岗位适配判断"
+          items={[
+            highlighted
+              ? role.fitJudgement
+              : `可以先了解；${role.nonHighlightReason}`,
+          ]}
+        />
+        <InfoBlock
+          title="为什么靠近 / 稍远"
+          items={[
+            role.distanceLabel,
+            highlighted ? role.highlightReason : role.nonHighlightReason,
+          ]}
+        />
+        <InfoBlock title="可先体验的岗位场景" items={role.firstScenes} />
+        <InfoBlock title="相关岗位叫法" items={role.aliases} />
+        <InfoBlock title="样例 JD 信号" items={role.jdSignals} />
+        <InfoBlock title="常见交付物" items={role.deliverables} />
+        <InfoBlock title="迁移入口" items={role.migrationEntries} />
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm font-semibold text-slate-950">
+            进入岗位试航任务
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {pilotActionCopy(role.pilotType)}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <PilotTypeTag type={role.pilotType} />
+            {role.pilotType === "development" && canGeneratePackage ? (
+              <ActionButton onClick={onGenerateTrialPackage} disabled={isGenerating}>
+                {isGenerating ? "正在生成适航任务" : "生成岗位试航任务"}
+              </ActionButton>
+            ) : (
+              <StatusPill
+                label={role.pilotType === "development" ? "先选择下方项目" : "查看下方任务框架"}
+                tone="amber"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </Panel>
   );
 }
 
@@ -1672,7 +1975,7 @@ export function PathfinderResultPage() {
               items={[
                 "补齐一段最具体的真实经历：背景、动作、材料、结果、边界。",
                 "把适航作答改成可复核条目，删掉夸大或归属不清的表述。",
-                "为 Top 1 星点准备 3 个面试追问和证据来源。",
+                "为当前重点星点准备 3 个面试追问和证据来源。",
               ]}
             />
           </Panel>

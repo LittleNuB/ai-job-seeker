@@ -623,9 +623,10 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
 
   await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
   await expect(page.getByRole("heading", { name: "tester的 AI 求职星图" })).toBeVisible();
-  await expect(page.getByText("2.5D 岗位星图工作台")).toBeVisible();
-  await expect(page.getByText("行业 AI 应用产品助理").first()).toBeVisible();
-  await expect(page.getByText("AI 工具体验营策划")).toBeVisible();
+  await expect(page.getByText("岗位星图导航盘")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "AI 产品经理（AI应用方向）" })).toBeVisible();
+  await expect(page.getByText("岗位适配判断")).toBeVisible();
+  await expect(page.getByText("AI运营/增长专家")).toBeVisible();
   await expect(page.getByText("适航任务入口")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Vibe Coding 原型试航" }),
@@ -636,6 +637,7 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   await expect(page.getByText("GitHub Search")).toHaveCount(0);
   await expect(page.getByText("score")).toHaveCount(0);
   await expect(page.getByText("probability")).toHaveCount(0);
+  await expect(page.getByText("Top 1")).toHaveCount(0);
   await expectNoUserVisibleEngineeringCopy(page);
   await expect(
     page
@@ -719,8 +721,8 @@ test("uploads resume, confirms extracted signals, and reaches star map", async (
   await page.getByRole("button", { name: "确认信号并查看星图" }).click();
 
   await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
-  await expect(page.getByText("Top 1")).toBeVisible();
-  await expect(page.getByText("2.5D 岗位星图工作台")).toBeVisible();
+  await expect(page.getByText("重点试航星点")).toBeVisible();
+  await expect(page.getByText("岗位星图导航盘")).toBeVisible();
   await expectNoUserVisibleEngineeringCopy(page);
 
   await expect
@@ -757,8 +759,8 @@ test("runs AI interview, lets user stop, confirm signals, and reach star map", a
   await page.getByRole("button", { name: "暂时够了，生成星图" }).click();
 
   await expect(page).toHaveURL(/\/pathfinder\/recommendation$/);
-  await expect(page.getByText("Top 1")).toBeVisible();
-  await expect(page.getByText("2.5D 岗位星图工作台")).toBeVisible();
+  await expect(page.getByText("重点试航星点")).toBeVisible();
+  await expect(page.getByText("岗位星图导航盘")).toBeVisible();
   await expect(page.getByText("GitHub Search")).toHaveCount(0);
 });
 

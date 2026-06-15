@@ -494,6 +494,9 @@ assertNoUserVisibleEngineeringTerms(
   routedPathfinderCopy,
   "routed Pathfinder page copy",
 );
+assert.equal(routedPathfinderCopy.includes("岗位星图导航盘"), true);
+assert.equal(routedPathfinderCopy.includes("岗位适配判断"), true);
+assert.equal(/Top\s*[123]/.test(routedPathfinderCopy), false);
 
 for (const unsafeCopy of [
   "我已经可以胜任这个岗位。",
