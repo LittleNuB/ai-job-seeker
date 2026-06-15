@@ -1,0 +1,2343 @@
+{
+  "schemaVersion": "pathfinder-role-scenarios.v1",
+  "recordType": "RoleScenarioSet",
+  "scenarioSetId": "p2-role-scenarios",
+  "version": "1.0.1",
+  "createdAt": "2026-06-15",
+  "updatedAt": "2026-06-15",
+  "status": "draft",
+  "scope": "Pathfinder P2 read-only role scenario fixture. It expands role star points into concrete work scenarios and pilot task bindings without adding runtime APIs, database migrations, scraping, search, ranking, or outcome promises.",
+  "sourceBasis": {
+    "taxonomySource": "data/ai_positions.json",
+    "jdSampleSource": "scraper/cleaned/cleaned_jds.json",
+    "roleStarPointBridge": "data/pathfinder/role-star-points/p1d-role-star-points.json",
+    "pilotTaskPackSource": "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json",
+    "antiPackagingRuleSource": "data/pathfinder/anti-packaging-rules/p1a-rules.json",
+    "evidenceBoundary": "JD evidence is treated only as current sample trend reference. It does not claim complete market coverage."
+  },
+  "statusSummary": {
+    "active": 58,
+    "needs_review": 14,
+    "draft": 0
+  },
+  "roleStarPoints": [
+    {
+      "roleStarPointId": "ai-application-product-manager",
+      "displayName": "AI 产品经理（AI应用方向）",
+      "status": "active",
+      "taxonomyRefs": ["product.ai_product_manager"],
+      "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"]
+    },
+    {
+      "roleStarPointId": "ai-data-product-manager",
+      "displayName": "数据产品经理（AI数据方向）",
+      "status": "active",
+      "taxonomyRefs": ["product.data_product_manager"],
+      "sourceP1dRoleStarPointIds": ["ai-product-manager-assistant", "data-analysis-assistant"]
+    },
+    {
+      "roleStarPointId": "ai-solution-architect",
+      "displayName": "AI解决方案架构师",
+      "status": "active",
+      "taxonomyRefs": ["product.ai_solution_architect"],
+      "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"]
+    },
+    {
+      "roleStarPointId": "ai-implementation-consultant",
+      "displayName": "AI应用实施顾问",
+      "status": "active",
+      "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+      "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"]
+    },
+    {
+      "roleStarPointId": "ai-application-engineer",
+      "displayName": "AI应用开发工程师",
+      "status": "active",
+      "taxonomyRefs": ["applied.ai_application_dev", "applied.ai_fullstack", "applied.prompt_engineer"],
+      "sourceP1dRoleStarPointIds": ["agent-application-developer", "ai-toolchain-developer"]
+    },
+    {
+      "roleStarPointId": "rag-engineer",
+      "displayName": "RAG工程师",
+      "status": "active",
+      "taxonomyRefs": ["engineering.rag_engineer"],
+      "sourceP1dRoleStarPointIds": ["rag-application-developer"]
+    },
+    {
+      "roleStarPointId": "agent-application-engineer",
+      "displayName": "Agent应用开发工程师",
+      "status": "active",
+      "taxonomyRefs": ["applied.ai_application_dev", "applied.prompt_engineer"],
+      "sourceP1dRoleStarPointIds": ["agent-application-developer"]
+    },
+    {
+      "roleStarPointId": "mlops-ai-platform-engineer",
+      "displayName": "MLOps/AI平台工程师",
+      "status": "active",
+      "taxonomyRefs": ["engineering.mlops_engineer", "engineering.ai_infra_engineer"],
+      "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"]
+    },
+    {
+      "roleStarPointId": "llm-evaluation-engineer",
+      "displayName": "LLM评测工程师",
+      "status": "active",
+      "taxonomyRefs": ["data.data_analyst", "data.data_scientist", "engineering.ai_safety_engineer"],
+      "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant"]
+    },
+    {
+      "roleStarPointId": "ai-annotation-qc-specialist",
+      "displayName": "AI数据标注与质检专家",
+      "status": "active",
+      "taxonomyRefs": ["data.annotation_manager", "applied.ai_trainer"],
+      "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"]
+    },
+    {
+      "roleStarPointId": "ai-data-analyst",
+      "displayName": "AI数据分析师",
+      "status": "active",
+      "taxonomyRefs": ["data.data_analyst"],
+      "sourceP1dRoleStarPointIds": ["data-analysis-assistant"]
+    },
+    {
+      "roleStarPointId": "ai-operations-growth-specialist",
+      "displayName": "AI运营/增长专家",
+      "status": "active",
+      "taxonomyRefs": ["product.ai_ops_specialist", "applied.ai_content_ops"],
+      "sourceP1dRoleStarPointIds": ["ai-content-operations", "ai-community-operations", "ai-event-operations"]
+    }
+  ],
+  "roleScenarioGroups": [
+    {
+      "roleStarPointId": "ai-application-product-manager",
+      "displayName": "AI 产品经理（AI应用方向）",
+      "scenarios": [
+        {
+          "scenarioId": "ai-app-pm-enterprise-knowledge-qa",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "企业知识库问答产品",
+          "scenarioSummary": "把企业文档、FAQ 或制度资料整理成可检索、可引用、可人工复核的问答体验。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中产品、搜索、RAG、Demo 和客户问题闭环信号较集中。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[9]", "cleaned_jds[37]"],
+            "taxonomyRefs": ["product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["梳理目标用户和高频问题", "定义资料接入、引用展示和人工复核节点", "写出 MVP 范围和验收口径"],
+          "commonDeliverables": ["问题场景页", "MVP 范围表", "引用与复核规则"],
+          "entryThreshold": "适合有文档整理、客服 FAQ、内部流程或知识管理经历的用户，可先从一个小资料包开始。",
+          "industryPreferenceTags": ["企业服务", "知识管理", "客服支持"],
+          "toolCategories": ["文档协作", "原型工具", "LLM 对话工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["PRD 摘要", "用户流程", "验收指标"]
+          },
+          "notClaims": ["不表示真实企业系统已上线", "不替代资料授权和内容核验", "不把原型产出写成已发生经历"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-app-pm-customer-service-copilot",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "客服辅助与质检产品",
+          "scenarioSummary": "围绕客服问答、会话摘要、知识推荐和质检线索设计 AI 辅助产品闭环。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本出现客服平台、AI/NLP、质检、客户反馈和产品指标信号。",
+            "sourceSampleRefs": ["cleaned_jds[42]", "cleaned_jds[107]", "cleaned_jds[484]"],
+            "taxonomyRefs": ["product.ai_product_manager", "product.data_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["拆解客服处理流程和痛点", "定义 AI 建议、质检抽样和人工确认规则", "设计反馈数据回流方式"],
+          "commonDeliverables": ["客服旅程图", "功能清单", "质检和反馈字段"],
+          "entryThreshold": "适合接触过客服、社群答疑、服务流程或用户反馈记录的用户。",
+          "industryPreferenceTags": ["客服支持", "电商", "企业服务"],
+          "toolCategories": ["工单系统", "LLM 对话工具", "数据表格", "原型工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["用户流程", "失败兜底", "反馈闭环"]
+          },
+          "notClaims": ["不表示真实客服数据已被处理", "不替代人工服务判断", "不承诺运营结果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-app-pm-ai-search-assistant",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "AI 搜索助手产品",
+          "scenarioSummary": "把搜索意图、结果排序解释、追问和答案引用整合成面向用户的搜索助手体验。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 搜索、垂类搜索、搜索策略产品和 Prompt 信号可互相支撑。",
+            "sourceSampleRefs": ["cleaned_jds[9]", "cleaned_jds[10]", "cleaned_jds[11]"],
+            "taxonomyRefs": ["product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["梳理搜索意图和失败场景", "设计追问、引用和改写规则", "定义结果质量反馈方式"],
+          "commonDeliverables": ["搜索场景清单", "交互流程", "质量反馈字段"],
+          "entryThreshold": "适合做过信息检索、内容整理、用户调研或搜索体验观察的用户。",
+          "industryPreferenceTags": ["内容平台", "教育", "企业知识库"],
+          "toolCategories": ["搜索产品", "原型工具", "Prompt 工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["交互流程", "验收指标", "迭代清单"]
+          },
+          "notClaims": ["不表示真实搜索排序系统已完成", "不替代算法评估", "不声称覆盖全量用户意图"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-app-pm-internal-workflow-assistant",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "内部流程 AI 助手",
+          "scenarioSummary": "面向 HR、运营或项目协作流程，设计资料收集、自动摘要、待办提醒和人工确认体验。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中流程、产品、客户、工具和内部效率场景反复出现。",
+            "sourceSampleRefs": ["cleaned_jds[7]", "cleaned_jds[40]", "cleaned_jds[254]"],
+            "taxonomyRefs": ["product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["拆解流程节点和人工判断点", "设计输入表单、AI 建议和确认状态", "梳理权限、记录和异常处理"],
+          "commonDeliverables": ["流程图", "低保真原型", "异常与权限说明"],
+          "entryThreshold": "适合有校园项目、实习协作、运营流程或行政流程梳理经历的用户。",
+          "industryPreferenceTags": ["企业服务", "人力资源", "内部协作"],
+          "toolCategories": ["流程图工具", "低代码工具", "文档协作", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["问题定义", "用户流程", "人工复核"]
+          },
+          "notClaims": ["不表示企业内部系统接入完成", "不处理真实敏感资料", "不把流程建议写成落地成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-app-pm-creative-tool-product",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "AI 内容创作工具产品",
+          "scenarioSummary": "围绕图文、视频、音频或社媒内容生产，设计模板、素材、生成、审核和发布前检查流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AIGC 内容、AI 工具、内容生态和产品反馈信号较多。",
+            "sourceSampleRefs": ["cleaned_jds[16]", "cleaned_jds[366]", "cleaned_jds[902]"],
+            "taxonomyRefs": ["product.ai_product_manager", "applied.ai_content_ops"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义创作人群和使用场景", "设计模板、生成约束和审核节点", "梳理版权、事实核验和发布边界"],
+          "commonDeliverables": ["创作流程", "模板规则", "审核清单"],
+          "entryThreshold": "适合有内容、设计、社媒运营或创作工具使用经历的用户。",
+          "industryPreferenceTags": ["内容平台", "营销", "教育"],
+          "toolCategories": ["AIGC 工具", "原型工具", "内容管理", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["PRD 摘要", "原型提示词", "风险边界"]
+          },
+          "notClaims": ["不表示内容效果已被验证", "不替代版权与事实核验", "不把 AI 生成内容写成未经说明的原创成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant", "ai-content-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-app-pm-education-practice-product",
+          "roleStarPointId": "ai-application-product-manager",
+          "displayName": "AI 学习练习产品",
+          "scenarioSummary": "把学习目标、练习题、AI 反馈、复盘和老师或助教确认设计成低风险学习体验。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "教育产品来自 taxonomy 和少量学习发展样本，需补充更直接 JD 证据。",
+            "sourceSampleRefs": ["cleaned_jds[863]", "data/ai_positions.json:industry.ai_education_specialist"],
+            "taxonomyRefs": ["industry.ai_education_specialist", "product.ai_product_manager"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义学习目标和练习路径", "设计 AI 反馈和人工确认节点", "整理错题、复盘和下一步练习建议"],
+          "commonDeliverables": ["学习场景页", "练习流程", "反馈与复盘表"],
+          "entryThreshold": "适合有教学、培训、课程运营或学习产品体验经历的用户。",
+          "industryPreferenceTags": ["教育", "培训", "知识服务"],
+          "toolCategories": ["课程工具", "LLM 对话工具", "原型工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["学习流程", "反馈规则", "复盘建议"]
+          },
+          "notClaims": ["不表示教学效果已验证", "不替代老师或专业人员判断", "不把样例练习写成真实教学成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant"],
+            "curationNote": "DATA-006 marks this scenario needs_review because JD support is thinner."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-data-product-manager",
+      "displayName": "数据产品经理（AI数据方向）",
+      "scenarios": [
+        {
+          "scenarioId": "ai-data-pm-metrics-dashboard",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "AI 产品指标看板",
+          "scenarioSummary": "围绕 AI 功能使用、反馈、质量和成本指标，设计产品侧可解释看板。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据分析、产品指标、用户行为和看板复盘信号较集中。",
+            "sourceSampleRefs": ["cleaned_jds[10]", "cleaned_jds[11]", "cleaned_jds[37]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义指标口径和事件来源", "设计看板层级和异常说明", "把指标变化转成产品问题"],
+          "commonDeliverables": ["指标字典", "看板草图", "复盘问题清单"],
+          "entryThreshold": "适合做过数据报表、用户反馈整理、运营复盘或产品指标跟踪的用户。",
+          "industryPreferenceTags": ["内容平台", "电商", "企业服务"],
+          "toolCategories": ["BI 工具", "SQL", "表格工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["指标口径", "验收指标", "迭代清单"]
+          },
+          "notClaims": ["不表示接入真实生产数据", "不替代数据治理流程", "不把看板草图写成已上线系统"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-product-manager-assistant", "data-analysis-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-pm-labeling-platform",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "标注与质检平台需求",
+          "scenarioSummary": "把标注任务、样本分配、质检抽样、争议复核和质量反馈设计成数据产品流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本出现标注、质检、数据服务和资源协同信号。",
+            "sourceSampleRefs": ["cleaned_jds[5]", "cleaned_jds[45]", "cleaned_jds[65]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.annotation_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["梳理标注角色和任务状态", "定义质检字段、抽样规则和争议流转", "设计质量反馈和版本记录"],
+          "commonDeliverables": ["标注流程图", "字段清单", "质检复盘页"],
+          "entryThreshold": "适合有数据整理、审核、质检、众包协作或流程管理经历的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "内容安全", "智能客服"],
+          "toolCategories": ["标注工具", "表格工具", "流程图工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["流程设计", "字段设计", "质量闭环"]
+          },
+          "notClaims": ["不表示真实标注团队已管理", "不替代数据安全审批", "不把模拟样本写成真实业务成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-pm-llm-eval-platform",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "LLM 评测平台需求",
+          "scenarioSummary": "面向模型回答质量、安全边界和业务可用性，设计评测任务、样例集和报告流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中评测、测试、质量、安全和报告信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[19]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义评测维度和样例集结构", "设计人工复核与错误分类", "梳理报告输出和迭代建议"],
+          "commonDeliverables": ["评测需求 brief", "样例表结构", "报告模板"],
+          "entryThreshold": "适合做过测试、质检、数据分析、内容审核或 AI 工具对比体验的用户。",
+          "industryPreferenceTags": ["AI 平台", "内容安全", "企业服务"],
+          "toolCategories": ["评测工具", "表格工具", "BI 工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["需求拆解", "验收口径", "报告结构"]
+          },
+          "notClaims": ["不输出模型优劣定论", "不替代专业测试流程", "不把小样本结论扩展到全部场景"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-pm-data-quality-workflow",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "AI 数据质量工作流",
+          "scenarioSummary": "设计数据清洗、去重、脱敏、异常发现和质量记录的产品化流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据、流程、质量、平台和治理信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[5]", "cleaned_jds[90]", "cleaned_jds[234]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.data_governance_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义质量问题类型和处理状态", "设计清洗、脱敏和复核流程", "整理质量记录和影响说明"],
+          "commonDeliverables": ["质量规则表", "工作流草图", "异常样例记录"],
+          "entryThreshold": "适合有表格清洗、数据整理、内容审核或流程规范经验的用户。",
+          "industryPreferenceTags": ["数据治理", "AI 数据服务", "金融科技"],
+          "toolCategories": ["数据清洗工具", "表格工具", "流程图工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["字段设计", "流程边界", "质量记录"]
+          },
+          "notClaims": ["不处理真实敏感数据", "不替代正式数据治理制度", "不把演示流程写成生产流程"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant", "ai-data-annotation-quality"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-pm-feature-dataset-catalog",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "特征与数据集目录",
+          "scenarioSummary": "把数据集来源、字段解释、适用场景、更新频率和使用边界整理成可查询目录。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据平台和数据仓库信号存在，但面向 AI 数据产品目录的直接样本需补充。",
+            "sourceSampleRefs": ["cleaned_jds[433]", "cleaned_jds[434]", "cleaned_jds[512]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.data_engineer"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["梳理数据集名称、字段和更新方式", "标注可用场景、限制和负责人", "设计查询和申请入口"],
+          "commonDeliverables": ["数据集目录", "字段说明", "使用边界说明"],
+          "entryThreshold": "适合有数据仓库、数据整理、指标口径或资料库维护经历的用户。",
+          "industryPreferenceTags": ["数据平台", "电商", "企业服务"],
+          "toolCategories": ["数据目录", "表格工具", "文档协作", "BI 工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["目录结构", "字段解释", "使用边界"]
+          },
+          "notClaims": ["不表示真实数据资产已接入", "不替代数据授权流程", "不把目录样例写成企业级建设成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct JD support is thinner."
+          }
+        },
+        {
+          "scenarioId": "ai-data-pm-user-behavior-insight",
+          "roleStarPointId": "ai-data-product-manager",
+          "displayName": "用户行为洞察产品",
+          "scenarioSummary": "把用户路径、功能使用、反馈分层和问题定位整理成支持产品决策的数据产品体验。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中用户、产品、运营、数据分析和策略产品信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[10]", "cleaned_jds[11]", "cleaned_jds[523]"],
+            "taxonomyRefs": ["product.data_product_manager", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义用户路径和关键行为", "整理分层、异常和反馈线索", "输出产品优化问题清单"],
+          "commonDeliverables": ["用户行为路径", "洞察表", "产品问题清单"],
+          "entryThreshold": "适合有运营复盘、用户访谈、数据分析或产品体验记录的用户。",
+          "industryPreferenceTags": ["内容平台", "电商", "教育"],
+          "toolCategories": ["BI 工具", "表格工具", "用户反馈工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["用户路径", "指标口径", "迭代清单"]
+          },
+          "notClaims": ["不表示用户行为来自真实业务系统", "不替代统计检验", "不把小样本洞察扩展成全局结论"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-product-manager-assistant", "data-analysis-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-solution-architect",
+      "displayName": "AI解决方案架构师",
+      "scenarios": [
+        {
+          "scenarioId": "ai-solution-customer-scenario-discovery",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "客户场景调研",
+          "scenarioSummary": "围绕业务流程、痛点、资料来源和人工确认节点，整理 AI 方案前的场景地图。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中客户、解决方案、ToB、交付和数据服务信号较集中。",
+            "sourceSampleRefs": ["cleaned_jds[51]", "cleaned_jds[54]", "cleaned_jds[303]"],
+            "taxonomyRefs": ["product.ai_solution_architect"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["梳理客户业务流程和约束", "记录资料来源、权限和风险点", "提出可试航的小场景"],
+          "commonDeliverables": ["场景调研摘要", "痛点地图", "试航场景候选"],
+          "entryThreshold": "适合有行业调研、客户沟通、售前支持、项目协调或业务分析经历的用户。",
+          "industryPreferenceTags": ["企业服务", "AI 数据服务", "行业客户"],
+          "toolCategories": ["文档协作", "演示工具", "流程图工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["场景调研", "参考项目能力拆解", "风险边界"]
+          },
+          "notClaims": ["不表示真实客户项目已交付", "不替代售前或法务流程", "不把调研样例写成客户背书"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-solution-poc-scope-design",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "PoC 范围设计",
+          "scenarioSummary": "把一个客户问题收敛为可演示、可验收、风险可控的小范围 PoC。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 PoC、方案架构、产品解决方案和大模型应用产品信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[303]", "cleaned_jds[418]", "cleaned_jds[506]"],
+            "taxonomyRefs": ["product.ai_solution_architect"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义 PoC 目标、输入输出和验收标准", "列出不做事项、前置条件和风险", "整理演示数据和人工复核方式"],
+          "commonDeliverables": ["PoC 范围 brief", "验收清单", "风险边界表"],
+          "entryThreshold": "适合有项目 brief、需求拆解、方案演示或客户沟通经历的用户。",
+          "industryPreferenceTags": ["云服务", "企业服务", "智能客服"],
+          "toolCategories": ["演示工具", "文档协作", "流程图工具", "开源参考项目"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["场景改造范围表", "输入输出口径", "面试追问准备"]
+          },
+          "notClaims": ["不表示 PoC 已由客户验收", "不替代真实部署评估", "不承诺业务结果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-solution-demo-script",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "Demo 脚本与讲解路径",
+          "scenarioSummary": "把能力演示、用户故事、关键问答和风险说明整理成可复盘的 Demo 脚本。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Demo、产品策略、客户和 AI 应用研发信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[37]", "cleaned_jds[86]"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义演示角色、流程和关键话术", "准备问题清单和失败兜底说明", "标注哪些能力来自参考项目"],
+          "commonDeliverables": ["Demo 脚本", "问答清单", "能力来源说明"],
+          "entryThreshold": "适合做过路演、课程演示、客户汇报、产品讲解或项目展示的用户。",
+          "industryPreferenceTags": ["云服务", "教育", "企业服务"],
+          "toolCategories": ["演示工具", "录屏工具", "文档协作", "开源参考项目"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["Demo 脚本", "参考项目能力拆解", "风险与人工复核"]
+          },
+          "notClaims": ["不表示真实客户演示已发生", "不把公开项目能力写成个人贡献", "不省略失败和边界说明"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/*.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-solution-integration-boundary",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "系统集成边界说明",
+          "scenarioSummary": "说明 AI 能力与现有系统、数据、权限、日志和人工处理流程如何连接或保持边界。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中平台、基础设施、AI 系统研发和方案架构信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[235]", "cleaned_jds[303]", "cleaned_jds[553]"],
+            "taxonomyRefs": ["product.ai_solution_architect", "engineering.ai_architect"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["梳理系统接口、数据路径和权限边界", "定义日志、监控和人工接管点", "说明暂不接入的部分"],
+          "commonDeliverables": ["集成边界图", "接口假设表", "运行风险说明"],
+          "entryThreshold": "适合有技术项目协作、系统流程理解、API 文档阅读或运营系统使用经历的用户。",
+          "industryPreferenceTags": ["云服务", "企业服务", "数据平台"],
+          "toolCategories": ["架构图工具", "API 文档", "日志工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["技术和数据边界", "输入输出口径", "风险清单"]
+          },
+          "notClaims": ["不表示已完成真实系统接入", "不替代安全评审", "不处理真实密钥或客户数据"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-toolchain-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-solution-acceptance-materials",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "验收材料与交接清单",
+          "scenarioSummary": "把试航范围、测试样例、风险说明、使用说明和后续问题整理成方案交接材料。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中交付、质检、评测、客户和解决方案信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[49]", "cleaned_jds[54]", "cleaned_jds[617]"],
+            "taxonomyRefs": ["product.ai_solution_architect"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["整理验收样例和结果记录", "写出使用说明、限制和人工处理建议", "列出待确认问题和后续计划"],
+          "commonDeliverables": ["验收清单", "使用说明", "交接问题表"],
+          "entryThreshold": "适合有项目交付、测试记录、客户培训、助教或运营 SOP 经历的用户。",
+          "industryPreferenceTags": ["企业服务", "AI 数据服务", "智能客服"],
+          "toolCategories": ["文档协作", "表格工具", "演示工具", "评测工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["验收口径", "风险与人工复核", "交接清单"]
+          },
+          "notClaims": ["不表示客户已签收", "不隐藏限制条件", "不把试航材料写成正式交付记录"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-solution-industry-playbook",
+          "roleStarPointId": "ai-solution-architect",
+          "displayName": "行业场景 playbook 改写",
+          "scenarioSummary": "把通用 AI 能力改写成某一行业的流程说明、适用边界和演示故事线。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "行业化方案有产品价值，但当前样本行业分布有限，需专项补证。",
+            "sourceSampleRefs": ["cleaned_jds[233]", "cleaned_jds[506]", "cleaned_jds[553]"],
+            "taxonomyRefs": ["product.ai_solution_architect"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["选择一个行业流程并拆解角色", "把 AI 能力映射到小场景", "整理不适用情形和资料缺口"],
+          "commonDeliverables": ["行业场景页", "能力映射表", "playbook 摘要"],
+          "entryThreshold": "适合有行业课程、实习、客户案例研究或业务流程观察经历的用户。",
+          "industryPreferenceTags": ["制造", "教育", "金融科技", "医疗健康"],
+          "toolCategories": ["行业资料", "演示工具", "文档协作", "开源参考项目"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["行业流程", "能力映射", "边界说明"]
+          },
+          "notClaims": ["不表示拥有行业交付经验", "不替代专家审核", "不把公开资料改写成客户案例"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant"],
+            "curationNote": "DATA-006 marks this scenario needs_review because industry-specific evidence is incomplete."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-implementation-consultant",
+      "displayName": "AI应用实施顾问",
+      "scenarios": [
+        {
+          "scenarioId": "ai-implementation-requirement-confirmation",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "实施需求确认与范围澄清",
+          "scenarioSummary": "把客户业务流程、使用对象、资料来源和交付边界整理成可确认的实施范围，避免把演示需求写成正式上线承诺。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中方案、客户、流程、工具配置和交付材料信号可支撑需求确认类实施场景。",
+            "sourceSampleRefs": ["cleaned_jds[7]", "cleaned_jds[40]", "cleaned_jds[254]"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖；实施类场景需要人工复核后再前台强化。"
+          },
+          "commonTasks": ["梳理客户流程和使用角色", "确认资料来源、系统边界和人工复核节点", "记录本次不覆盖的需求和待确认问题"],
+          "commonDeliverables": ["需求确认表", "实施范围清单", "待确认问题列表"],
+          "entryThreshold": "适合有客户沟通、SaaS 实施、客服支持、流程培训或项目协作经验的用户，先从一个小流程范围开始。",
+          "industryPreferenceTags": ["企业服务", "客户支持", "流程工具"],
+          "toolCategories": ["文档协作", "流程图工具", "表格工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["需求确认表", "实施范围", "风险边界"]
+          },
+          "notClaims": ["不表示真实客户项目已签署", "不承诺上线交付结果", "不替代客户授权和安全复核"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 adds implementation consultant scenario from existing solution, operations, and pilot task fixture signals."
+          }
+        },
+        {
+          "scenarioId": "ai-implementation-configuration-checklist",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "配置清单与权限台账",
+          "scenarioSummary": "围绕 AI 应用启用前的账号、权限、知识库、模板和开关项，整理配置步骤、负责人和复核状态。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中工具、权限、平台配置、客户流程和知识库维护信号可支撑轻量配置台账。",
+            "sourceSampleRefs": ["cleaned_jds[40]", "cleaned_jds[107]", "cleaned_jds[419]"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖；实施类场景需要人工复核后再前台强化。"
+          },
+          "commonTasks": ["列出账号、权限、知识库和模板配置项", "标记负责人、依赖资料和复核状态", "记录无法直接配置的安全或系统限制"],
+          "commonDeliverables": ["配置清单", "权限台账", "复核记录"],
+          "entryThreshold": "适合做过工具配置、知识库维护、客服系统设置、运营后台配置或项目支持的用户。",
+          "industryPreferenceTags": ["企业服务", "知识管理", "客服支持"],
+          "toolCategories": ["表格工具", "工单系统", "知识库工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["配置清单", "权限台账", "复核记录"]
+          },
+          "notClaims": ["不表示真实系统配置已完成", "不替代企业权限审批", "不处理未授权的敏感资料"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 adds implementation consultant scenario from existing solution, operations, and pilot task fixture signals."
+          }
+        },
+        {
+          "scenarioId": "ai-implementation-training-materials",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "客户培训与上手材料",
+          "scenarioSummary": "把 AI 工具的首轮使用路径、常见问题、人工复核要求和风险提醒整理成培训材料或上手脚本。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中培训、客户支持、工具体验和运营材料信号可支撑上手材料类实施场景。",
+            "sourceSampleRefs": ["cleaned_jds[863]", "cleaned_jds[2407]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖；实施类场景需要人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义新用户第一步任务和演示路径", "整理 FAQ、错误示例和人工复核提示", "把培训内容拆成脚本、截图位和课后反馈"],
+          "commonDeliverables": ["培训脚本", "上手 SOP", "FAQ 草稿"],
+          "entryThreshold": "适合有培训、助教、社群答疑、客户成功、内容运营或工具教程经验的用户。",
+          "industryPreferenceTags": ["教育培训", "企业服务", "工具体验"],
+          "toolCategories": ["文档协作", "演示文稿", "问卷工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["培训脚本", "上手 SOP", "FAQ"]
+          },
+          "notClaims": ["不表示真实培训服务已完成", "不承诺用户学习结果", "不把演示反馈写成客户正式验收"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 adds implementation consultant scenario from existing solution, operations, and pilot task fixture signals."
+          }
+        },
+        {
+          "scenarioId": "ai-implementation-issue-ledger",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "问题台账与响应分级",
+          "scenarioSummary": "在试用或上线观察期间记录问题、影响范围、责任人、响应优先级和后续处理动作，形成可追踪台账。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中客服、工单、客户反馈、产品迭代和问题闭环信号可支撑问题台账场景。",
+            "sourceSampleRefs": ["cleaned_jds[107]", "cleaned_jds[419]", "cleaned_jds[2407]"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖；实施类场景需要人工复核后再前台强化。"
+          },
+          "commonTasks": ["设计问题字段、优先级和责任人规则", "记录复现步骤、影响范围和临时处理方式", "沉淀高频问题和下一步改进建议"],
+          "commonDeliverables": ["问题台账", "响应分级规则", "复盘清单"],
+          "entryThreshold": "适合做过客服、工单处理、用户反馈整理、项目跟进或运营复盘的用户。",
+          "industryPreferenceTags": ["客户支持", "企业服务", "产品运营"],
+          "toolCategories": ["工单系统", "表格工具", "文档协作", "看板工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["问题台账", "响应分级", "复盘清单"]
+          },
+          "notClaims": ["不表示真实生产故障已处理", "不替代专业运维或安全判断", "不公开用户隐私和未授权问题记录"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 adds implementation consultant scenario from existing solution, operations, and pilot task fixture signals."
+          }
+        },
+        {
+          "scenarioId": "ai-implementation-acceptance-handover",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "验收测试与交接清单",
+          "scenarioSummary": "把试用范围、测试样例、通过条件、未解决事项和后续维护责任整理成验收与交接材料。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "方案交付样本中有验收和交接材料信号，但作为实施顾问前台场景仍需要更多直接 JD 样本。",
+            "sourceSampleRefs": ["cleaned_jds[7]", "cleaned_jds[254]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["整理验收样例和测试步骤", "记录已完成、待处理和不在本次范围内的事项", "形成后续维护责任和交接说明"],
+          "commonDeliverables": ["验收测试表", "交接清单", "未解决事项列表"],
+          "entryThreshold": "适合有项目交付、测试协作、客户成功、实施支持或流程验收经验的用户。",
+          "industryPreferenceTags": ["企业服务", "项目交付", "客户成功"],
+          "toolCategories": ["表格工具", "文档协作", "看板工具", "测试记录工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["验收测试表", "交接清单", "待处理事项"]
+          },
+          "notClaims": ["不表示真实客户验收已通过", "不替代正式合同或服务级别约定", "不把测试样例写成生产环境结果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 marks this implementation scenario needs_review because direct JD support is thinner."
+          }
+        },
+        {
+          "scenarioId": "ai-implementation-post-launch-support",
+          "roleStarPointId": "ai-implementation-consultant",
+          "displayName": "上线观察与运营支持",
+          "scenarioSummary": "在 AI 应用试运行后跟进使用情况、问题反馈、培训补充和小版本配置调整，形成后续运营支持节奏。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "当前主要由运营支持、用户反馈和工具体验样本支撑，直接的上线后实施支持样本仍需补充。",
+            "sourceSampleRefs": ["cleaned_jds[419]", "cleaned_jds[2407]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_solution_architect", "product.ai_ops_specialist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义上线观察周期和反馈入口", "汇总使用问题、培训缺口和配置调整建议", "输出下一轮支持计划和风险提醒"],
+          "commonDeliverables": ["上线观察表", "运营支持节奏", "改进建议清单"],
+          "entryThreshold": "适合有运营支持、客户成功、培训跟进、客服答疑或项目运营经验的用户。",
+          "industryPreferenceTags": ["客户成功", "产品运营", "企业服务"],
+          "toolCategories": ["表格工具", "工单系统", "问卷工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["观察记录", "支持节奏", "改进建议"]
+          },
+          "notClaims": ["不表示真实上线已完成", "不承诺留存、转化或业务改善结果", "不替代正式运维和合规流程"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["industry-ai-solution-assistant", "ai-community-operations", "ai-event-operations"],
+            "curationNote": "DATA-007 marks this implementation scenario needs_review because direct JD support is thinner."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-application-engineer",
+      "displayName": "AI应用开发工程师",
+      "scenarios": [
+        {
+          "scenarioId": "ai-app-eng-feature-integration",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "AI 功能前后端集成",
+          "scenarioSummary": "把一个 AI 调用能力接入页面、服务端接口、状态处理和错误提示。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 应用研发、服务端开发、产品研发和工程架构信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[41]", "cleaned_jds[28]"],
+            "taxonomyRefs": ["applied.ai_fullstack", "applied.ai_application_dev"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义接口输入输出和页面状态", "处理加载、失败和重试", "记录日志和人工复核入口"],
+          "commonDeliverables": ["接口契约", "页面流程", "错误处理说明"],
+          "entryThreshold": "适合有 Web 开发、接口联调、低代码原型或脚本项目经历的用户。",
+          "industryPreferenceTags": ["SaaS", "开发者工具", "企业服务"],
+          "toolCategories": ["TypeScript", "API 文档", "前端框架", "LLM API"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["技术边界", "输入输出口径", "风险清单"]
+          },
+          "notClaims": ["不表示生产系统已部署", "不处理真实密钥", "不把样例代码写成企业交付成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "ai-toolchain-developer"],
+            "curationNote": "DATA-007 migrates this application development scenario into AI应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "ai-app-eng-chat-interface",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "AI 对话界面",
+          "scenarioSummary": "实现对话输入、历史记录、流式响应、引用展示和异常提示的基本产品界面。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 应用、搜索、RAG、Demo 和产品体验信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[9]", "cleaned_jds[37]"],
+            "taxonomyRefs": ["applied.ai_fullstack", "product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["设计消息状态和错误提示", "接入模型响应和引用信息", "记录用户反馈和人工复核"],
+          "commonDeliverables": ["对话界面原型", "状态说明", "错误提示清单"],
+          "entryThreshold": "适合有前端开发、交互原型、聊天产品体验或 API 调用经历的用户。",
+          "industryPreferenceTags": ["企业知识库", "客服支持", "教育"],
+          "toolCategories": ["前端框架", "LLM API", "原型工具", "日志工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["输入输出口径", "人工复核", "风险边界"]
+          },
+          "notClaims": ["不表示对话系统已商业化运行", "不承诺回答正确", "不省略失败状态"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer", "agent-application-developer"],
+            "curationNote": "DATA-007 migrates this application development scenario into AI应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "ai-app-eng-prototype-to-mvp",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "原型到 MVP 小闭环",
+          "scenarioSummary": "把一个 Vibe Coding 或低代码原型拆解成页面、接口、数据和待验证风险。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI Coding、AI 应用、产品和 Demo 信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[40]", "cleaned_jds[41]", "cleaned_jds[86]"],
+            "taxonomyRefs": ["applied.ai_fullstack", "product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["拆解原型页面和状态", "定义后端接口和数据结构", "记录哪些部分仍需人工实现"],
+          "commonDeliverables": ["MVP 拆解表", "接口草案", "风险清单"],
+          "entryThreshold": "适合有原型工具、前端入门、低代码、课程项目或产品技术协作经历的用户。",
+          "industryPreferenceTags": ["开发者工具", "SaaS", "教育"],
+          "toolCategories": ["Vibe Coding 工具", "前端框架", "API 文档", "版本管理"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["原型提示词", "人工修改", "验收指标"]
+          },
+          "notClaims": ["不把 AI 生成原型写成独立完整开发", "不表示产品可直接上线", "不省略人工修改说明"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-application-product-assistant", "agent-application-developer"],
+            "curationNote": "DATA-007 migrates this application development scenario into AI应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "ai-app-eng-api-orchestration",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "多 API 编排",
+          "scenarioSummary": "把模型、检索、业务接口和消息通知连接成可追踪的小型应用流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 应用研发、Agent、工具、平台和流程信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[1]", "cleaned_jds[235]"],
+            "taxonomyRefs": ["applied.ai_fullstack", "applied.ai_application_dev"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义 API 调用顺序和失败分支", "设计数据传递和重试策略", "记录调用日志和人工接管"],
+          "commonDeliverables": ["API 编排图", "失败分支表", "日志字段"],
+          "entryThreshold": "适合有接口联调、脚本自动化、低代码流程或系统集成兴趣的用户。",
+          "industryPreferenceTags": ["企业服务", "开发者工具", "运营自动化"],
+          "toolCategories": ["API 文档", "工作流工具", "后端框架", "日志工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["流程自动化草图", "输入输出口径", "风险清单"]
+          },
+          "notClaims": ["不表示真实业务 API 已接入", "不处理真实密钥", "不把编排草图写成已运行系统"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/node-red.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "ai-toolchain-developer"],
+            "curationNote": "DATA-007 migrates this application development scenario into AI应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "ai-app-eng-lightweight-deployment-demo",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "轻量部署演示",
+          "scenarioSummary": "把试航应用整理成可本地运行或临时演示的部署说明、环境变量和回滚边界。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 系统研发、服务端、平台和 Demo 信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[41]", "cleaned_jds[235]", "cleaned_jds[254]"],
+            "taxonomyRefs": ["applied.ai_fullstack", "engineering.mlops_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["整理运行步骤和环境变量", "设计演示数据和失败提示", "说明回滚、日志和不可公开内容"],
+          "commonDeliverables": ["运行说明", "环境变量清单", "演示边界"],
+          "entryThreshold": "适合有课程项目、个人项目、部署平台或命令行基础的用户。",
+          "industryPreferenceTags": ["开发者工具", "SaaS", "AI 平台"],
+          "toolCategories": ["部署平台", "命令行", "版本管理", "日志工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["运行边界", "风险清单", "面试追问准备"]
+          },
+          "notClaims": ["不表示生产环境上线", "不公开密钥或隐私数据", "不把临时演示写成企业级部署"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"],
+            "curationNote": "DATA-007 migrates this application development scenario into AI应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "ai-app-eng-prompt-template-library",
+          "roleStarPointId": "ai-application-engineer",
+          "displayName": "应用 Prompt 模板库",
+          "scenarioSummary": "为 AI 应用中的问答、摘要、改写或工作流节点沉淀 Prompt 模板、变量、示例和人工复核说明。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Prompt、AI 应用、产品和内容运营信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[9]", "cleaned_jds[40]"],
+            "taxonomyRefs": ["applied.ai_application_dev", "applied.prompt_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义任务类型和输入字段", "撰写模板、示例和反例", "记录适用边界和人工检查方式"],
+          "commonDeliverables": ["Prompt 模板", "示例库", "使用边界"],
+          "entryThreshold": "适合经常使用 AI 工具整理材料、写作、分析或运营内容的用户。",
+          "industryPreferenceTags": ["内容运营", "企业服务", "教育"],
+          "toolCategories": ["LLM 对话工具", "文档协作", "表格工具", "版本记录"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["工具使用说明", "测试样例", "人工复核"]
+          },
+          "notClaims": ["不把 Prompt 当作最终专业判断", "不省略人工修改记录", "不把模板效果写成稳定结果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "ai-toolchain-developer"],
+            "curationNote": "DATA-007 migrates a prompt/template scenario into AI应用开发工程师 instead of keeping Prompt as a front-stage role star point."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "rag-engineer",
+      "displayName": "RAG工程师",
+      "scenarios": [
+        {
+          "scenarioId": "rag-document-ingestion-pipeline",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "文档接入与解析流程",
+          "scenarioSummary": "拆解文档上传、解析、清洗、切分和元数据记录的 RAG 前置流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 RAG、AI 应用研发、数据工程和文档处理信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[5]", "data/pathfinder/open-source-projects/unstructured.json"],
+            "taxonomyRefs": ["engineering.rag_engineer", "data.data_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["列出文档类型和解析路径", "设计清洗、切分和元数据字段", "说明失败文件和人工复核方式"],
+          "commonDeliverables": ["接入流程图", "字段表", "失败样例记录"],
+          "entryThreshold": "适合有 Python、文档处理、资料整理或数据清洗经历的用户。",
+          "industryPreferenceTags": ["企业知识库", "法律文档", "教育资料"],
+          "toolCategories": ["Python", "文档解析工具", "向量数据库", "开源参考项目"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["参考项目能力拆解", "数据边界", "评测样例"]
+          },
+          "notClaims": ["不表示真实 RAG 系统已上线", "不处理未授权文档", "不把公开项目能力写成个人维护成果"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/unstructured.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "rag-chunking-retrieval-strategy",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "切分与检索策略",
+          "scenarioSummary": "比较切分粒度、召回方式、重排和查询改写对回答质量的影响。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 RAG、检索、数据、评测和 Agent Infra 信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[1]", "cleaned_jds[6]", "cleaned_jds[12]"],
+            "taxonomyRefs": ["engineering.rag_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义测试问题和期望引用", "比较切分和召回策略", "记录失败原因和改进建议"],
+          "commonDeliverables": ["策略对比表", "测试样例", "错误分析"],
+          "entryThreshold": "适合有检索、数据分析、算法基础或技术文档阅读经历的用户。",
+          "industryPreferenceTags": ["搜索", "知识管理", "企业服务"],
+          "toolCategories": ["向量数据库", "RAG 框架", "表格工具", "评测工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["场景改造方案", "检索边界", "错误分类"]
+          },
+          "notClaims": ["不输出全局最佳策略", "不替代正式评测集", "不把小样本对比写成性能结论"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "rag-citation-answer-ui",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "引用展示与答案复核",
+          "scenarioSummary": "设计答案引用、置信提示、原文跳转和人工复核流程，降低错误理解风险。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI 搜索、产品、RAG、评测和质量信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[9]", "cleaned_jds[10]", "cleaned_jds[12]"],
+            "taxonomyRefs": ["engineering.rag_engineer", "product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义引用展示规则", "设计原文回看和人工确认", "记录无引用或引用冲突场景"],
+          "commonDeliverables": ["答案 UI 草图", "引用规则", "复核清单"],
+          "entryThreshold": "适合有产品交互、内容审核、检索使用或技术实现兴趣的用户。",
+          "industryPreferenceTags": ["搜索", "客服支持", "知识管理"],
+          "toolCategories": ["前端原型", "RAG 框架", "文档工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["输入输出口径", "人工复核", "风险边界"]
+          },
+          "notClaims": ["不表示引用一定正确", "不替代人工审阅", "不隐藏无答案或低质量答案"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "rag-evaluation-dataset",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "RAG 评测样例集",
+          "scenarioSummary": "构造小样例问题、期望引用、错误类型和复盘记录，用于比较 RAG 改造效果。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 RAG、评测、测试开发和 AI Agent 优化信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[19]"],
+            "taxonomyRefs": ["engineering.rag_engineer", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["设计问题类型和样例来源", "记录答案、引用和错误原因", "总结下一轮改造假设"],
+          "commonDeliverables": ["评测样例表", "错误分类", "复盘摘要"],
+          "entryThreshold": "适合有测试、数据标注、内容审核、数据分析或研发协作经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "企业知识库", "内容安全"],
+          "toolCategories": ["评测工具", "表格工具", "RAG 框架", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["评测样例", "错误分类", "迭代建议"]
+          },
+          "notClaims": ["不输出模型整体结论", "不替代正式测试流程", "不把样例数量写成规模化验证"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer", "llm-evaluation-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "rag-permission-update-boundary",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "权限与资料更新边界",
+          "scenarioSummary": "说明资料权限、版本更新、删除同步和不可回答范围，避免 RAG 应用越界。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中平台、权限、数据治理、流程和安全信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[3]", "cleaned_jds[5]", "cleaned_jds[50]"],
+            "taxonomyRefs": ["engineering.rag_engineer", "data.data_governance_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["列出资料权限和访问角色", "定义更新、删除和过期流程", "设计不可回答提示和人工转接"],
+          "commonDeliverables": ["权限矩阵", "更新流程", "不可回答策略"],
+          "entryThreshold": "适合有系统权限、资料维护、知识库、客服或数据流程经验的用户。",
+          "industryPreferenceTags": ["企业服务", "知识管理", "合规"],
+          "toolCategories": ["权限管理", "文档协作", "流程图工具", "RAG 框架"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["数据边界", "人工复核", "风险清单"]
+          },
+          "notClaims": ["不处理真实权限系统", "不替代合规审查", "不把策略草图写成正式制度"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "rag-multimodal-document-qa",
+          "roleStarPointId": "rag-engineer",
+          "displayName": "多模态文档问答",
+          "scenarioSummary": "探索图片、表格、PDF 页面或音视频摘要进入问答流程时的解析和复核边界。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中多模态和文档问答均有信号，但该组合需要更多专项样本。",
+            "sourceSampleRefs": ["cleaned_jds[24]", "cleaned_jds[151]", "data/pathfinder/open-source-projects/opendocuments.json"],
+            "taxonomyRefs": ["engineering.rag_engineer", "algorithm.multimodal_engineer"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["选择一种多模态资料类型", "记录解析失败和人工复核方式", "定义适用和不适用问题"],
+          "commonDeliverables": ["资料类型说明", "解析风险表", "问答样例"],
+          "entryThreshold": "适合有 PDF、表格、图像资料整理或多模态工具体验经历的用户。",
+          "industryPreferenceTags": ["教育资料", "企业文档", "多媒体内容"],
+          "toolCategories": ["文档解析工具", "OCR", "RAG 框架", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["资料解析", "风险边界", "问答样例"]
+          },
+          "notClaims": ["不表示多模态能力完整实现", "不替代专业 OCR 或音视频处理评估", "不处理未授权材料"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/opendocuments.json"],
+            "sourceP1dRoleStarPointIds": ["rag-application-developer"],
+            "curationNote": "DATA-006 marks this scenario needs_review because combined evidence is thinner."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "agent-application-engineer",
+      "displayName": "Agent应用开发工程师",
+      "scenarios": [
+        {
+          "scenarioId": "agent-tool-calling-workflow",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "工具调用 Agent",
+          "scenarioSummary": "设计一个能调用搜索、表格、工单或文档工具的 Agent 流程，并记录停止条件。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Agent、工具调用、应用研发和 Infra 信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[1]", "cleaned_jds[6]"],
+            "taxonomyRefs": ["applied.ai_application_dev", "applied.prompt_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义目标、工具和输入输出", "设计调用顺序和失败分支", "记录人工确认和日志字段"],
+          "commonDeliverables": ["工具调用清单", "流程图", "测试样例"],
+          "entryThreshold": "适合有 API 阅读、自动化工具、脚本、流程配置或 AI 工具体验经历的用户。",
+          "industryPreferenceTags": ["企业服务", "开发者工具", "客服支持"],
+          "toolCategories": ["Agent 框架", "API 文档", "日志工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["工具清单", "流程边界", "失败案例"]
+          },
+          "notClaims": ["不表示生产级自动化已运行", "不让 Agent 替代人工确认", "不处理真实密钥"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "agent-workflow-orchestration",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "任务编排 Agent",
+          "scenarioSummary": "把多步骤任务拆成计划、执行、检查、追问和回滚节点，形成可观测的 Agent 工作流。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Agent、流程、平台和 AI 应用研发信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[1]", "cleaned_jds[31]", "cleaned_jds[248]"],
+            "taxonomyRefs": ["applied.ai_application_dev"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["拆解任务阶段和状态", "定义追问、回滚和人工确认", "记录运行日志和错误类型"],
+          "commonDeliverables": ["编排流程", "状态表", "错误记录"],
+          "entryThreshold": "适合有项目流程、自动化、低代码工作流或脚本编排经历的用户。",
+          "industryPreferenceTags": ["开发者工具", "企业服务", "运营自动化"],
+          "toolCategories": ["工作流工具", "Agent 框架", "日志工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["流程设计", "停止条件", "运行边界"]
+          },
+          "notClaims": ["不表示端到端自动执行已稳定", "不省略人工接管点", "不替代真实任务审批"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "agent-customer-support-assistant",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "客服支持 Agent",
+          "scenarioSummary": "为客服问答、工单分类、知识推荐和转人工设计 Agent 辅助流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中智能客服、AI 产品、客户和质检信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[42]", "cleaned_jds[107]", "cleaned_jds[484]"],
+            "taxonomyRefs": ["applied.ai_application_dev", "product.ai_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义客服问题类型和工具", "设计转人工与知识引用规则", "记录质量问题和反馈字段"],
+          "commonDeliverables": ["问题分类表", "Agent 流程", "复核字段"],
+          "entryThreshold": "适合有客服、社群答疑、工单、知识库或服务流程经验的用户。",
+          "industryPreferenceTags": ["客服支持", "电商", "企业服务"],
+          "toolCategories": ["客服系统", "Agent 框架", "知识库", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["目标场景", "工具调用", "人工复核"]
+          },
+          "notClaims": ["不表示真实客服自动化上线", "不处理客户隐私", "不承诺服务指标变化"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/chatwoot.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "ai-community-operations"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "agent-data-analysis-assistant",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "数据分析 Agent",
+          "scenarioSummary": "设计一个能读取小样本表格、提出分析步骤、生成图表建议并等待人工确认的 Agent。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据分析、Agent、产品指标和工具信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[22]", "cleaned_jds[37]", "cleaned_jds[54]"],
+            "taxonomyRefs": ["applied.ai_application_dev", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义数据输入和分析问题", "设计分析步骤和人工确认节点", "记录图表建议和异常解释"],
+          "commonDeliverables": ["分析任务流程", "字段说明", "图表建议"],
+          "entryThreshold": "适合有表格分析、SQL、Python notebook、BI 或运营复盘经历的用户。",
+          "industryPreferenceTags": ["数据分析", "内容平台", "电商"],
+          "toolCategories": ["Python", "BI 工具", "Agent 框架", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["输入输出口径", "技术边界", "复盘建议"]
+          },
+          "notClaims": ["不表示自动分析完全正确", "不替代统计判断", "不处理真实敏感数据"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "data-analysis-assistant"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "agent-eval-logging",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "Agent 评测与日志",
+          "scenarioSummary": "围绕 Agent 运行轨迹、失败类型、工具调用记录和人工复核设计评测与日志方案。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Agent 优化、评测、测试和日志质量信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[19]"],
+            "taxonomyRefs": ["applied.ai_application_dev", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义日志字段和任务结果", "设计失败分类和复核表", "比较不同 prompt 或工具组合"],
+          "commonDeliverables": ["日志字段表", "评测样例", "失败分析"],
+          "entryThreshold": "适合有测试、日志分析、数据记录、Prompt 调试或工具对比经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "开发者工具", "企业服务"],
+          "toolCategories": ["日志工具", "评测工具", "表格工具", "Agent 框架"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["评测样例", "错误分类", "人工复核"]
+          },
+          "notClaims": ["不输出全局质量结论", "不替代生产监控", "不把日志样例写成真实线上记录"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer", "llm-evaluation-assistant"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        },
+        {
+          "scenarioId": "agent-multi-agent-collaboration",
+          "roleStarPointId": "agent-application-engineer",
+          "displayName": "多 Agent 协作原型",
+          "scenarioSummary": "探索规划、执行、检查等多个 Agent 角色协作时的任务分工、上下文传递和失败处理。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "Agent 样本较多，但多 Agent 协作作为细分场景需要更多直接证据。",
+            "sourceSampleRefs": ["cleaned_jds[1]", "cleaned_jds[31]", "cleaned_jds[424]"],
+            "taxonomyRefs": ["applied.ai_application_dev"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义 Agent 角色和消息边界", "设计上下文共享和冲突处理", "记录失败案例和人工介入方式"],
+          "commonDeliverables": ["角色分工表", "消息流图", "失败处理说明"],
+          "entryThreshold": "适合有复杂流程拆解、系统设计、低代码编排或 Agent 工具使用经历的用户。",
+          "industryPreferenceTags": ["开发者工具", "企业流程", "AI 平台"],
+          "toolCategories": ["Agent 框架", "流程图工具", "日志工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["角色分工", "消息边界", "失败处理"]
+          },
+          "notClaims": ["不表示多 Agent 系统已稳定运行", "不替代真实系统设计评审", "不省略人工控制点"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["agent-application-developer"],
+            "curationNote": "DATA-007 renames Agent application development into Agent应用开发工程师."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "mlops-ai-platform-engineer",
+      "displayName": "MLOps/AI平台工程师",
+      "scenarios": [
+        {
+          "scenarioId": "mlops-serving-observability",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "模型服务观测",
+          "scenarioSummary": "围绕模型调用延迟、错误、成本、版本和用户反馈设计基础观测方案。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中机器学习平台、AI SRE、模型服务和监控信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[4]", "cleaned_jds[30]", "cleaned_jds[195]"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "engineering.ai_infra_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义调用日志和指标", "设计错误、延迟和成本看板", "说明告警与人工处理方式"],
+          "commonDeliverables": ["指标表", "观测看板草图", "异常处理清单"],
+          "entryThreshold": "适合有后端、运维、日志分析、数据看板或平台工具使用经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "云服务", "企业服务"],
+          "toolCategories": ["监控工具", "日志工具", "BI 工具", "API 文档"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["模块拆解", "运行边界", "复盘指标"]
+          },
+          "notClaims": ["不表示真实服务可用性已验证", "不替代平台监控建设", "不处理真实生产日志"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "mlops-batch-inference-workflow",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "批量推理流程",
+          "scenarioSummary": "设计数据输入、任务队列、结果存储、失败重试和人工抽检的批量推理流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中模型部署、推理、数据工程和平台任务信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[30]", "cleaned_jds[217]", "cleaned_jds[239]"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "engineering.model_deployment_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义批处理输入输出和状态", "设计失败重试与抽检", "记录成本、时延和结果质量"],
+          "commonDeliverables": ["批处理流程", "状态字段", "抽检记录表"],
+          "entryThreshold": "适合有数据处理、脚本、任务调度、云平台或工程项目经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "数据服务", "内容处理"],
+          "toolCategories": ["任务队列", "Python", "日志工具", "对象存储"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["流程自动化草图", "输入输出口径", "风险边界"]
+          },
+          "notClaims": ["不表示大规模推理已运行", "不处理真实业务数据", "不把任务草图写成平台建设成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "mlops-config-management",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "模型与 Prompt 配置管理",
+          "scenarioSummary": "整理模型版本、Prompt 版本、参数、实验记录和回滚策略，形成可追溯配置流程。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Prompt、平台、工具、版本和 AI 应用信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[1]", "cleaned_jds[40]", "cleaned_jds[53]"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "applied.prompt_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义配置字段和版本记录", "设计实验、回滚和审批流程", "记录变更影响和复盘问题"],
+          "commonDeliverables": ["配置表", "版本记录", "回滚说明"],
+          "entryThreshold": "适合有配置管理、Prompt 调试、产品实验、脚本项目或文档版本管理经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "开发者工具", "企业服务"],
+          "toolCategories": ["版本管理", "配置中心", "表格工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["模块拆解", "版本边界", "复盘记录"]
+          },
+          "notClaims": ["不表示真实配置中心已搭建", "不替代发布审批", "不把实验记录写成线上变更"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer", "agent-application-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "mlops-workflow-automation",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "AI 工作流自动化",
+          "scenarioSummary": "用低代码或脚本把资料处理、模型调用、结果记录和通知组合成可审计工作流。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中流程、工具、平台和 Agent 信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[1]", "cleaned_jds[3]", "data/pathfinder/open-source-projects/node-red.json"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "applied.ai_application_dev"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["拆解工作流节点和输入输出", "设计失败处理、重试和人工确认", "记录运行日志和数据边界"],
+          "commonDeliverables": ["工作流草图", "节点说明", "运行边界"],
+          "entryThreshold": "适合有自动化、低代码、脚本、运营流程或项目工具使用经历的用户。",
+          "industryPreferenceTags": ["运营自动化", "企业服务", "数据处理"],
+          "toolCategories": ["低代码工作流", "API 文档", "日志工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["流程自动化草图", "风险清单", "人工复核"]
+          },
+          "notClaims": ["不表示自动化流程已接入生产", "不处理真实密钥或隐私数据", "不把低代码流程写成平台能力"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/node-red.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "mlops-cost-latency-monitoring",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "成本与时延监控",
+          "scenarioSummary": "记录模型调用成本、时延、缓存、重试和降级策略，支撑 AI 应用运行复盘。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 AI Infra、平台、SRE、模型服务和应用效率信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[3]", "cleaned_jds[4]", "cleaned_jds[195]"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "engineering.ai_infra_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义成本、时延和错误指标", "设计缓存、降级和重试说明", "整理复盘问题和优化假设"],
+          "commonDeliverables": ["监控指标表", "降级策略", "复盘摘要"],
+          "entryThreshold": "适合有系统性能、日志、云服务、后端或数据看板经验的用户。",
+          "industryPreferenceTags": ["AI 平台", "云服务", "企业服务"],
+          "toolCategories": ["监控工具", "日志工具", "云平台", "BI 工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["运行边界", "成本风险", "复盘指标"]
+          },
+          "notClaims": ["不表示成本优化已经产生业务收益", "不替代平台级容量规划", "不使用真实账单数据"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "mlops-evaluation-release-gate",
+          "roleStarPointId": "mlops-ai-platform-engineer",
+          "displayName": "评测发布门禁",
+          "scenarioSummary": "为 Prompt、模型或工作流版本建立小样例检查、人工复核和发布前确认流程。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "评测和平台样本都有支撑，但发布门禁作为产品化流程还需更多专项样本。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[30]"],
+            "taxonomyRefs": ["engineering.mlops_engineer", "data.data_analyst"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义版本进入发布前的检查项", "设计样例评测和人工确认", "记录未通过原因和回滚方式"],
+          "commonDeliverables": ["门禁清单", "评测样例", "回滚说明"],
+          "entryThreshold": "适合有测试、发布流程、质量管理、Prompt 版本或平台协作经验的用户。",
+          "industryPreferenceTags": ["AI 平台", "企业服务", "开发者工具"],
+          "toolCategories": ["评测工具", "CI 工具", "版本管理", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["发布边界", "评测样例", "人工确认"]
+          },
+          "notClaims": ["不表示真实发布流程已建立", "不替代质量团队审核", "不把样例检查写成正式发布记录"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-toolchain-developer", "llm-evaluation-assistant"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct workflow evidence is thinner."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "llm-evaluation-engineer",
+      "displayName": "LLM评测工程师",
+      "scenarios": [
+        {
+          "scenarioId": "llm-eval-task-dataset",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "任务评测样例集",
+          "scenarioSummary": "为问答、摘要、分类或生成任务设计小样例集、期望结果和记录格式。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中评测、测试开发、AI Agent 优化和数据工程信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[19]"],
+            "taxonomyRefs": ["data.data_analyst", "applied.ai_trainer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义任务、样例和期望输出", "记录模型回答和人工复核", "整理错误原因和改进建议"],
+          "commonDeliverables": ["评测样例集", "结果记录表", "复盘摘要"],
+          "entryThreshold": "适合有测试、内容审核、数据标注、课程作业或 AI 工具对比经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "内容安全", "企业知识库"],
+          "toolCategories": ["评测工具", "表格工具", "LLM 对话工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["评测样例", "错误分类", "人工复核"]
+          },
+          "notClaims": ["不输出模型整体优劣结论", "不替代专业测试流程", "不把小样本记录写成正式报告"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        },
+        {
+          "scenarioId": "llm-eval-error-taxonomy",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "错误类型分析",
+          "scenarioSummary": "把事实错误、格式错误、引用错误、拒答异常和安全风险整理成可复盘分类。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中质量、评测、安全、测试和内容审核信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[12]", "cleaned_jds[45]", "cleaned_jds[50]"],
+            "taxonomyRefs": ["data.data_analyst", "engineering.ai_safety_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义错误分类和记录字段", "标注失败样例和原因", "提出下一轮 Prompt 或数据改进建议"],
+          "commonDeliverables": ["错误分类表", "样例记录", "改进建议"],
+          "entryThreshold": "适合有测试、审核、写作校对、数据分析或产品反馈整理经历的用户。",
+          "industryPreferenceTags": ["内容安全", "AI 平台", "企业服务"],
+          "toolCategories": ["表格工具", "评测工具", "LLM 对话工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["错误分类", "复盘建议", "人工复核"]
+          },
+          "notClaims": ["不表示错误类型覆盖全部风险", "不替代安全团队审核", "不隐藏失败样例"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        },
+        {
+          "scenarioId": "llm-eval-safety-checklist",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "安全边界检查清单",
+          "scenarioSummary": "围绕敏感内容、越权建议、隐私泄露和误导性输出设计检查项。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中大模型安全、策略运营、质检和模型运维信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[46]", "cleaned_jds[47]", "cleaned_jds[50]"],
+            "taxonomyRefs": ["engineering.ai_safety_engineer", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["列出风险类型和触发样例", "设计人工复核和升级方式", "记录模型输出与改写建议"],
+          "commonDeliverables": ["安全检查清单", "风险样例", "复核记录"],
+          "entryThreshold": "适合有内容审核、合规意识、客服、测试或社区治理经历的用户。",
+          "industryPreferenceTags": ["内容安全", "客服支持", "教育"],
+          "toolCategories": ["评测工具", "表格工具", "安全策略文档", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["风险边界", "人工复核", "错误分类"]
+          },
+          "notClaims": ["不表示风险完全消除", "不替代正式合规判断", "不处理真实敏感资料"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        },
+        {
+          "scenarioId": "llm-eval-prompt-version-comparison",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "Prompt 版本对比",
+          "scenarioSummary": "比较不同 Prompt、系统指令或示例对输出质量、稳定性和风险的影响。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中 Prompt、评测、测试和 AI 应用优化信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[0]", "cleaned_jds[6]", "cleaned_jds[53]"],
+            "taxonomyRefs": ["applied.prompt_engineer", "data.data_analyst"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["设计对比版本和统一样例", "记录输出差异和错误类型", "总结推荐使用边界"],
+          "commonDeliverables": ["版本对比表", "样例记录", "使用建议"],
+          "entryThreshold": "适合有 Prompt 调试、A/B 测试、内容改写、数据记录或测试经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "内容运营", "企业服务"],
+          "toolCategories": ["LLM 对话工具", "表格工具", "评测工具", "版本记录"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["版本对比", "错误分类", "复盘建议"]
+          },
+          "notClaims": ["不输出永久最佳 Prompt", "不替代正式实验", "不把小样本对比写成业务结论"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant", "agent-application-developer"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        },
+        {
+          "scenarioId": "llm-eval-human-review-protocol",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "人工复核协议",
+          "scenarioSummary": "为模型输出建立复核角色、检查顺序、记录字段和升级路径。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中质检、评测、交付和内容审核信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[45]", "cleaned_jds[49]", "cleaned_jds[54]"],
+            "taxonomyRefs": ["data.data_analyst", "data.annotation_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义复核角色和检查项", "设计结果记录和争议升级", "整理复盘与规则更新"],
+          "commonDeliverables": ["复核流程", "记录字段", "升级清单"],
+          "entryThreshold": "适合有质检、助教、审核、客服二线或项目交接经历的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "客服支持", "内容安全"],
+          "toolCategories": ["表格工具", "流程图工具", "质量管理", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["人工复核", "错误分类", "风险边界"]
+          },
+          "notClaims": ["不表示复核流程已由团队执行", "不替代专业审核", "不把流程草图写成管理经验"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant", "ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        },
+        {
+          "scenarioId": "llm-eval-benchmark-dashboard",
+          "roleStarPointId": "llm-evaluation-engineer",
+          "displayName": "评测看板与复盘",
+          "scenarioSummary": "把评测结果、错误分布、版本变化和复盘建议整理成可解释看板。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "评测和看板分别有样本支撑，但组合场景需补充更直接岗位样本。",
+            "sourceSampleRefs": ["cleaned_jds[12]", "cleaned_jds[22]", "data/pathfinder/open-source-projects/apache-superset.json"],
+            "taxonomyRefs": ["data.data_analyst", "data.data_scientist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义评测指标和分组", "设计看板视图和解释文案", "记录复盘结论和下一步样本需求"],
+          "commonDeliverables": ["评测看板草图", "指标口径", "复盘摘要"],
+          "entryThreshold": "适合有 BI、数据分析、测试报告、运营复盘或质量看板经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "数据分析", "内容安全"],
+          "toolCategories": ["BI 工具", "表格工具", "评测工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["指标看板", "复盘建议", "边界说明"]
+          },
+          "notClaims": ["不表示模型表现被完整评估", "不替代正式 benchmark", "不把看板草图写成线上监控"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/apache-superset.json"],
+            "sourceP1dRoleStarPointIds": ["llm-evaluation-assistant", "data-analysis-assistant"],
+            "curationNote": "DATA-007 renames LLM evaluation specialist scenarios into LLM评测工程师."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-annotation-qc-specialist",
+      "displayName": "AI数据标注与质检专家",
+      "scenarios": [
+        {
+          "scenarioId": "annotation-guideline-design",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "标注规范设计",
+          "scenarioSummary": "为一类样本定义标签、边界、正反例和争议处理方式。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中标注、训练数据、数据策略和内容安全信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[5]", "cleaned_jds[52]", "cleaned_jds[65]"],
+            "taxonomyRefs": ["data.annotation_manager", "applied.ai_trainer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义标签体系和边界样例", "整理正例、反例和争议样本", "设计更新和沟通方式"],
+          "commonDeliverables": ["标注指南", "样例表", "争议处理规则"],
+          "entryThreshold": "适合有内容审核、数据整理、运营质检、课程助教或标注经历的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "内容安全", "智能客服"],
+          "toolCategories": ["标注工具", "表格工具", "文档协作", "样本管理"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["标注指南", "错误分类", "人工复核"]
+          },
+          "notClaims": ["不表示真实标注团队已执行", "不处理敏感样本", "不把模拟规则写成企业规范"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        },
+        {
+          "scenarioId": "annotation-sampling-qc",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "质检抽样流程",
+          "scenarioSummary": "设计抽样比例、复核字段、错误等级和反馈回流，提升标注质量可解释性。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中质检、数据交付、标注和安全运维信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[45]", "cleaned_jds[49]", "cleaned_jds[234]"],
+            "taxonomyRefs": ["data.annotation_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义抽样规则和错误等级", "记录质检结果和争议原因", "把反馈转成规范更新"],
+          "commonDeliverables": ["抽样表", "错误等级说明", "反馈闭环记录"],
+          "entryThreshold": "适合有审核、质检、表格统计、流程改进或团队协作经历的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "内容安全", "客服质检"],
+          "toolCategories": ["表格工具", "标注工具", "质量管理", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["质检抽样表", "错误分类", "复核流程"]
+          },
+          "notClaims": ["不表示真实质检结果", "不替代数据交付验收", "不把抽样演示写成团队管理经验"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        },
+        {
+          "scenarioId": "annotation-edge-case-taxonomy",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "边界样本分类",
+          "scenarioSummary": "收集难判样本、冲突标签和规则空白，形成边界案例库和复核机制。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中安全、内容审核、数据策略和评测质量信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[46]", "cleaned_jds[50]", "cleaned_jds[52]"],
+            "taxonomyRefs": ["data.annotation_manager", "engineering.ai_safety_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["整理边界样本和冲突标签", "定义复核优先级和升级方式", "沉淀规则更新建议"],
+          "commonDeliverables": ["边界样本库", "冲突原因表", "规则更新建议"],
+          "entryThreshold": "适合有内容判断、审核、标注、规则整理或测试用例设计经历的用户。",
+          "industryPreferenceTags": ["内容安全", "AI 数据服务", "智能客服"],
+          "toolCategories": ["样本管理", "表格工具", "文档协作", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["边界样例", "错误分类", "人工复核"]
+          },
+          "notClaims": ["不表示规则已被业务采纳", "不处理真实敏感内容", "不把边界样本当作完整数据集"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        },
+        {
+          "scenarioId": "annotation-training-material",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "标注员培训材料",
+          "scenarioSummary": "把规则说明、案例练习、常见错误和复核流程整理成可培训材料。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中资源 BP、数据服务、标注和质量反馈信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[65]", "cleaned_jds[87]", "cleaned_jds[551]"],
+            "taxonomyRefs": ["data.annotation_manager", "applied.ai_trainer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["整理培训目标和材料结构", "设计练习样例和答案解释", "准备常见错误和复核说明"],
+          "commonDeliverables": ["培训手册", "练习样例", "FAQ"],
+          "entryThreshold": "适合有助教、培训、运营 SOP、社群教学或流程文档经验的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "教育培训", "内容安全"],
+          "toolCategories": ["文档协作", "演示工具", "表格工具", "标注工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["任务卡", "话术", "反馈表"]
+          },
+          "notClaims": ["不表示真实培训已执行", "不替代团队正式培训", "不把练习材料写成管理成果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        },
+        {
+          "scenarioId": "annotation-data-desensitization-review",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "样本脱敏与使用边界",
+          "scenarioSummary": "在标注或评测前检查隐私、敏感字段、授权来源和可展示范围。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中安全、数据治理、质检和内容审核信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[45]", "cleaned_jds[50]", "cleaned_jds[234]"],
+            "taxonomyRefs": ["data.annotation_manager", "data.data_governance_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["识别隐私和敏感字段", "设计脱敏、替换和删除规则", "记录样本使用范围和不可展示内容"],
+          "commonDeliverables": ["脱敏清单", "样本使用说明", "风险记录"],
+          "entryThreshold": "适合有数据整理、审核、合规意识、内容运营或质检经历的用户。",
+          "industryPreferenceTags": ["内容安全", "数据治理", "AI 数据服务"],
+          "toolCategories": ["数据脱敏工具", "表格工具", "文档协作", "质量管理"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["数据边界", "风险清单", "人工复核"]
+          },
+          "notClaims": ["不处理真实个人隐私", "不替代合规审批", "不把脱敏样例写成企业制度"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        },
+        {
+          "scenarioId": "annotation-vendor-resource-coordination",
+          "roleStarPointId": "ai-annotation-qc-specialist",
+          "displayName": "外部资源协同记录",
+          "scenarioSummary": "整理任务拆分、交付节奏、质量反馈和问题升级，形成协同记录模板。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中资源管理和数据服务信号存在，但外部资源协同需更多直接证据。",
+            "sourceSampleRefs": ["cleaned_jds[65]", "cleaned_jds[87]", "cleaned_jds[551]"],
+            "taxonomyRefs": ["data.annotation_manager"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["拆分任务包和交付节奏", "记录质量反馈和问题升级", "整理沟通模板和复盘事项"],
+          "commonDeliverables": ["任务拆分表", "协同记录", "复盘问题清单"],
+          "entryThreshold": "适合有团队协作、供应商沟通、项目管理、运营排期或助教管理经历的用户。",
+          "industryPreferenceTags": ["AI 数据服务", "外包协同", "项目管理"],
+          "toolCategories": ["项目管理工具", "表格工具", "文档协作", "沟通工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["节奏表", "反馈闭环", "风险边界"]
+          },
+          "notClaims": ["不表示真实供应商管理经验", "不替代合同或采购流程", "不把协同模板写成实际交付"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-data-annotation-quality"],
+            "curationNote": "DATA-007 renames annotation management scenarios into AI数据标注与质检专家."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-data-analyst",
+      "displayName": "AI数据分析师",
+      "scenarios": [
+        {
+          "scenarioId": "ai-data-analyst-product-metrics",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "AI 产品指标分析",
+          "scenarioSummary": "围绕 AI 功能使用、留存、反馈、成本和质量指标做基础分析和解释。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据分析、产品指标、策略产品和用户行为信号较集中。",
+            "sourceSampleRefs": ["cleaned_jds[10]", "cleaned_jds[11]", "cleaned_jds[37]"],
+            "taxonomyRefs": ["data.data_analyst", "product.data_product_manager"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义指标口径和数据范围", "做分组、趋势和异常分析", "把发现转成产品问题"],
+          "commonDeliverables": ["指标口径表", "分析表", "洞察摘要"],
+          "entryThreshold": "适合有 Excel、SQL、运营复盘、用户调研或报表整理经历的用户。",
+          "industryPreferenceTags": ["内容平台", "电商", "SaaS"],
+          "toolCategories": ["Excel", "SQL", "BI 工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["指标口径", "基础看板", "复盘摘要"]
+          },
+          "notClaims": ["不使用真实敏感数据", "不替代统计建模", "不把小样本洞察写成业务定论"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-analyst-user-funnel",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "用户漏斗与路径分析",
+          "scenarioSummary": "分析用户从进入、试用、反馈到持续使用的路径，定位可能的断点和下一步验证问题。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中用户、运营、增长、产品策略和数据分析信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[10]", "cleaned_jds[22]", "cleaned_jds[523]"],
+            "taxonomyRefs": ["data.data_analyst", "product.ai_ops_specialist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义路径阶段和事件", "计算转化和流失位置", "提出需进一步验证的问题"],
+          "commonDeliverables": ["漏斗表", "路径图", "验证问题清单"],
+          "entryThreshold": "适合有用户运营、活动复盘、数据报表或产品体验观察经历的用户。",
+          "industryPreferenceTags": ["内容平台", "电商", "教育"],
+          "toolCategories": ["BI 工具", "表格工具", "用户反馈工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["看板说明", "洞察摘要", "迭代建议"]
+          },
+          "notClaims": ["不表示已接入真实埋点", "不承诺转化变化", "不把样例数据写成平台事实"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant", "ai-community-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-analyst-content-ops",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "内容运营数据复盘",
+          "scenarioSummary": "整理内容主题、发布节奏、互动反馈和 AI 工具参与方式，形成运营复盘。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中内容运营、AIGC、内容生态和数据科学信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[366]", "cleaned_jds[902]", "cleaned_jds[523]"],
+            "taxonomyRefs": ["data.data_analyst", "applied.ai_content_ops"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["整理内容主题和发布时间", "记录互动、反馈和问题类型", "提出下一轮内容假设"],
+          "commonDeliverables": ["内容数据表", "复盘摘要", "下一轮选题建议"],
+          "entryThreshold": "适合有内容运营、社媒、公众号、课程运营或活动复盘经历的用户。",
+          "industryPreferenceTags": ["内容平台", "营销", "教育"],
+          "toolCategories": ["表格工具", "内容后台", "BI 工具", "LLM 对话工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["内容日历", "反馈表", "复盘指标"]
+          },
+          "notClaims": ["不承诺曝光或增长结果", "不把未执行内容写成已发布成果", "不省略 AI 使用说明"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant", "ai-content-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-analyst-output-quality",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "模型输出质量分析",
+          "scenarioSummary": "对模型输出的错误类型、重复问题、人工修改量和反馈来源做结构化分析。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中评测、质量、数据分析和安全信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[6]", "cleaned_jds[12]", "cleaned_jds[45]"],
+            "taxonomyRefs": ["data.data_analyst", "data.data_scientist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["设计输出质量记录字段", "整理错误类型和频率", "提出数据或 Prompt 改进建议"],
+          "commonDeliverables": ["质量分析表", "错误分布", "改进建议"],
+          "entryThreshold": "适合有质检、测试、内容审核、数据分析或 AI 工具对比经历的用户。",
+          "industryPreferenceTags": ["AI 平台", "内容安全", "客服支持"],
+          "toolCategories": ["表格工具", "评测工具", "BI 工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["错误分类", "基础看板", "复盘建议"]
+          },
+          "notClaims": ["不输出模型整体结论", "不替代专业评测", "不把小样本分析写成全局质量判断"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant", "llm-evaluation-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-analyst-dashboard-report",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "看板洞察报告",
+          "scenarioSummary": "从小样本数据出发，整理指标、图表、异常解释和下一步行动建议。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中数据科学、数据分析、看板和业务复盘信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[509]", "cleaned_jds[512]", "cleaned_jds[531]"],
+            "taxonomyRefs": ["data.data_analyst", "data.data_scientist"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义图表和指标口径", "解释异常和分组差异", "写出下一步验证或运营动作"],
+          "commonDeliverables": ["看板草图", "洞察报告", "行动建议"],
+          "entryThreshold": "适合有 BI、Excel、SQL、研究报告或运营数据分析经历的用户。",
+          "industryPreferenceTags": ["电商", "内容平台", "企业服务"],
+          "toolCategories": ["BI 工具", "SQL", "表格工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "development_open_source_adaptation",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["基础看板", "洞察摘要", "复盘建议"]
+          },
+          "notClaims": ["不表示真实业务数据接入", "不替代严谨统计分析", "不把图表草图写成线上看板"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/apache-superset.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-data-analyst-experiment-followup",
+          "roleStarPointId": "ai-data-analyst",
+          "displayName": "实验跟踪与复盘",
+          "scenarioSummary": "围绕功能试验、Prompt 调整或运营动作，记录实验假设、观察指标和下一步建议。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "增长、策略和分析样本存在，但 AI 实验跟踪需补充更直接样本。",
+            "sourceSampleRefs": ["cleaned_jds[37]", "cleaned_jds[38]", "cleaned_jds[73]"],
+            "taxonomyRefs": ["data.data_analyst", "product.ai_product_manager"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义实验假设和观察指标", "记录版本、样本和反馈", "总结下一步验证计划"],
+          "commonDeliverables": ["实验记录表", "结果摘要", "下一步建议"],
+          "entryThreshold": "适合有产品试验、运营活动、Prompt 对比或数据复盘经历的用户。",
+          "industryPreferenceTags": ["内容平台", "AI 产品", "增长运营"],
+          "toolCategories": ["表格工具", "BI 工具", "文档协作", "版本记录"],
+          "pilotTaskBinding": {
+            "taskPackId": "product_vibe_coding_prototype",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["验收指标", "反馈闭环", "迭代清单"]
+          },
+          "notClaims": ["不表示实验达到业务目标", "不替代正式实验设计", "不把观察结果写成确定因果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["data-analysis-assistant", "ai-product-manager-assistant"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct evidence is thinner."
+          }
+        }
+      ]
+    },
+    {
+      "roleStarPointId": "ai-operations-growth-specialist",
+      "displayName": "AI运营/增长专家",
+      "scenarios": [
+        {
+          "scenarioId": "ai-ops-aigc-content-calendar",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "AIGC 内容日历",
+          "scenarioSummary": "围绕目标人群、内容主题、AI 生成流程、人工改写和发布节奏设计内容日历。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中内容运营、AIGC 投稿、AI 内容创意和内容生态信号较强。",
+            "sourceSampleRefs": ["cleaned_jds[366]", "cleaned_jds[902]", "cleaned_jds[1075]"],
+            "taxonomyRefs": ["product.ai_ops_specialist", "applied.ai_content_ops"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义目标人群和内容主题", "设计 AI 生成、人工改写和审核流程", "整理发布节奏和反馈字段"],
+          "commonDeliverables": ["内容日历", "Prompt 模板", "审核记录"],
+          "entryThreshold": "适合有内容运营、社媒、校园活动、公众号、小红书或视频内容经历的用户。",
+          "industryPreferenceTags": ["内容平台", "营销", "教育"],
+          "toolCategories": ["AIGC 工具", "内容后台", "表格工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["内容日历", "工具任务卡", "反馈表"]
+          },
+          "notClaims": ["不承诺曝光或转化结果", "不把未发布内容写成已执行成果", "不省略 AI 使用和人工修改"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-content-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-ops-prompt-template-operations",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "运营 Prompt 模板维护",
+          "scenarioSummary": "为内容、客服、活动和社群运营沉淀 Prompt 模板、示例、审核点和复盘记录。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中运营、Prompt、AIGC、客服平台和内容生态信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[40]", "cleaned_jds[107]", "cleaned_jds[1186]"],
+            "taxonomyRefs": ["product.ai_ops_specialist", "applied.prompt_engineer"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["定义运营任务和模板字段", "记录示例、禁用场景和人工改写", "根据反馈更新模板"],
+          "commonDeliverables": ["Prompt 模板库", "使用说明", "更新记录"],
+          "entryThreshold": "适合有运营 SOP、内容写作、客服话术、社群管理或 AI 工具使用经历的用户。",
+          "industryPreferenceTags": ["内容运营", "客服支持", "社群运营"],
+          "toolCategories": ["LLM 对话工具", "文档协作", "表格工具", "内容管理"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["AI 工具任务卡", "话术", "审核记录"]
+          },
+          "notClaims": ["不把模板效果写成稳定增长结果", "不省略人工审核", "不把 AI 输出写成未经说明的原创内容"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json"],
+            "sourceP1dRoleStarPointIds": ["ai-content-operations", "ai-community-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-ops-community-tool-camp",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "社群 AI 工具体验营",
+          "scenarioSummary": "设计社群分层、体验任务、提醒节奏、群内答疑和反馈收集的运营方案。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "社群样本数量较少，当前主要由产品定义和少量实习/学习发展样本支撑。",
+            "sourceSampleRefs": ["cleaned_jds[863]", "cleaned_jds[2407]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_ops_specialist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义社群人群和参与目标", "设计 AI 工具体验任务和提醒", "收集作品、问题和反馈"],
+          "commonDeliverables": ["体验营节奏表", "群内话术", "反馈表"],
+          "entryThreshold": "适合有社群、班群、用户运营、助教或活动组织经历的用户。",
+          "industryPreferenceTags": ["社群运营", "教育培训", "工具体验"],
+          "toolCategories": ["社群工具", "问卷工具", "LLM 对话工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["体验营节奏", "话术", "反馈闭环"]
+          },
+          "notClaims": ["不表示真实社群已运营", "不承诺参与或留存结果", "不使用未授权聊天记录"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["ai-community-operations"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct JD support is thinner."
+          }
+        },
+        {
+          "scenarioId": "ai-ops-workshop-event",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "AI 工作坊活动运营",
+          "scenarioSummary": "围绕 AI 工具工作坊设计报名、提醒、主持脚本、体验任务和复盘指标。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "活动运营直接样本较少，当前作为运营试航高价值场景进入复核。",
+            "sourceSampleRefs": ["cleaned_jds[1272]", "cleaned_jds[2419]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_ops_specialist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义活动目标、人群和节奏", "设计主持脚本和工具体验任务", "准备报名、提醒、反馈和复盘"],
+          "commonDeliverables": ["活动方案", "主持脚本", "复盘表"],
+          "entryThreshold": "适合有校园活动、线上分享、工作坊、运营策划或培训组织经历的用户。",
+          "industryPreferenceTags": ["活动运营", "教育培训", "工具体验"],
+          "toolCategories": ["会议工具", "问卷工具", "AIGC 工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["活动方案", "任务卡", "复盘指标"]
+          },
+          "notClaims": ["不表示活动已经执行", "不承诺报名、到场或商业结果", "不使用未授权用户资料"],
+          "provenance": {
+            "sourceFiles": ["scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["ai-event-operations"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct JD support is thinner."
+          }
+        },
+        {
+          "scenarioId": "ai-ops-user-feedback-loop",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "用户反馈闭环",
+          "scenarioSummary": "收集 AI 工具体验中的问题、建议、作品和流失原因，形成产品和运营改进线索。",
+          "status": "active",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "样本中运营、用户、反馈、客服平台和产品策略信号可支撑该场景。",
+            "sourceSampleRefs": ["cleaned_jds[107]", "cleaned_jds[419]", "cleaned_jds[2407]"],
+            "taxonomyRefs": ["product.ai_ops_specialist", "applied.ai_content_ops"],
+            "boundary": "只作当前样本趋势参考，不代表市场完整覆盖。"
+          },
+          "commonTasks": ["设计反馈字段和收集入口", "分类问题、建议和完成作品", "输出改进线索和下一步动作"],
+          "commonDeliverables": ["反馈表", "问题分类", "改进清单"],
+          "entryThreshold": "适合有用户运营、客服、社群答疑、课程反馈或活动复盘经历的用户。",
+          "industryPreferenceTags": ["客服支持", "社群运营", "产品运营"],
+          "toolCategories": ["问卷工具", "客服系统", "表格工具", "文档协作"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "template_ready",
+            "outputFocus": ["反馈表", "复盘指标", "风险边界"]
+          },
+          "notClaims": ["不表示真实用户规模", "不承诺反馈改善业务结果", "不公开用户隐私"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/open-source-projects/chatwoot.json"],
+            "sourceP1dRoleStarPointIds": ["ai-community-operations", "ai-content-operations"],
+            "curationNote": "DATA-006 read-only scenario fixture."
+          }
+        },
+        {
+          "scenarioId": "ai-ops-onboarding-sop",
+          "roleStarPointId": "ai-operations-growth-specialist",
+          "displayName": "AI 工具上手 SOP",
+          "scenarioSummary": "为新用户设计工具选择、账号准备、第一步任务、常见问题和风险提醒。",
+          "status": "needs_review",
+          "jdEvidenceBasis": {
+            "basisType": "current_sample_trend_reference_only",
+            "summary": "工具体验营来自产品定义，直接 JD 样本需继续补充。",
+            "sourceSampleRefs": ["cleaned_jds[863]", "cleaned_jds[2407]", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "taxonomyRefs": ["product.ai_ops_specialist"],
+            "boundary": "当前证据较薄，进入人工复核后再前台强化。"
+          },
+          "commonTasks": ["定义用户起点和工具选择", "设计第一步任务和常见问题", "写出隐私、版权和事实核验提醒"],
+          "commonDeliverables": ["上手 SOP", "工具任务卡", "FAQ"],
+          "entryThreshold": "适合有教程写作、社群答疑、活动运营、课程助教或工具测评经历的用户。",
+          "industryPreferenceTags": ["工具体验", "教育培训", "社群运营"],
+          "toolCategories": ["LLM 对话工具", "文档协作", "问卷工具", "表格工具"],
+          "pilotTaskBinding": {
+            "taskPackId": "operations_ai_experience_camp",
+            "bindingStatus": "needs_task_review",
+            "outputFocus": ["工具任务卡", "FAQ", "风险边界"]
+          },
+          "notClaims": ["不表示真实培训服务已完成", "不替代专业工具培训", "不承诺用户学习结果"],
+          "provenance": {
+            "sourceFiles": ["data/ai_positions.json", "scraper/cleaned/cleaned_jds.json", "data/pathfinder/pilot-task-packs/p1d-pilot-task-packs.json"],
+            "sourceP1dRoleStarPointIds": ["ai-event-operations", "ai-community-operations"],
+            "curationNote": "DATA-006 marks this scenario needs_review because direct JD support is thinner."
+          }
+        }
+      ]
+    }
+  ]
+}

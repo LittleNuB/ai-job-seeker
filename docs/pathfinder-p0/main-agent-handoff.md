@@ -1008,3 +1008,76 @@ Main Agent follow-up order:
 - Scope guard:
   - Documentation-only. No runtime code, database file, migration, internet search, push, PR, or merge.
   - Forbidden B-class files were not touched.
+
+## DATA-006 Status
+
+- Task ID: `DATA-006`
+- Child role: `数据方案E`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\d105\ai-job-seeker`
+- Branch: `codex/pathfinder-data-006-role-scenarios`
+- Scope:
+  - Added the first read-only P2 role scenario fixture.
+  - Defined 12 formal role star points and 72 role scenarios.
+  - Kept product roles as `AI 产品经理（AI 应用方向）` and `数据产品经理（AI 数据方向）`.
+  - Used `AI 解决方案架构师` as the formal solution direction.
+  - Merged operations into `AI 运营/增长专家` with content, community, event, tool-camp, feedback, and onboarding scenes underneath.
+- Delivered files:
+  - `data/pathfinder/role-scenarios/p2-role-scenarios.json`
+  - `docs/pathfinder-p0/p2-role-scenarios-fixture.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Fixture summary:
+  - 12 role star points.
+  - 72 role scenarios.
+  - 58 `active` scenarios.
+  - 14 `needs_review` scenarios.
+  - 0 `draft` scenarios.
+- Scope guard:
+  - No frontend or backend runtime logic.
+  - No database migration.
+  - No GitHub Search or new scraping.
+  - No new scoring, ranking, employer-side decisioning, job outcome prediction, credential claim, or resume-polish promise.
+  - No protected B-class dirty files touched.
+- Validation:
+  - `python -m json.tool data/pathfinder/role-scenarios/p2-role-scenarios.json` passed.
+  - Custom JSON count check passed: 12 role star points, 12 groups, 72 scenarios, no missing required scenario fields.
+  - Final `rg`, `git diff --check`, and `git status --short --branch` results are reported in DATA-006回传.
+- Remaining risks:
+  - `docs/pathfinder-p0/p2-role-data-foundation-plan.md` was not present in this worktree, so this fixture follows the DATA-006 product-owner constraints and current repository evidence.
+  - `needs_review` scenarios should be promoted only after additional JD samples or manual review.
+
+## DATA-007 Status
+
+- Task ID: `DATA-007`
+- Child role: `数据方案F`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\c70a\ai-job-seeker`
+- Branch: `codex/pathfinder-data-007-align-role-stars`
+- Scope:
+  - Aligned the P2 role scenario fixture to the PM-approved 12 front-stage role star point baseline.
+  - Added `AI应用实施顾问` with 6 scenarios: implementation requirement confirmation, configuration checklist, training materials, issue ledger, acceptance handover, and post-launch support.
+  - Removed `Prompt 工程师` as a front-stage role star point and migrated prompt/template content into role scenarios under other star points.
+  - Collapsed `AI 全栈工程师` into `AI应用开发工程师`, `AI 标注经理` into `AI数据标注与质检专家`, and `LLM 评测专员` into `LLM评测工程师`.
+- Delivered files:
+  - `data/pathfinder/role-scenarios/p2-role-scenarios.json`
+  - `docs/pathfinder-p0/p2-role-scenarios-fixture.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Fixture summary:
+  - 12 role star points.
+  - 12 role scenario groups.
+  - 72 role scenarios.
+  - 58 `active` scenarios.
+  - 14 `needs_review` scenarios.
+  - 0 `draft` scenarios.
+- Scope guard:
+  - No frontend or backend runtime logic.
+  - No database migration.
+  - No GitHub Search, new scraping, new JD sourcing, or internet research.
+  - No protected B-class dirty files touched.
+- Validation:
+  - `python -m json.tool data/pathfinder/role-scenarios/p2-role-scenarios.json` passed.
+  - Custom JSON check passed: 12 role star points, 12 scenario groups, 72 scenarios, 6 scenarios per group, exact PM baseline names, no missing required scenario fields.
+  - Legacy foreground `displayName` scan found no old role names; broader legacy-name scan matched only DATA-007 migration notes.
+  - Listed forbidden-wording scan found no DATA-007 JSON or fixture positive claims; matches were limited to historical Scope Guard or ordinary-English lines already present in this handoff.
+  - `git diff --check` passed; Git printed CRLF normalization warnings only.
+- Remaining risks:
+  - Implementation consultant evidence is based on existing local solution, operations, and pilot task fixture signals; two implementation scenarios remain `needs_review`.
+  - `needs_review` scenarios should be promoted only after additional JD samples or manual review.
