@@ -2,6 +2,14 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
+test.beforeEach(async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+});
+
 const apiRecordId = "api-record-1";
 const currentTrialPackageId = "p1a-opendocuments-engineering-kb";
 const requiredApiQuestionIds = [
@@ -22,6 +30,26 @@ const requiredMarkdownSections = [
   "forbidden_claims",
   "six_question_answers",
   "disclaimer",
+];
+const requiredRoleStarTitles = [
+  "AI 产品经理（AI应用方向）",
+  "数据产品经理（AI数据方向）",
+  "AI解决方案架构师",
+  "AI应用实施顾问",
+  "AI应用开发工程师",
+  "RAG工程师",
+  "Agent应用开发工程师",
+  "MLOps/AI平台工程师",
+  "LLM评测工程师",
+  "AI数据标注与质检专家",
+  "AI数据分析师",
+  "AI运营/增长专家",
+];
+const retiredRoleStarTitles = [
+  "大模型应用工程师",
+  "数据标注质检专家",
+  "模型反馈分析师",
+  "AI 项目经理（交付方向）",
 ];
 
 const forbiddenVisibleCopyPattern =
@@ -625,6 +653,16 @@ test("runs P1-D Lite manual fallback loop and exports Chatwoot markdown", async 
   await expect(page.getByRole("heading", { name: "tester的 AI 求职星图" })).toBeVisible();
   await expect(page.getByText("岗位星图导航盘")).toBeVisible();
   await expect(page.getByRole("heading", { name: "AI 产品经理（AI应用方向）" })).toBeVisible();
+  for (const title of requiredRoleStarTitles) {
+    await expect(
+      page.getByRole("button", { name: `查看${title}` }),
+    ).toBeVisible();
+  }
+  for (const title of retiredRoleStarTitles) {
+    await expect(
+      page.getByRole("button", { name: `查看${title}` }),
+    ).toHaveCount(0);
+  }
   await expect(page.getByText("岗位适配判断")).toBeVisible();
   await expect(page.getByText("AI运营/增长专家")).toBeVisible();
   await expect(page.getByText("适航任务入口")).toBeVisible();

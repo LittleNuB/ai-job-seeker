@@ -112,6 +112,42 @@ const routedPathfinderCopy = [
 ].map((filePath) =>
   extractPotentialVisibleCopyFromSource(readFileSync(filePath, "utf8")),
 ).join("\n");
+const p1dPagesSource = readFileSync(
+  "src/features/pathfinder/p1d-pages.tsx",
+  "utf8",
+);
+const roleStarPointsSource =
+  p1dPagesSource.match(
+    /const roleStarPoints: RoleStarPoint\[\] = \[([\s\S]*?)\];/,
+  )?.[1] ?? "";
+const roleStarTitles = Array.from(
+  roleStarPointsSource.matchAll(/title:\s*"([^"]+)"/g),
+  (match) => match[1],
+);
+const roleStarOrbits = Array.from(
+  roleStarPointsSource.matchAll(/orbit:\s*([1-4])/g),
+  (match) => Number(match[1]),
+);
+const expectedRoleStarTitles = [
+  "AI 产品经理（AI应用方向）",
+  "数据产品经理（AI数据方向）",
+  "AI解决方案架构师",
+  "AI应用实施顾问",
+  "AI应用开发工程师",
+  "RAG工程师",
+  "Agent应用开发工程师",
+  "MLOps/AI平台工程师",
+  "LLM评测工程师",
+  "AI数据标注与质检专家",
+  "AI数据分析师",
+  "AI运营/增长专家",
+];
+const retiredRoleStarTitles = [
+  "大模型应用工程师",
+  "数据标注质检专家",
+  "模型反馈分析师",
+  "AI 项目经理（交付方向）",
+];
 
 const expectedQuestions: Array<{ id: TrialQuestionId; prompt: string }> = [
   {
@@ -494,6 +530,25 @@ assertNoUserVisibleEngineeringTerms(
   routedPathfinderCopy,
   "routed Pathfinder page copy",
 );
+assert.equal(roleStarTitles.length, 12);
+assert.equal(roleStarOrbits.length, 12);
+assert.deepEqual(
+  Array.from(new Set(roleStarOrbits)).sort(),
+  [1, 2, 3, 4],
+  "roleStarPoints must remain distributed across four starmap orbits",
+);
+assert.deepEqual(
+  [...roleStarTitles].sort((a, b) => a.localeCompare(b, "zh-Hans")),
+  [...expectedRoleStarTitles].sort((a, b) => a.localeCompare(b, "zh-Hans")),
+  "roleStarPoints titles must match the PM-approved 12 role star baseline",
+);
+for (const retiredTitle of retiredRoleStarTitles) {
+  assert.equal(
+    roleStarTitles.includes(retiredTitle),
+    false,
+    `${retiredTitle} must not remain a front-stage role star title`,
+  );
+}
 assert.equal(routedPathfinderCopy.includes("岗位星图导航盘"), true);
 assert.equal(routedPathfinderCopy.includes("岗位适配判断"), true);
 assert.equal(/Top\s*[123]/.test(routedPathfinderCopy), false);
