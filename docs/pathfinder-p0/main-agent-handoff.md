@@ -968,3 +968,43 @@ Main Agent follow-up order:
 - Scope guard:
   - No backend implementation, migration, GitHub Search, real RAG, scoring, offer probability, certification, employer screening, or resume packaging added.
   - Forbidden B-class files were not touched.
+## PRD-003 Status
+
+- Task ID: `PRD-003`
+- Child role: `产品规划D`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\c5ca\ai-job-seeker`
+- Branch: `codex/pathfinder-prd-003-role-detail-copy`
+- Status: completed locally; awaiting main Agent review.
+- Delivered files:
+  - `docs/pathfinder-p0/p2-role-detail-copy-prd.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Scope:
+  - Added user-facing copy and page structure guidance for star map, role star point detail, role scenario detail, and role pilot-task entry.
+  - Covered 12 formal role star points with one-line role summary, daily work, deliverables, small first scenario, gentle entry threshold wording, and cannot-claim guard.
+  - Added high-fidelity detail samples for AI 产品经理（AI应用方向）, AI解决方案架构师, RAG工程师, and AI运营/增长专家.
+  - Added templates for non-numeric role-fit judgment, star-map distance explanation, role scenario cards, pilot-task entry, and 可积累简历素材 guidance.
+- Source note:
+  - The three requested P2 planning docs are not present in this worktree, so this document follows the current glossary, P1-D Lite data/content baseline, current Pathfinder copy, and the product-owner decisions in the PRD-003 delegation.
+- Scope guard:
+  - Documentation-only. No runtime code, database file, migration, internet search, push, PR, or merge.
+  - Forbidden B-class files were not touched.
+
+## PRD-004 Status
+
+- Task ID: `PRD-004`
+- Child role: `产品规划E`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\1d66\ai-job-seeker`
+- Branch: `codex/pathfinder-prd-004-align-role-stars`
+- Status: completed locally; awaiting main Agent review.
+- Delivered files:
+  - `docs/pathfinder-p0/p2-role-detail-copy-prd.md`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Scope:
+  - Aligned PRD-003 role detail copy to the main Agent PM merge review baseline for the 12 user-facing role star points.
+  - Replaced `AI工具链开发工程师` with `MLOps/AI平台工程师` as a formal role star point.
+  - Renamed `Agent应用工程师` to `Agent应用开发工程师`.
+  - Kept `AI应用实施顾问` as a formal role star point and moved it to the agreed baseline order.
+  - Recorded `AI工具链开发工程师`, `Prompt 工程师`, and `AI全栈工程师` as adjacent directions, aliases, or future candidates only.
+- Scope guard:
+  - Documentation-only. No runtime code, database file, migration, internet search, push, PR, or merge.
+  - Forbidden B-class files were not touched.
