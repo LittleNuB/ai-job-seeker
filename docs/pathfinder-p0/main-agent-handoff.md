@@ -1081,3 +1081,34 @@ Main Agent follow-up order:
 - Remaining risks:
   - Implementation consultant evidence is based on existing local solution, operations, and pilot task fixture signals; two implementation scenarios remain `needs_review`.
   - `needs_review` scenarios should be promoted only after additional JD samples or manual review.
+
+## FE-008 / Frontend Copy Fix Status
+
+- Task ID: `FE-008`
+- Child role: `前端开发F`
+- Worktree: `C:\Users\LittleNub\.codex\worktrees\ff51\ai-job-seeker`
+- Branch: `codex/pathfinder-fe-008-copy-fix`
+- Scope:
+  - Polished routed Pathfinder entry, background, trial/result boundary copy, and shared visible project boundary copy so user pages use natural preparation-oriented wording.
+  - Tightened static and E2E visible-copy guards for the QA-blocked boundary and engineering terms.
+  - Did not change star-map structure, 12 star points, trial package logic, API client behavior, backend code, data fixtures, or migrations.
+- Delivered files:
+  - `frontend/src/features/pathfinder/p1d-pages.tsx`
+  - `frontend/src/features/pathfinder/data.ts`
+  - `frontend/scripts/pathfinder-static-tests.ts`
+  - `frontend/e2e/pathfinder.spec.ts`
+  - `docs/pathfinder-p0/main-agent-handoff.md`
+- Validation:
+  - `cd frontend && npm run test:safety` passed after `npm ci` installed missing frontend dependencies.
+  - `cd frontend && npm run lint` passed.
+  - `cd frontend && npm run build` passed.
+  - `cd frontend && npm run test:e2e -- e2e/pathfinder.spec.ts` initially failed because no server was listening on `localhost:3000`.
+  - Started local frontend server on `http://127.0.0.1:3018`; `cd frontend && E2E_BASE_URL=http://127.0.0.1:3018 npm run test:e2e -- e2e/pathfinder.spec.ts` passed: 9 passed.
+  - `git diff --check` passed with only LF-to-CRLF working-copy warnings.
+  - Browser smoke passed on `/pathfinder` and full-flow `/pathfinder/result`: no blocked visible terms, no console warn/error logs, and 390px checks reported `scrollWidth=375` with no overflow.
+- Scope guard:
+  - No protected B-class files were touched.
+  - No push or PR.
+- Remaining risks:
+  - `npm ci` reports existing dependency audit findings; not addressed in this copy-only task.
+  - Main Agent should rerun QA validation if it needs an independent confirmation of the visible-copy blocker closure.

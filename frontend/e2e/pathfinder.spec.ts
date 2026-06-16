@@ -53,7 +53,7 @@ const retiredRoleStarTitles = [
 ];
 
 const forbiddenVisibleCopyPattern =
-  /API|后端|前端|占位|fallback|mock|schema|fixture|P1-D|P1-C|migration|不新增|低摩擦入口心智|实现范围|运行逻辑/;
+  /API|后端|前端|简历包装|企业筛选|评分|百分比|排名|\boffer\b|录用概率|认证|占位|fallback|mock|schema|fixture|P1-D|P1-C|migration|不新增|低摩擦入口心智|实现范围|运行逻辑/i;
 
 const profile = {
   displayName: "tester",
@@ -363,7 +363,7 @@ async function mockRecommendationAndProjectApi(
             ],
           },
         ],
-        scopeDisclaimer: "只做证据链试航，不做录用判断。",
+        scopeDisclaimer: "只做证据链试航，不代表任何招聘结果。",
       }),
     });
   });

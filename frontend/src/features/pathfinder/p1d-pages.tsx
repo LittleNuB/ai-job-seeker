@@ -758,11 +758,11 @@ export function PathfinderEntryPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Notice title="不是简历包装" tone="amber">
-          Pathfinder 只整理真实背景信号、样例 JD 证据和边界说明，不替用户编造成果。
+        <Notice title="真实经历整理" tone="amber">
+          Pathfinder 只整理你确认过的真实经历、样例 JD 证据和边界说明，不替用户编造成果。
         </Notice>
-        <Notice title="不是录用判断" tone="slate">
-          星点代表可试航方向，不代表录用结论、企业筛选或能力背书。
+        <Notice title="探索准备方向" tone="slate">
+          星点代表可试航方向，用于探索准备路径，不代表任何招聘结果或能力背书。
         </Notice>
         <Notice title="结果是适航成果包" tone="teal">
           Markdown 只是导出格式，主结果是一组可追溯的岗位星点、试航产出和打磨计划。
@@ -1065,7 +1065,7 @@ export function PathfinderBackgroundPage() {
           </div>
           <div className="grid content-start gap-4">
             <Notice title={ready ? "可生成星图" : "建议补齐必填信号"} tone={ready ? "teal" : "amber"}>
-              手动补充用于修正或补齐信号。保存后只进入证据链和星图，不产生录用判断。
+              手动补充用于修正或补齐信号。保存后只进入证据链和星图，不代表任何招聘结果。
             </Notice>
             <div className="flex flex-wrap gap-3">
               <ActionButton type="submit" disabled={!ready}>
@@ -1936,7 +1936,7 @@ export function PathfinderResultPage() {
               items={[
                 "不声称参与原开源项目开发、维护或官方贡献。",
                 "不把公开项目能力写成个人已交付成果。",
-                "不输出录用判断或企业筛选结论。",
+                "星点仅用于整理准备方向，不代表任何招聘结果。",
               ]}
             />
             <InfoBlock

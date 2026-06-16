@@ -286,8 +286,8 @@ export const openDocumentsProjectRecord: OpenSourceProjectRecord = {
   forbiddenClaims: [
     "岗位背书。",
     "求职结果预测。",
-    "企业侧筛选。",
-    "履历包装。",
+    "替招聘方作判断。",
+    "编造或夸大真实经历。",
     "不声明官方贡献记录。",
   ],
   allowedContexts: [
@@ -754,7 +754,7 @@ export const pageCopy = {
   entryScope:
     "当前版本展示路径建议、样例 JD、已审计公开项目、试航问答和 Markdown 导出；AI 只整理背景信号，不直接决定结果。",
   entryBoundaryNotice:
-    "这不是履历美化工具，也不做岗位背书、企业侧动作或求职结果判断。它只帮助你把路径判断、试航作答和边界说明整理成可追溯材料。",
+    "它只整理你确认过的真实经历、岗位样例证据和边界说明，帮助形成可追溯材料。星点用于探索准备方向，不代表任何招聘结果或能力背书。",
   entryBoundary: [
     "用户：真实输入",
     "项目：已审计公开项目库",
