@@ -13,12 +13,13 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
-DATA_DIR = Path(__file__).parent
-PROJECT_ROOT = DATA_DIR.parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parents[1]
+DATA_DIR = PROJECT_ROOT / "data"
 
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
-sys.path.insert(0, str(DATA_DIR))
+sys.path.insert(0, str(SCRIPT_DIR))
 os.environ.setdefault("DEBUG", "false")
 logging.getLogger("sqlalchemy.engine").disabled = True
 logging.getLogger("sqlalchemy.engine.Engine").disabled = True
@@ -123,7 +124,7 @@ async def seed(data_path: Path, *, dry_run: bool = False) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed or update AI position taxonomy data")
-    parser.add_argument("--path", default=str(DATA_DIR / "ai_positions.json"))
+    parser.add_argument("--path", default=str(DATA_DIR / "positions.json"))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

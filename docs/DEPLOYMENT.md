@@ -1,15 +1,15 @@
 # Deployment Guide
 
-This guide captures the minimum deployment expectations for the MVP trial release. It is not a full public-launch runbook yet.
+This guide captures the minimum requirements for running AI Job Copilot outside local development.
 
 ## Target Shape
 
-- For the MVP trusted trial, the preferred deployment is a single VPS with Docker Compose, Caddy, FastAPI, Next.js, PostgreSQL, and Redis.
+- The reference deployment is a single VPS with Docker Compose, Caddy, FastAPI, Next.js, PostgreSQL, and Redis.
 - Put the backend behind an HTTPS reverse proxy.
 - Serve the frontend through HTTPS.
 - Keep backend environment variables outside git.
-- Use PostgreSQL for trial data. SQLite is acceptable only for local development.
-- Run the health check before inviting users:
+- Use PostgreSQL for persisted user data. SQLite is acceptable only for local development.
+- Run the health check before directing traffic to the deployment:
 
 ```text
 GET /api/health
@@ -46,7 +46,7 @@ CORS_ALLOW_ORIGINS=https://app.example.com,https://www.example.com
 
 Production startup refuses weak or missing `JWT_SECRET`, `DEBUG=true`, missing `CORS_ALLOW_ORIGINS`, wildcard CORS origins, and non-HTTPS CORS origins.
 
-Model settings are also range-checked at startup. Prefer the generic `LLM_*` variables for new deployments; legacy `GLM_*` variables still work as a fallback for existing environments. Keep `LLM_TIMEOUT_SECONDS` below the frontend match timeout so users receive a clear retryable error instead of waiting indefinitely. For the MVP trial, start with one SDK retry and raise it only if transient provider/network failures are common. Leave `LLM_EMBEDDING_MODEL` empty only when the selected provider has no compatible embedding API; semantic search will then fall back to keyword search.
+Model settings are also range-checked at startup. Prefer the generic `LLM_*` variables for new deployments; legacy `GLM_*` variables still work as a fallback for existing environments. Keep `LLM_TIMEOUT_SECONDS` below the frontend match timeout so users receive a clear retryable error instead of waiting indefinitely. Start with one SDK retry and raise it only if transient provider or network failures are common. Leave `LLM_EMBEDDING_MODEL` empty only when the selected provider has no compatible embedding interface; semantic search will then fall back to keyword search.
 
 ## Required Frontend Environment
 
@@ -70,7 +70,7 @@ Do not use `*` in production. Do not include `http://` origins in production.
 
 ## HTTPS
 
-For the MVP trial, enforce HTTPS at the platform or reverse-proxy layer. The backend also rejects production requests unless the request scheme is HTTPS or the reverse proxy sends `X-Forwarded-Proto: https`.
+Enforce HTTPS at the platform or reverse-proxy layer. The backend rejects production requests unless the request scheme is HTTPS or the reverse proxy sends `X-Forwarded-Proto: https`.
 
 Recommended options:
 
@@ -87,7 +87,7 @@ X-Forwarded-For: <client-ip>
 Host: <api-domain>
 ```
 
-The backend uses bearer tokens and receives resume/JD content, so do not expose it over plain HTTP to trial users.
+The backend uses bearer tokens and receives resume and JD content, so do not expose it over plain HTTP.
 
 ## Database And Migrations
 
@@ -127,11 +127,11 @@ Also verify from the frontend domain:
 
 Keep each deploy tied to a git commit hash. To roll back:
 
-1. Stop onboarding new trial users.
+1. Stop directing new traffic to the affected deployment.
 2. Redeploy the previous known-good commit.
 3. Keep the database unchanged unless a migration rollback has been tested.
 4. Re-run smoke checks.
-5. Record the incident and fix in `docs/DEVELOPMENT_LOG.md`.
+5. Record the incident, affected version, and corrective action in the project issue tracker or release notes.
 
 ## Secrets
 

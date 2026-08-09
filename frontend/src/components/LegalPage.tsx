@@ -21,9 +21,9 @@ export default function LegalPage({ title, updatedAt, intro, sections }: LegalPa
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
           <div>
-            <p className="text-sm font-semibold text-blue-950">试用版说明</p>
+            <p className="text-sm font-semibold text-blue-950">法律与数据说明</p>
             <p className="mt-1 text-sm leading-relaxed text-blue-800">
-              以下内容用于小范围试用阶段的产品告知，不替代正式法律文件。公开上线前应由专业人士复核。
+              以下内容说明当前产品实现中的使用和数据处理边界。面向公众运营时，部署方应结合实际模型供应商、存储位置和适用法律完成专业复核。
             </p>
           </div>
         </div>

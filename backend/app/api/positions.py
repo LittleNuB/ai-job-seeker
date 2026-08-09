@@ -17,7 +17,7 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
     return [{"id": c.id, "name": c.name, "description": c.description, "icon": c.icon} for c in categories]
 
 
-@router.get("/positions")
+@router.get("")
 async def get_positions(
     category_id: str | None = None,
     query: str | None = None,
@@ -41,20 +41,6 @@ async def get_positions(
     return [_position_to_dict(p) for p in positions]
 
 
-@router.get("/positions/{position_id}")
-async def get_position(position_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Position).where(Position.id == position_id))
-    pos = result.scalar_one_or_none()
-    if not pos:
-        return {"error": "岗位未找到"}
-    cat_result = await db.execute(select(Category).where(Category.id == pos.category_id))
-    cat = cat_result.scalar_one_or_none()
-    data = _position_to_dict(pos)
-    data["category_name"] = cat.name if cat else None
-    data["category_id"] = pos.category_id
-    return data
-
-
 @router.get("/search")
 async def semantic_search(query: str, top_k: int = Query(default=10, le=50), db: AsyncSession = Depends(get_db)):
     service = get_embedding_service()
@@ -74,6 +60,20 @@ async def get_real_jds(
         result = await db.execute(select(Position).where(Position.id == position_id))
         position = result.scalar_one_or_none()
     return search_real_jds(position=position, query=query, company=company, limit=limit)
+
+
+@router.get("/{position_id}")
+async def get_position(position_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Position).where(Position.id == position_id))
+    pos = result.scalar_one_or_none()
+    if not pos:
+        return {"error": "岗位未找到"}
+    cat_result = await db.execute(select(Category).where(Category.id == pos.category_id))
+    cat = cat_result.scalar_one_or_none()
+    data = _position_to_dict(pos)
+    data["category_name"] = cat.name if cat else None
+    data["category_id"] = pos.category_id
+    return data
 
 
 def _position_to_dict(p: Position) -> dict:

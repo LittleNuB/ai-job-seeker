@@ -27,20 +27,12 @@ frontend/.env.local
 frontend/*.log
 
 data/*
-!data/ai_positions.json
-!data/seed_positions.py
-!data/validate_positions.py
+!data/positions.json
+!data/jd_samples.json
 *.db
 *.sqlite
 *.sqlite3
 *.log
-
-scraper/raw/
-scraper/cleaned/
-!scraper/cleaned/
-!scraper/cleaned/cleaned_jds.json
-scraper/structured/
-scraper/__pycache__/
 
 test_*.json
 docs/

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, Download, FileText, Loader2, Tag } from "lucide-react";
 import { exportApi, jd as jdApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
-import ActionPlanPanel from "@/components/ActionPlanPanel";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 
@@ -279,7 +278,6 @@ export default function JDPage() {
                   用此 JD 匹配简历 <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-              <ActionPlanPanel sourceType="jd" sourceRecordId={recordId} />
             </div>
           )}
 

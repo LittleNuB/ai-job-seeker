@@ -8,17 +8,25 @@ services:
     envVars:
       - key: APP_ENV
         value: production
+      - key: DEBUG
+        value: "false"
       - key: CORS_ALLOW_ORIGINS
-        value: https://ai-jobcopilot.vercel.app
-      - key: GLM_MODEL
-        value: deepseek-v4-flash
-      - key: GLM_BASE_URL
-        value: https://api.deepseek.com
-      - key: GLM_TIMEOUT_SECONDS
-        value: "120"
-      - key: GLM_MAX_RETRIES
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: LLM_PROVIDER
+        sync: false
+      - key: LLM_CHAT_MODEL
+        sync: false
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_TIMEOUT_SECONDS
+        value: "60"
+      - key: LLM_MAX_RETRIES
         value: "1"
       - key: JWT_SECRET
         sync: false
-      - key: GLM_API_KEY
+      - key: LLM_API_KEY
         sync: false

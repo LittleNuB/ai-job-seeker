@@ -139,9 +139,9 @@ export const positions = {
     if (params?.category_id) searchParams.set("category_id", params.category_id);
     if (params?.query) searchParams.set("query", params.query);
     const qs = searchParams.toString();
-    return request<any[]>(`/api/positions/positions${qs ? `?${qs}` : ""}`);
+    return request<any[]>(`/api/positions${qs ? `?${qs}` : ""}`);
   },
-  getPosition: (id: string) => request<any>(`/api/positions/positions/${id}`),
+  getPosition: (id: string) => request<any>(`/api/positions/${id}`),
   semanticSearch: (query: string, topK?: number) =>
     request<{ id: string; name: string; name_en: string; summary: string; score: number }[]>(
       `/api/positions/search?query=${encodeURIComponent(query)}&top_k=${topK || 10}`,
@@ -171,22 +171,6 @@ export const jd = {
     }),
 };
 
-// Position Radar
-export const positionRadar = {
-  analyze: (data: {
-    resume_text: string;
-    preferences?: {
-      target_city?: string;
-      experience_level?: string;
-      preferred_tracks?: string[];
-    };
-  }) =>
-    request<{ record_id: string; result: any }>("/api/position-radar", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-};
-
 // Match
 export const matchApi = {
   analyze: (data: { resume_text: string; position_id: string; jd_text?: string }, options?: RequestInit) =>
@@ -194,15 +178,6 @@ export const matchApi = {
       method: "POST",
       body: JSON.stringify(data),
       ...options,
-    }),
-};
-
-// Action Plan
-export const actionPlan = {
-  create: (data: { source_type: "position_radar" | "jd" | "match"; source_record_id: string }) =>
-    request<{ record_id: string; result: any }>("/api/action-plan", {
-      method: "POST",
-      body: JSON.stringify(data),
     }),
 };
 

@@ -75,7 +75,7 @@ try {
     }
 
     Invoke-Step "Position data validation" {
-        & $Python data\validate_positions.py
+        & $Python scripts\data\validate_positions.py
     }
 
     Invoke-Step "Docker Compose config" {

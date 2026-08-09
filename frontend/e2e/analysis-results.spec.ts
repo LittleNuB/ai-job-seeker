@@ -76,7 +76,7 @@ test("JD page renders analysis result and downloads report", async ({ page }) =>
 test("match page renders analysis result and downloads report", async ({ page }) => {
   await installMockSession(page);
 
-  await page.route("**/api/positions/positions", async (route) => {
+  await page.route("**/api/positions", async (route) => {
     await route.fulfill({
       json: [{ id: "position-1", name: "大模型应用工程师" }],
     });

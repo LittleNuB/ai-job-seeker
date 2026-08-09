@@ -6,17 +6,25 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .position_radar_service import _as_text
 from ..models.position import Position
+
+
+def _as_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False)
+
 
 def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
-        if (parent / "scraper" / "cleaned" / "cleaned_jds.json").exists():
+        if (parent / "data" / "jd_samples.json").exists():
             return parent
     return Path(__file__).resolve().parents[3]
 
 
-JD_DATA_PATH = _project_root() / "scraper" / "cleaned" / "cleaned_jds.json"
+JD_DATA_PATH = _project_root() / "data" / "jd_samples.json"
 
 
 def _normalize(text: str | None) -> str:
@@ -36,7 +44,7 @@ def _keywords(text: str) -> list[str]:
 
 
 @lru_cache(maxsize=1)
-def load_cleaned_jds() -> list[dict[str, Any]]:
+def load_jd_samples() -> list[dict[str, Any]]:
     if not JD_DATA_PATH.exists():
         return []
     with JD_DATA_PATH.open("r", encoding="utf-8") as file:
@@ -98,7 +106,7 @@ def search_real_jds(
     company: str | None = None,
     limit: int = 8,
 ) -> dict[str, Any]:
-    all_jds = load_cleaned_jds()
+    all_jds = load_jd_samples()
     companies = sorted({jd.get("company") for jd in all_jds if jd.get("company")})
     keywords = _position_keywords(position)
 

@@ -17,11 +17,10 @@ RUN pip install -r requirements.txt
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/alembic ./alembic
 COPY backend/app ./app
-COPY data/ai_positions.json ./data/ai_positions.json
-COPY data/seed_positions.py ./data/seed_positions.py
-COPY data/validate_positions.py ./data/validate_positions.py
-COPY scraper/cleaned/cleaned_jds.json ./scraper/cleaned/cleaned_jds.json
+COPY data/positions.json ./data/positions.json
+COPY data/jd_samples.json ./data/jd_samples.json
+COPY scripts/data ./scripts/data
 
 EXPOSE 8000
 
-CMD bash -c 'for i in 1 2 3 4 5; do alembic -c alembic.ini upgrade head && break || sleep 5; done && python data/seed_positions.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers'
+CMD bash -c 'for i in 1 2 3 4 5; do alembic -c alembic.ini upgrade head && break || sleep 5; done && python scripts/data/seed_positions.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers'

@@ -40,4 +40,9 @@ if errorlevel 1 (
   echo Database migration failed.
   exit /b 1
 )
+"%VENV_PY%" ..\scripts\data\seed_positions.py
+if errorlevel 1 (
+  echo Position data seed failed.
+  exit /b 1
+)
 "%VENV_PY%" -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
