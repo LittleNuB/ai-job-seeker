@@ -1,130 +1,136 @@
-# AI Job Copilot
+<p align="center">
+  <img src="./docs/assets/ai-job-copilot-role-detail.png" alt="AI Job Copilot 的岗位探索和岗位详情界面" width="100%">
+</p>
 
-AI 驱动的求职决策工具 — 从岗位探索到 JD 解析再到简历匹配，帮助你做出更聪明的求职决策。
+<h1 align="center">AI Job Copilot</h1>
 
-## 功能概览
+<p align="center">为 AI 岗位求职准备的全栈工作台</p>
 
-### 岗位探索
+<p align="center">
+  <a href="#产品工作流">产品工作流</a> ·
+  <a href="#核心界面">核心界面</a> ·
+  <a href="#本地运行">本地运行</a> ·
+  <a href="#验证">验证</a>
+</p>
 
-了解 AI 行业主流岗位的定位、能力要求、职业路径和薪资水平。
+投递一个职位前，岗位信息、原始 JD、简历版本和修改判断常常散在不同地方。AI Job Copilot 把这些材料放进一个工作区，让用户先理解目标岗位，再把经历与岗位要求逐项对照，并把后续追问与报告保存到个人历史中。
 
-- 5 大方向（算法 / 工程 / 产品 / 数据 / 应用）、16+ 岗位的结构化数据
-- 每个岗位包含：岗位定位、能力要求（must_have / nice_to_have / tools）、职业路径、薪资范围、行业趋势
-- 选中岗位可直接跳转到 JD 解析或简历匹配
+项目提供求职准备所需的分析和整理能力。它不替招聘方筛选候选人，匹配结果也不构成录用预测。
 
-### JD 深度解析
+## 产品工作流
 
-用大模型从 JD 文本中提取三层信息——表面要求、隐藏需求、面试聚焦。
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>01　岗位探索</strong><br />
+      按 7 个 AI 岗位方向浏览和搜索 46 个结构化岗位样例。每个岗位提供能力要求、职业路径、薪资样例和相关 JD。
+    </td>
+    <td width="50%" valign="top">
+      <strong>02　JD 解析</strong><br />
+      粘贴目标 JD，整理显性要求、隐含要求和面试准备点，并把目标岗位带入简历匹配。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>03　简历匹配</strong><br />
+      上传或粘贴简历，选择目标岗位后生成匹配分项、已有证据、能力差距和阶段性行动建议。
+    </td>
+    <td width="50%" valign="top">
+      <strong>04　追问与留档</strong><br />
+      围绕一次 JD 或匹配结果继续提问。账户中的历史页支持回看、导出和删除个人分析记录。
+    </td>
+  </tr>
+</table>
 
-- **表面要求**：硬技能、软技能、经验、学历
-- **隐藏需求**：团队真实挑战、最看重的能力（优先级排序）、文化信号、招人原因推断
-- **面试聚焦**：重点主题 + 考察深度、潜在坑点、脱颖而出切入点
+## 核心界面
 
-### 简历匹配
+<p align="center">
+  <img src="./docs/assets/ai-job-copilot-explore.png" alt="AI Job Copilot 的岗位列表和岗位方向筛选界面" width="49%">
+  <img src="./docs/assets/ai-job-copilot-match.png" alt="AI Job Copilot 的简历匹配输入界面" width="49%">
+</p>
 
-将求职者简历与目标岗位进行四维匹配分析。
+岗位探索页用于缩小目标范围。用户可以从岗位方向或关键词开始，进入岗位详情后查看能力标签、样例薪资、职业路径和关联 JD。简历匹配页接受文本和文件材料，并要求用户明确目标岗位和可选的 JD 上下文。
 
-- **四维评分**：硬技能匹配 / 经验匹配 / 文化契合 / 成长潜力
-- **核心优势**：含简历佐证 + 为什么对该岗位重要
-- **能力差距**：严重程度 + 影响 + 弥补措施
-- **三阶段提升计划**：即刻（1-2 周）/ 短期（1-3 月）/ 中期（3-6 月）
-- **面试策略**：主动引导话题 / 重点准备方向 / 叙述角度建议
+## 实现范围
 
-## 技术栈
+| 层级 | 内容 |
+| --- | --- |
+| 产品界面 | Next.js 14、React、TypeScript、TanStack Query 和 Tailwind CSS |
+| 服务端 | FastAPI、SQLAlchemy async、Alembic、Pydantic Settings 和鉴权接口 |
+| 求职能力 | 岗位探索、JD 分析、简历匹配、上下文追问、报告导出、历史与账户管理 |
+| 文件处理 | PDF、DOCX 和图片文件的解析入口，上传类型与大小限制 |
+| 数据与交付 | SQLite 开发库、PostgreSQL 配置、Docker Compose、Caddy、Render 和 Railway 配置 |
 
-| 层级 | 技术 |
-|------|------|
-| 前端框架 | Streamlit（多页应用） |
-| 大模型 | GLM-4.6V（智谱 AI，OpenAI 兼容协议） |
-| 部署 | Streamlit Cloud |
-| 数据 | 本地 JSON（结构化岗位数据） |
-| 语言 | Python 3.11 |
-
-## 项目结构
-
+```text
+浏览器
+  ↓
+Next.js 前端
+  ↓
+FastAPI API ── 结构化岗位数据与账户记录
+  ↓
+兼容 OpenAI 的模型服务或 GLM 配置
 ```
-ai-job-seeker/
-├── app.py                        # 首页（Hero + Bento Grid）
-├── pages/
-│   ├── 1_AI岗位探索.py            # 岗位研究分析台
-│   ├── 2_JD解析器.py              # JD 分析工作台
-│   └── 3_简历匹配.py              # 匹配分析中心
-├── services/
-│   ├── glm_client.py             # GLM API 客户端（OpenAI SDK 兼容）
-│   ├── jd_service.py             # JD 解析 Prompt 工程
-│   ├── resume_service.py         # 简历匹配 Prompt 工程
-│   └── position_service.py       # 岗位数据服务
-├── utils/
-│   ├── config.py                 # 双源配置（st.secrets / os.environ）
-│   ├── formatters.py             # UI 组件库（12 个可复用组件）
-│   ├── rate_limiter.py           # 会话级频率限制
-│   └── validators.py             # 输入校验
-├── data/
-│   └── ai_positions.json         # AI 行业岗位数据库
-├── static/
-│   └── style.css                 # 全局样式（深色侧边栏 + 蓝色科技风）
-└── .streamlit/
-    └── config.toml               # Streamlit 主题配置
-```
 
-## 快速开始
+## 本地运行
 
-### 1. 克隆仓库
+需要 Python 3.11 或更高版本，以及 Node.js 20 或更高版本。
 
-```bash
+```powershell
 git clone https://github.com/LittleNuB/ai-job-seeker.git
 cd ai-job-seeker
 ```
 
-### 2. 安装依赖
+启动后端。
 
-```bash
-pip install -r requirements.txt
+```powershell
+.\start-backend.bat
 ```
 
-依赖仅 3 个：`streamlit`、`openai`、`python-dotenv`
+脚本会创建 `backend/.venv`、安装后端依赖、执行数据库迁移，并启动 `http://127.0.0.1:8000`。
 
-### 3. 配置环境变量
+另开一个终端启动前端。
 
-```bash
-cp .env.example .env
+```powershell
+cd frontend
+npm ci
+npm run dev
 ```
 
-编辑 `.env`，填入你的智谱 AI API Key：
+浏览器打开 `http://localhost:3000`。开发代理会把 `/api/*` 转发给本机后端。
 
-```
-GLM_API_KEY=your_api_key_here
-GLM_MODEL=glm-4.6V
-GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
-```
+## 模型与数据边界
 
-API Key 获取：[智谱 AI 开放平台](https://open.bigmodel.cn/)
+JD 分析、简历匹配、语义检索和图片文字识别需要模型服务。复制配置文件后填入自己的兼容 OpenAI 服务信息，已有 GLM 配置也可继续使用。
 
-### 4. 启动应用
-
-```bash
-streamlit run app.py
+```powershell
+Copy-Item .env.example .env
 ```
 
-## 部署到 Streamlit Cloud
+新配置使用 `LLM_PROVIDER`、`LLM_API_KEY`、`LLM_CHAT_MODEL` 和 `LLM_BASE_URL`。密钥只保存在本机 `.env`，不应提交到仓库。
 
-1. Fork 本仓库
-2. 在 [Streamlit Cloud](https://share.streamlit.app/) 创建新应用，连接你的 GitHub 仓库
-3. 在 Secrets 中配置 `GLM_API_KEY`（Settings → Secrets）：
+- 仓库中的 SQLite 文件只保留岗位样例，用户、分析记录和聊天记录均为空。
+- 简历、JD 和追问内容可能会发送给用户配置的第三方模型服务，提交前应移除不必要的个人信息。
+- 用户数据查询、导出与删除接口要求登录，并按账户隔离。
+- 项目不读取浏览器登录状态，也不包含任何模型服务密钥。
 
-```toml
-GLM_API_KEY = "your_api_key_here"
+## 验证
+
+仓库包含后端回归测试、前端类型检查、lint 和 Playwright E2E。
+
+```powershell
+.\scripts\check_all.ps1
+.\scripts\check_all.ps1 -E2E -StartServices
 ```
 
-## 关键技术决策
+运行中的 API 可以使用下面的脚本检查健康状态、岗位数据、鉴权边界和文件上传保护。
 
-| 决策 | 理由 |
-|------|------|
-| GLM 而非 GPT | 面向中国 AI 求职场景，中文 JD 理解更好；OpenAI 兼容协议可复用 SDK；成本更低 |
-| Streamlit 多页架构 | MVP 阶段核心是 Prompt 工程和业务逻辑；零运维部署到 Streamlit Cloud |
-| components.html() 渲染 | st.markdown(unsafe_allow_html) 在 Cloud 上会转义 HTML；iframe 渲染完整可靠 |
-| 三级 JSON 解析回退 | 大模型输出不稳定（代码块包裹/额外文字），回退机制确保 99% 响应可解析 |
-| 双源配置 | st.secrets（云端优先）→ os.environ（本地回退），一套代码双环境运行 |
+```powershell
+python .\scripts\smoke_api.py --base-url http://127.0.0.1:8000
+```
+
+## 部署
+
+仓库提供 Docker Compose、Caddy、Render 与 Railway 配置，可用于本地或受控环境部署。部署前需要重新设置 HTTPS、CORS、JWT 密钥、数据库和模型服务参数。
 
 ## License
 
