@@ -1,7 +1,7 @@
 .env
 .env.production
 .env.local
-.streamlit/secrets.toml
+**/secrets.toml
 __pycache__/
 *.pyc
 .venv/
