@@ -1,6 +1,6 @@
 # VPS Docker Compose Deployment
 
-This guide is for the MVP trusted trial deployment on a single VPS.
+This guide covers the reference single-VPS deployment.
 
 ## Target Architecture
 
@@ -18,7 +18,7 @@ Services:
 - `caddy`: public HTTP/HTTPS entrypoint and reverse proxy.
 - `frontend`: Next.js standalone server.
 - `backend`: FastAPI/Uvicorn server.
-- `postgres`: PostgreSQL trial database.
+- `postgres`: PostgreSQL database.
 - `redis`: reserved cache/rate-limit backend for production-like topology.
 
 ## Files
@@ -39,7 +39,7 @@ Services:
 - Ports `80` and `443` open.
 - Git access to this repository.
 
-Suggested baseline for a small trial:
+Suggested baseline for a small deployment:
 
 - 2 vCPU
 - 4 GB RAM
@@ -52,7 +52,7 @@ Clone or update the repo on the VPS:
 ```bash
 git clone <repo-url> ai-job-seeker
 cd ai-job-seeker
-git checkout codex/mvp-vps-deploy
+git checkout main
 ```
 
 Create the production env file:
@@ -134,11 +134,11 @@ Use `-DestroyVolumes` only for disposable local smoke runs where deleting Postgr
 
 ## Migrations
 
-The backend service runs Alembic and then upserts `data/ai_positions.json` before starting Uvicorn:
+The backend service runs Alembic and then upserts `data/positions.json` before starting Uvicorn:
 
 ```bash
 python -m alembic upgrade head
-python data/seed_positions.py
+python scripts/data/seed_positions.py
 ```
 
 To run migrations manually:
@@ -150,8 +150,8 @@ docker compose --env-file .env.production -f docker-compose.prod.yml run --rm ba
 To validate and preview position data sync manually:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python data/validate_positions.py
-docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python data/seed_positions.py --dry-run
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python scripts/data/validate_positions.py
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm backend python scripts/data/seed_positions.py --dry-run
 ```
 
 ## Smoke Checks
@@ -163,7 +163,7 @@ python scripts/smoke_api.py --base-url https://app.example.com
 ```
 
 Replace `https://app.example.com` with `https://<CADDY_SITE_ADDRESS>`.
-By default the smoke check expects at least 7 categories and 40 positions; override with `--min-categories` and `--min-positions` if the trial dataset intentionally changes.
+By default the smoke check expects at least 7 categories and 40 positions; override with `--min-categories` and `--min-positions` if the bundled dataset intentionally changes.
 
 For a local Docker Desktop stack using the port override above:
 
@@ -209,7 +209,7 @@ sh deploy/scripts/restore_postgres.sh backups/ai_job_copilot-YYYYMMDD-HHMMSS.dum
 
 Before restore:
 
-- pause trial onboarding;
+- pause new traffic or account onboarding;
 - record the current commit and backup file;
 - understand that `--clean --if-exists` can replace current database objects.
 
@@ -217,7 +217,7 @@ Before restore:
 
 ```bash
 git fetch
-git checkout codex/mvp-vps-deploy
+git checkout main
 git pull
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
 python scripts/smoke_api.py --base-url https://app.example.com
@@ -235,8 +235,8 @@ python scripts/smoke_api.py --base-url https://app.example.com
 
 Do not roll back database migrations unless a rollback has been tested.
 
-## Trial Caveats
+## Operational Checks
 
-- PostgreSQL starts empty, but the backend container upserts the bundled `data/ai_positions.json` on startup. Confirm the smoke check's position-data assertions pass before inviting users.
-- Keep the user group small until `docs/MVP_TRIAL_ACCEPTANCE.md` has a `GO` or explicit `GO_WITH_NOTES` decision.
+- PostgreSQL starts empty, but the backend container upserts the bundled `data/positions.json` on startup. Confirm the smoke check's position-data assertions pass before directing traffic to the deployment.
+- Run the automated checks and release acceptance helper before directing traffic to a new version.
 - Keep `.env.production`, backups, and filled feedback notes out of git.

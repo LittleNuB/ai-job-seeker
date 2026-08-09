@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("match page shows progress while analysis is pending and supports cancel", async ({ page }) => {
-  await page.route("**/api/positions/positions", async (route) => {
+  await page.route("**/api/positions", async (route) => {
     await route.fulfill({
       json: [{ id: "position-1", name: "大模型应用工程师" }],
     });
@@ -46,7 +46,7 @@ test("match page shows progress while analysis is pending and supports cancel", 
 test("match page shows timeout failure and retries successfully", async ({ page }) => {
   let attempts = 0;
 
-  await page.route("**/api/positions/positions", async (route) => {
+  await page.route("**/api/positions", async (route) => {
     await route.fulfill({
       json: [{ id: "position-1", name: "大模型应用工程师" }],
     });

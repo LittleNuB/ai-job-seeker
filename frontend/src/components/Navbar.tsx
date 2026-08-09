@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Brain, Compass, FileText, History, LogIn, LogOut, Radar, Target, UserCircle } from "lucide-react";
+import { Brain, Compass, FileText, History, LogIn, LogOut, Target, UserCircle } from "lucide-react";
 import { AUTH_CHANGED_EVENT, clearAuthSession, getAuthEmail, getLoginPath } from "@/lib/auth";
 
 const links = [
   { href: "/", label: "首页", icon: Brain },
-  { href: "/radar", label: "岗位雷达", icon: Radar },
-  { href: "/explore", label: "岗位探索", icon: Compass },
+  { href: "/explore", label: "岗位资料", icon: Compass },
   { href: "/jd", label: "JD 解析", icon: FileText },
   { href: "/match", label: "简历匹配", icon: Target },
   { href: "/history", label: "历史记录", icon: History },

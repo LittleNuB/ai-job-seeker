@@ -81,7 +81,7 @@ def enrich_match_result(result: dict, resume_text: str) -> dict:
         score_reason = "已有部分相关基础，但需要补强证据和岗位关键词表达。"
     else:
         decision = "暂缓投"
-        score_reason = "当前简历与目标岗位存在明显差距，建议先补项目或调整主投方向。"
+        score_reason = "当前简历与这个目标岗位存在明显差距，建议先补充相关项目证据或调整本次投递材料。"
 
     advantages = result.get("core_advantages") or []
     gaps = result.get("capability_gaps") or []

@@ -12,7 +12,7 @@ const geistSans = localFont({
 
 export const metadata: Metadata = {
   title: "AI Job Copilot",
-  description: "AI求职助手 — 岗位探索 / JD解析 / 简历匹配",
+  description: "AI 岗位投递准备工作台 — 岗位资料 / JD 解析 / 简历匹配",
 };
 
 export default function RootLayout({

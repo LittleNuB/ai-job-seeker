@@ -112,7 +112,7 @@ def main() -> int:
             f"expected >= {args.min_categories}, got {len(resp.body) if isinstance(resp.body, list) else resp.body}",
         )
 
-        resp = call(base_url, "GET", "/api/positions/positions")
+        resp = call(base_url, "GET", "/api/positions")
         expect(
             "positions",
             resp.status == 200 and isinstance(resp.body, list) and len(resp.body) >= args.min_positions,

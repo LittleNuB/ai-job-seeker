@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { AlertCircle, Clock3, Download, Loader2, RefreshCw, Target, XCircle } from "lucide-react";
 import { exportApi, matchApi, positions as positionsApi } from "@/lib/api";
 import { AuthRequiredError, redirectToLogin, requireAuth } from "@/lib/auth";
-import ActionPlanPanel from "@/components/ActionPlanPanel";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FileUploader from "@/components/FileUploader";
 import ScoreBar from "@/components/ScoreBar";
@@ -479,7 +478,6 @@ function MatchPageContent() {
               </button>
             </div>
           )}
-          <ActionPlanPanel sourceType="match" sourceRecordId={recordId} />
         </div>
       )}
 

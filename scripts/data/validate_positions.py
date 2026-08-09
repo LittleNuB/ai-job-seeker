@@ -217,8 +217,9 @@ def print_result(result: ValidationResult) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate data/ai_positions.json")
-    parser.add_argument("--path", default=str(Path(__file__).with_name("ai_positions.json")))
+    default_path = Path(__file__).resolve().parents[2] / "data" / "positions.json"
+    parser = argparse.ArgumentParser(description="Validate data/positions.json")
+    parser.add_argument("--path", default=str(default_path))
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     args = parser.parse_args()
 

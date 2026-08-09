@@ -13,8 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.database import async_session  # noqa: E402
 from app.models.position import Category, Position  # noqa: E402
-from data.seed_positions import seed  # noqa: E402
-from data.validate_positions import validate_positions_data  # noqa: E402
+from scripts.data.seed_positions import seed  # noqa: E402
+from scripts.data.validate_positions import validate_positions_data  # noqa: E402
 
 
 def valid_positions_data() -> dict:
@@ -62,7 +62,7 @@ def valid_positions_data() -> dict:
 
 
 def write_positions_json(tmp_path: Path, data: dict) -> Path:
-    path = tmp_path / "ai_positions.json"
+    path = tmp_path / "positions.json"
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     return path
 

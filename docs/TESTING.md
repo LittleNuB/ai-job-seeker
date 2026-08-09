@@ -28,19 +28,19 @@ By default it runs backend pytest, frontend typecheck, and frontend lint.
 Validate the bundled position taxonomy before seeding or building a deployment image:
 
 ```powershell
-python data\validate_positions.py
-python data\seed_positions.py --dry-run
+python scripts\data\validate_positions.py
+python scripts\data\seed_positions.py --dry-run
 ```
 
 The seed command is idempotent: it inserts new categories/positions and updates existing rows by ID.
 
-Run the live trial acceptance helper against an already running backend when preparing a release candidate:
+Run the live release acceptance helper against an already running backend when preparing a release candidate:
 
 ```powershell
-python scripts\trial_accept.py --base-url http://127.0.0.1:8000 --no-color
+python scripts\release_accept.py --base-url http://127.0.0.1:8000 --no-color
 ```
 
-This helper creates and deletes a temporary account. It skips model-costing JD and resume analysis by default; add `--run-model-checks --model-provider <provider> --chat-model <model>` only for intentional manual trial acceptance.
+This helper creates and deletes a temporary account. It skips model-costing JD and resume analysis by default; add `--run-model-checks --model-provider <provider> --chat-model <model>` only for an intentional model-backed release check.
 
 Run the Docker deployment check against `.env.production` when validating the VPS Compose packaging:
 

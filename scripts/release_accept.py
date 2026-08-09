@@ -1,4 +1,4 @@
-"""Run a manual MVP trial acceptance check against a live backend.
+"""Run a manual release acceptance check against a live backend.
 
 The default mode avoids LLM-costing JD and resume analysis calls. Add
 `--run-model-checks` when you intentionally want to exercise the model runtime.
@@ -17,7 +17,7 @@ from typing import Any
 from urllib import error, parse, request
 
 
-DEFAULT_OUTPUT = Path("scripts/trial_accept_result.json")
+DEFAULT_OUTPUT = Path("scripts/release_accept_result.json")
 DEFAULT_JD_TEXT = (
     "招聘高级后端开发工程师，要求精通Python语言和微服务架构，具备5年以上后端开发经验，"
     "熟悉MySQL、Redis等常用中间件，有良好的系统设计能力和团队协作精神。"
@@ -38,7 +38,7 @@ class ApiResponse:
 
 
 @dataclass
-class TrialRecorder:
+class ReleaseRecorder:
     no_color: bool = False
     passed: int = 0
     failed: int = 0
@@ -79,7 +79,7 @@ class TrialRecorder:
         }
 
 
-class TrialClient:
+class ReleaseClient:
     def __init__(self, base_url: str, *, timeout: int):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -132,10 +132,10 @@ def _body_dict(resp: ApiResponse) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run live MVP trial acceptance checks.")
+    parser = argparse.ArgumentParser(description="Run live release acceptance checks.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
-    parser.add_argument("--email-prefix", default="trial-accept")
+    parser.add_argument("--email-prefix", default="release-accept")
     parser.add_argument("--password", default="Test1234!")
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("--model-timeout", type=int, default=180)
@@ -152,11 +152,11 @@ def unique_email(prefix: str) -> str:
     return f"{prefix}+{int(time.time())}-{uuid.uuid4().hex[:8]}@example.com"
 
 
-def choose_position(client: TrialClient, args: argparse.Namespace, recorder: TrialRecorder) -> str | None:
+def choose_position(client: ReleaseClient, args: argparse.Namespace, recorder: ReleaseRecorder) -> str | None:
     if args.match_position_id:
         return args.match_position_id
 
-    resp = client.call("GET", "/api/positions/positions?category_id=algorithm")
+    resp = client.call("GET", "/api/positions?category_id=algorithm")
     ok = resp.status == 200 and isinstance(resp.body, list) and len(resp.body) > 0
     recorder.check("Position data available", ok, f"status={resp.status}, body={resp.body}")
     if not ok:
@@ -169,14 +169,14 @@ def choose_position(client: TrialClient, args: argparse.Namespace, recorder: Tri
     return position_id
 
 
-def run_account_checks(client: TrialClient, args: argparse.Namespace, recorder: TrialRecorder) -> str:
+def run_account_checks(client: ReleaseClient, args: argparse.Namespace, recorder: ReleaseRecorder) -> str:
     print("\n1. Account & Consent")
     email = unique_email(args.email_prefix)
 
     resp = client.call(
         "POST",
         "/api/auth/register",
-        body={"email": email, "password": args.password, "name": "Trial Accept", "accepted_terms": False},
+        body={"email": email, "password": args.password, "name": "Release Accept", "accepted_terms": False},
     )
     body = _body_dict(resp)
     recorder.check(
@@ -188,7 +188,7 @@ def run_account_checks(client: TrialClient, args: argparse.Namespace, recorder: 
     resp = client.call(
         "POST",
         "/api/auth/register",
-        body={"email": email, "password": args.password, "name": "Trial Accept", "accepted_terms": True},
+        body={"email": email, "password": args.password, "name": "Release Accept", "accepted_terms": True},
     )
     body = _body_dict(resp)
     recorder.check("Registration with consent", resp.status == 200 and bool(body.get("access_token")), str(resp.body))
@@ -208,7 +208,7 @@ def run_account_checks(client: TrialClient, args: argparse.Namespace, recorder: 
     return email
 
 
-def run_runtime_checks(client: TrialClient, args: argparse.Namespace, recorder: TrialRecorder) -> None:
+def run_runtime_checks(client: ReleaseClient, args: argparse.Namespace, recorder: ReleaseRecorder) -> None:
     print("\n2. Runtime")
     resp = client.call("GET", "/api/health")
     body = _body_dict(resp)
@@ -219,7 +219,7 @@ def run_runtime_checks(client: TrialClient, args: argparse.Namespace, recorder: 
     recorder.check(f"Model config recorded: provider={provider}, model={model}", True)
 
 
-def run_model_checks(client: TrialClient, args: argparse.Namespace, recorder: TrialRecorder) -> tuple[str | None, str | None]:
+def run_model_checks(client: ReleaseClient, args: argparse.Namespace, recorder: ReleaseRecorder) -> tuple[str | None, str | None]:
     if not args.run_model_checks:
         recorder.skip("JD analysis flow", "use --run-model-checks to spend model quota")
         recorder.skip("Resume match flow", "use --run-model-checks to spend model quota")
@@ -276,7 +276,7 @@ def run_model_checks(client: TrialClient, args: argparse.Namespace, recorder: Tr
     return jd_id, match_id
 
 
-def run_history_checks(client: TrialClient, recorder: TrialRecorder, jd_id: str | None) -> None:
+def run_history_checks(client: ReleaseClient, recorder: ReleaseRecorder, jd_id: str | None) -> None:
     print("\n5. History & Data Rights")
     resp = client.call("GET", "/api/records")
     body = _body_dict(resp)
@@ -299,7 +299,7 @@ def run_history_checks(client: TrialClient, recorder: TrialRecorder, jd_id: str 
     recorder.check("Deleted record returns 404", resp.status == 404, str(resp.body))
 
 
-def run_export_and_delete_checks(client: TrialClient, recorder: TrialRecorder) -> None:
+def run_export_and_delete_checks(client: ReleaseClient, recorder: ReleaseRecorder) -> None:
     print("\n6. Data Export")
     resp = client.call("GET", "/api/auth/export-data")
     body = _body_dict(resp)
@@ -327,10 +327,10 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    recorder = TrialRecorder(no_color=args.no_color)
-    client = TrialClient(args.base_url, timeout=args.timeout)
+    recorder = ReleaseRecorder(no_color=args.no_color)
+    client = ReleaseClient(args.base_url, timeout=args.timeout)
 
-    print("=== AI Job Copilot Trial Acceptance ===")
+    print("=== AI Job Copilot Release Acceptance ===")
     print(f"Backend: {args.base_url}")
     if args.run_model_checks:
         print("Model checks: enabled, this run will call JD and resume analysis endpoints.")

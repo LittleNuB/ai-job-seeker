@@ -4,7 +4,7 @@ test("home and auth pages render readable Chinese copy", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "AI Job Copilot" })).toBeVisible();
   const nav = page.getByRole("navigation");
-  await expect(nav.getByRole("link", { name: "岗位探索" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "岗位资料" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "JD 解析" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "简历匹配" })).toBeVisible();
   await expect(page.getByRole("link", { name: "隐私政策" })).toBeVisible();

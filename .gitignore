@@ -17,8 +17,8 @@ Thumbs.db
 .pytest-temp/
 frontend/test-results/
 data/ai_job_copilot.db
-data/ai_positions_backup_*.json
-scripts/trial_accept_result.json
+data/*_backup_*.json
+scripts/release_accept_result.json
 test_*.json
 
 .vercel

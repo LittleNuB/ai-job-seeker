@@ -194,8 +194,6 @@ export default function HistoryPage() {
             { label: "全部", value: undefined },
             { label: "JD 解析", value: "jd" },
             { label: "简历匹配", value: "match" },
-            { label: "岗位雷达", value: "position_radar" },
-            { label: "行动计划", value: "action_plan" },
           ].map((tab) => (
             <button
               key={tab.label}
@@ -227,7 +225,7 @@ export default function HistoryPage() {
         <div className="py-20 text-center text-gray-400">
           <MessageSquare className="mx-auto mb-3 h-10 w-10" />
           <p>尚无 AI 对话</p>
-          <p className="mt-1 text-sm">在岗位探索、JD 解析或简历匹配页追问后，对话会显示在这里</p>
+          <p className="mt-1 text-sm">在岗位资料、JD 解析或简历匹配页追问后，对话会显示在这里</p>
         </div>
       ) : viewMode === "chats" ? (
         <div className="space-y-3">
@@ -570,7 +568,7 @@ function ResultView({ type, result }: { type: string; result: any }) {
 
 function labelContext(value: string): string {
   const map: Record<string, string> = {
-    explore: "岗位探索",
+    explore: "岗位资料",
     jd: "JD 解析",
     match: "简历匹配",
     e2e: "测试对话",

@@ -192,7 +192,11 @@ export default function ExplorePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6">
-        <div className="relative max-w-xl">
+        <h1 className="text-2xl font-bold text-gray-900">AI 岗位资料库</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          用结构化岗位样例理解目标岗位，再进入具体 JD 或简历匹配。
+        </p>
+        <div className="relative mt-4 max-w-xl">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
