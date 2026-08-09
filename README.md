@@ -91,8 +91,8 @@ docs/        测试、部署、迁移和合规说明
 需要 Python 3.11 或更高版本，以及 Node.js 20 或更高版本。
 
 ```powershell
-git clone https://github.com/LittleNuB/ai-job-seeker.git
-cd ai-job-seeker
+git clone https://github.com/LittleNuB/ai-job-copilot.git
+cd ai-job-copilot
 ```
 
 启动后端。
