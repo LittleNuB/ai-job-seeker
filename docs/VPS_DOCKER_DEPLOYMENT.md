@@ -50,8 +50,8 @@ Suggested baseline for a small deployment:
 Clone or update the repo on the VPS:
 
 ```bash
-git clone <repo-url> ai-job-seeker
-cd ai-job-seeker
+git clone <repo-url> ai-job-copilot
+cd ai-job-copilot
 git checkout main
 ```
 
