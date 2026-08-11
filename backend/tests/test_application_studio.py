@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+
 from httpx import AsyncClient
 
 from app.main import app
-from app.services.application_model import ModelTimeoutError, get_application_model
+from app.services.application_model import (
+    ModelProviderUnavailableError,
+    ModelTimeoutError,
+    get_application_model,
+)
 
 
 CONCRETE_JD = """
@@ -62,6 +68,19 @@ class FakeApplicationModel:
         self.calls += 1
         if isinstance(self.output, Exception):
             raise self.output
+        return self.output
+
+
+class BlockingApplicationModel(FakeApplicationModel):
+    def __init__(self, output: object) -> None:
+        super().__init__(output)
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def generate_json(self, *, system_prompt: str, user_prompt: str) -> object:
+        self.calls += 1
+        self.started.set()
+        await self.release.wait()
         return self.output
 
 
@@ -559,20 +578,90 @@ async def test_target_analysis_timeout_is_recoverable_and_preserves_the_applicat
     assert snapshot["prompt_runs"][-1]["error_code"] == "timeout"
 
 
-async def test_target_analysis_without_a_configured_provider_returns_a_retryable_state(
+async def test_target_analysis_unavailable_provider_returns_a_retryable_state(
     client: AsyncClient, auth_headers
 ):
     headers = await auth_headers(client)
     created = await _create_application(client, headers)
-
-    response = await client.post(
-        f"/api/applications/{created['application_id']}/commands",
-        headers=headers,
-        json={"type": "analyze_target"},
-    )
+    model = FakeApplicationModel(ModelProviderUnavailableError("fixture unavailable"))
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
 
     assert response.status_code == 200
     snapshot = response.json()
     assert snapshot["target_analysis"]["status"] == "failed"
     assert snapshot["target_analysis"]["last_error"]["code"] == "provider_unavailable"
     assert snapshot["role_signals"] == []
+    assert model.calls == 1
+
+
+async def test_target_analysis_keeps_experience_changes_saved_while_the_model_runs(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    standalone_item = created["standalone_experience_items"][0]
+    destination_entry = created["experience_entries"][0]
+    model = BlockingApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analysis_task = asyncio.create_task(
+            client.post(
+                f"/api/applications/{created['application_id']}/commands",
+                headers=headers,
+                json={"type": "analyze_target"},
+            )
+        )
+        await asyncio.wait_for(model.started.wait(), timeout=2)
+
+        moved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "move_experience_item",
+                "experience_item_id": standalone_item["id"],
+                "destination_entry_id": destination_entry["id"],
+            },
+        )
+        assert moved_response.status_code == 200, moved_response.text
+
+        model.release.set()
+        analyzed_response = await asyncio.wait_for(analysis_task, timeout=2)
+    finally:
+        model.release.set()
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200, analyzed_response.text
+    analyzed = analyzed_response.json()
+    assert analyzed["standalone_experience_items"] == []
+    assert [
+        item["id"] for item in analyzed["experience_entries"][0]["experience_items"]
+    ] == [
+        created["experience_entries"][0]["experience_items"][0]["id"],
+        standalone_item["id"],
+    ]
+    assert analyzed["target_analysis"]["status"] == "completed"
+
+    reopened = await client.get(
+        f"/api/applications/{created['application_id']}", headers=headers
+    )
+    assert reopened.status_code == 200
+    assert reopened.json() == analyzed

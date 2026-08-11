@@ -58,7 +58,7 @@ test("unauthenticated candidate is sent to login before opening the workspace", 
   await expect(page).toHaveURL(/\/auth\?next=%2Fapplications$/);
 });
 
-test("candidate can inspect explicit and interpreted Role Signal provenance", async ({ page, request }) => {
+test("candidate recovers from an unavailable provider and inspects Role Signal provenance", async ({ page, request }) => {
   const user = await registerUser(request, "role-signals");
   const createResponse = await request.post(apiPath("/api/applications/commands"), {
     headers: { Authorization: `Bearer ${user.token}` },
@@ -74,10 +74,42 @@ test("candidate can inspect explicit and interpreted Role Signal provenance", as
 
   await installSession(page, user);
   await page.goto(`/applications/${created.application_id}`);
+  let analysisAttempt = 0;
   await page.route(`**/api/applications/${created.application_id}/commands`, async (route) => {
     const command = route.request().postDataJSON();
     if (command?.type !== "analyze_target") {
       await route.continue();
+      return;
+    }
+    analysisAttempt += 1;
+    if (analysisAttempt === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...created,
+          target_analysis: {
+            status: "failed",
+            last_error: {
+              code: "provider_unavailable",
+              message: "模型服务暂时不可用，现有投递内容已保留，请稍后重试。",
+              retryable: true,
+            },
+          },
+          prompt_runs: [
+            {
+              id: "prompt-run-failed",
+              prompt_family: "target_analysis",
+              prompt_version: "target-analysis-v1",
+              model_provider: "deterministic-fake",
+              model_name: "target-analysis-fixture-v1",
+              status: "failed",
+              error_code: "provider_unavailable",
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
       return;
     }
     await route.fulfill({
@@ -105,6 +137,16 @@ test("candidate can inspect explicit and interpreted Role Signal provenance", as
         target_analysis: { status: "completed", last_error: null },
         prompt_runs: [
           {
+            id: "prompt-run-failed",
+            prompt_family: "target_analysis",
+            prompt_version: "target-analysis-v1",
+            model_provider: "deterministic-fake",
+            model_name: "target-analysis-fixture-v1",
+            status: "failed",
+            error_code: "provider_unavailable",
+            created_at: new Date().toISOString(),
+          },
+          {
             id: "prompt-run-1",
             prompt_family: "target_analysis",
             prompt_version: "target-analysis-v1",
@@ -120,6 +162,11 @@ test("candidate can inspect explicit and interpreted Role Signal provenance", as
   });
 
   await page.getByRole("button", { name: "提取岗位信号" }).click();
+  await expect(page.getByText("模型服务暂时不可用", { exact: false })).toBeVisible();
+  await expect(page.getByText("现有材料未被改动")).toBeVisible();
+  await expect(page.getByText("智能客服评测体系")).toBeVisible();
+
+  await page.getByRole("button", { name: "重新尝试" }).click();
 
   await expect(page.getByRole("heading", { name: "大模型工作流与质量评测设计" })).toBeVisible();
   await expect(page.getByText("JD 原文", { exact: true })).toBeVisible();

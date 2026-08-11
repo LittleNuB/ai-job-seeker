@@ -437,14 +437,19 @@ class ApplicationStudio:
     async def _analyze_target(
         self, owner_id: str, application_id: str
     ) -> ApplicationSnapshot:
-        record = await self._get_record(application_id, owner_id)
-        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        initial_record = await self._get_record(application_id, owner_id)
+        initial_snapshot = ApplicationSnapshot.model_validate_json(
+            initial_record.snapshot_json
+        )
         system_prompt, user_prompt = build_target_analysis_prompts(
-            target_role=snapshot.target_application.target_role,
-            jd_text=snapshot.target_application.jd_text,
+            target_role=initial_snapshot.target_application.target_role,
+            jd_text=initial_snapshot.target_application.jd_text,
         )
         run_id = _new_id()
         run_created_at = _now_iso()
+        output: TargetAnalysisModelOutput | None = None
+        failure_code: str | None = None
+        failure_message: str | None = None
 
         try:
             raw_output = await self.model.generate_json(
@@ -454,28 +459,36 @@ class ApplicationStudio:
             for signal in output.role_signals:
                 if (
                     signal.source_type == "explicit"
-                    and signal.jd_excerpt not in snapshot.target_application.jd_text
+                    and signal.jd_excerpt
+                    not in initial_snapshot.target_application.jd_text
                 ):
                     raise ModelInvalidOutputError("显式 Role Signal 引用的内容不在当前 JD 中")
         except ValidationError:
-            return await self._save_analysis_failure(
-                record,
-                snapshot,
-                run_id=run_id,
-                run_created_at=run_created_at,
-                code="invalid_output",
-                message="模型返回的岗位信号格式不完整，请重试。",
-            )
+            failure_code = "invalid_output"
+            failure_message = "模型返回的岗位信号格式不完整，请重试。"
         except ApplicationModelError as exc:
+            failure_code = exc.code
+            failure_message = self._analysis_error_message(exc.code)
+
+        # The provider call can be slow while the candidate continues editing.
+        # Re-open the persisted application before applying analysis-only fields
+        # so a concurrent item move, split, or merge is never overwritten.
+        await self.db.rollback()
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+
+        if failure_code and failure_message:
             return await self._save_analysis_failure(
                 record,
                 snapshot,
                 run_id=run_id,
                 run_created_at=run_created_at,
-                code=exc.code,
-                message=self._analysis_error_message(exc.code),
+                code=failure_code,
+                message=failure_message,
             )
 
+        if output is None:
+            raise ApplicationCommandError("Target Analysis 未返回可保存的结果")
         snapshot.role_signals = [
             RoleSignalSnapshot(id=_new_id(), **signal.model_dump())
             for signal in output.role_signals
