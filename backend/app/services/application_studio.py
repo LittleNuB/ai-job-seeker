@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
@@ -46,6 +46,10 @@ class ApplicationNotFoundError(Exception):
 
 
 class ApplicationCommandError(Exception):
+    pass
+
+
+class ApplicationConflictError(Exception):
     pass
 
 
@@ -470,75 +474,83 @@ class ApplicationStudio:
             failure_code = exc.code
             failure_message = self._analysis_error_message(exc.code)
 
-        # The provider call can be slow while the candidate continues editing.
-        # Re-open the persisted application before applying analysis-only fields
-        # so a concurrent item move, split, or merge is never overwritten.
-        await self.db.rollback()
-        record = await self._get_record(application_id, owner_id)
-        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
-
-        if failure_code and failure_message:
-            return await self._save_analysis_failure(
-                record,
-                snapshot,
-                run_id=run_id,
-                run_created_at=run_created_at,
-                code=failure_code,
-                message=failure_message,
-            )
-
         if output is None:
-            raise ApplicationCommandError("Target Analysis 未返回可保存的结果")
-        snapshot.role_signals = [
-            RoleSignalSnapshot(id=_new_id(), **signal.model_dump())
-            for signal in output.role_signals
-        ]
-        snapshot.target_analysis = TargetAnalysisSnapshot(
-            status="completed", last_error=None
-        )
-        snapshot.workflow_phase = "role_signal_review"
-        snapshot.prompt_runs.append(
-            PromptRunSnapshot(
-                id=run_id,
-                prompt_family="target_analysis",
-                prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
-                model_provider=self.model.provider_name,
-                model_name=self.model.model_name,
-                status="completed",
-                created_at=run_created_at,
-            )
-        )
-        return await self._save_snapshot(record, snapshot)
+            if not (failure_code and failure_message):
+                raise ApplicationCommandError("Target Analysis 未返回可保存的结果")
 
-    async def _save_analysis_failure(
+        return await self._save_analysis_outcome(
+            application_id=application_id,
+            owner_id=owner_id,
+            output=output,
+            failure_code=failure_code,
+            failure_message=failure_message,
+            run_id=run_id,
+            run_created_at=run_created_at,
+        )
+
+    async def _save_analysis_outcome(
         self,
-        record: TargetApplication,
-        snapshot: ApplicationSnapshot,
         *,
+        application_id: str,
+        owner_id: str,
+        output: TargetAnalysisModelOutput | None,
+        failure_code: str | None,
+        failure_message: str | None,
         run_id: str,
         run_created_at: str,
-        code: str,
-        message: str,
     ) -> ApplicationSnapshot:
-        snapshot.target_analysis = TargetAnalysisSnapshot(
-            status="failed",
-            last_error=RecoverableAnalysisErrorSnapshot(
-                code=code, message=message, retryable=True
-            ),
-        )
-        snapshot.prompt_runs.append(
-            PromptRunSnapshot(
-                id=run_id,
-                prompt_family="target_analysis",
-                prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
-                model_provider=self.model.provider_name,
-                model_name=self.model.model_name,
-                status="failed",
-                error_code=code,
-                created_at=run_created_at,
+        # A model call can overlap with candidate edits. Compare-and-swap makes
+        # the save atomic; on conflict, analysis-only fields are merged onto the
+        # latest owner snapshot and retried without replaying the provider call.
+        for attempt in range(3):
+            await self.db.rollback()
+            record = await self._get_record(application_id, owner_id)
+            snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+
+            if failure_code and failure_message:
+                snapshot.target_analysis = TargetAnalysisSnapshot(
+                    status="failed",
+                    last_error=RecoverableAnalysisErrorSnapshot(
+                        code=failure_code,
+                        message=failure_message,
+                        retryable=True,
+                    ),
+                )
+                run_status = "failed"
+            else:
+                if output is None:
+                    raise ApplicationCommandError(
+                        "Target Analysis 未返回可保存的结果"
+                    )
+                snapshot.role_signals = [
+                    RoleSignalSnapshot(id=_new_id(), **signal.model_dump())
+                    for signal in output.role_signals
+                ]
+                snapshot.target_analysis = TargetAnalysisSnapshot(
+                    status="completed", last_error=None
+                )
+                snapshot.workflow_phase = "role_signal_review"
+                run_status = "completed"
+
+            snapshot.prompt_runs.append(
+                PromptRunSnapshot(
+                    id=run_id,
+                    prompt_family="target_analysis",
+                    prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
+                    model_provider=self.model.provider_name,
+                    model_name=self.model.model_name,
+                    status=run_status,
+                    error_code=failure_code,
+                    created_at=run_created_at,
+                )
             )
-        )
-        return await self._save_snapshot(record, snapshot)
+            try:
+                return await self._save_snapshot(record, snapshot)
+            except ApplicationConflictError:
+                if attempt == 2:
+                    raise
+
+        raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
 
     @staticmethod
     def _analysis_error_message(code: str) -> str:
@@ -565,17 +577,32 @@ class ApplicationStudio:
     async def _save_snapshot(
         self, record: TargetApplication, snapshot: ApplicationSnapshot
     ) -> ApplicationSnapshot:
+        expected_snapshot_json = record.snapshot_json
         snapshot.updated_at = _now_iso()
-        record.snapshot_json = snapshot.model_dump_json()
+        next_snapshot_json = snapshot.model_dump_json()
+        result = await self.db.execute(
+            update(TargetApplication)
+            .where(
+                TargetApplication.id == record.id,
+                TargetApplication.user_id == record.user_id,
+                TargetApplication.snapshot_json == expected_snapshot_json,
+            )
+            .values(snapshot_json=next_snapshot_json)
+        )
+        if result.rowcount != 1:
+            await self.db.rollback()
+            raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
         await self.db.commit()
         return snapshot
 
     async def _get_record(self, application_id: str, owner_id: str) -> TargetApplication:
         result = await self.db.execute(
-            select(TargetApplication).where(
+            select(TargetApplication)
+            .where(
                 TargetApplication.id == application_id,
                 TargetApplication.user_id == owner_id,
             )
+            .execution_options(populate_existing=True)
         )
         record = result.scalar_one_or_none()
         if record is None:

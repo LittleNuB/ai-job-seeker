@@ -11,6 +11,7 @@ from ..schemas.application import (
 )
 from ..services.application_studio import (
     ApplicationCommandError,
+    ApplicationConflictError,
     ApplicationNotFoundError,
     ApplicationStudio,
 )
@@ -68,5 +69,7 @@ async def execute_application_command(
         )
     except ApplicationNotFoundError as exc:
         raise _not_found() from exc
+    except ApplicationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ApplicationCommandError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
