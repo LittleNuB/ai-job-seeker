@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def _require_concrete_jd(value: str) -> str:
@@ -105,8 +105,17 @@ class MergeExperienceItemsCommand(BaseModel):
     destination_item_id: str
 
 
+class AnalyzeTargetCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["analyze_target"]
+
+
 ApplicationMutationCommand = Annotated[
-    MoveExperienceItemCommand | SplitExperienceItemCommand | MergeExperienceItemsCommand,
+    MoveExperienceItemCommand
+    | SplitExperienceItemCommand
+    | MergeExperienceItemsCommand
+    | AnalyzeTargetCommand,
     Field(discriminator="type"),
 ]
 
@@ -147,15 +156,79 @@ class TargetedResumeVersionSnapshot(BaseModel):
     resume_claims: list[dict] = Field(default_factory=list)
 
 
+class RoleSignalModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    signal: str = Field(min_length=1, max_length=240)
+    source_type: Literal["explicit", "interpretation"]
+    jd_excerpt: str | None = Field(default=None, max_length=500)
+    rationale: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def require_source_evidence(self) -> "RoleSignalModelOutput":
+        if self.source_type == "explicit":
+            if not self.jd_excerpt or not self.jd_excerpt.strip():
+                raise ValueError("显式 Role Signal 必须引用 JD 原文")
+            if self.rationale is not None:
+                raise ValueError("显式 Role Signal 不需要推断说明")
+        else:
+            if self.jd_excerpt is not None:
+                raise ValueError("推断 Role Signal 不能伪装成 JD 原文")
+            if not self.rationale or not self.rationale.strip():
+                raise ValueError("推断 Role Signal 必须说明解释依据")
+        return self
+
+
+class TargetAnalysisModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role_signals: list[RoleSignalModelOutput] = Field(max_length=3)
+
+    @model_validator(mode="after")
+    def require_distinct_signals(self) -> "TargetAnalysisModelOutput":
+        normalized = [signal.signal.casefold() for signal in self.role_signals]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Role Signal 不能重复")
+        return self
+
+
+class RoleSignalSnapshot(RoleSignalModelOutput):
+    id: str
+
+
+class RecoverableAnalysisErrorSnapshot(BaseModel):
+    code: Literal["invalid_output", "timeout", "provider_unavailable"]
+    message: str
+    retryable: Literal[True] = True
+
+
+class TargetAnalysisSnapshot(BaseModel):
+    status: Literal["not_started", "completed", "failed"] = "not_started"
+    last_error: RecoverableAnalysisErrorSnapshot | None = None
+
+
+class PromptRunSnapshot(BaseModel):
+    id: str
+    prompt_family: Literal["target_analysis"]
+    prompt_version: str
+    model_provider: str
+    model_name: str
+    status: Literal["completed", "failed"]
+    error_code: Literal["invalid_output", "timeout", "provider_unavailable"] | None = None
+    created_at: str
+
+
 class ApplicationSnapshot(BaseModel):
     snapshot_version: Literal[1] = 1
     application_id: str
-    workflow_phase: Literal["source_review"] = "source_review"
+    workflow_phase: Literal["source_review", "role_signal_review"] = "source_review"
     target_application: TargetApplicationInputSnapshot
     resume_source: ResumeSourceSnapshot
     experience_entries: list[ExperienceEntrySnapshot]
     standalone_experience_items: list[ExperienceItemSnapshot]
-    role_signals: list[dict] = Field(default_factory=list)
+    role_signals: list[RoleSignalSnapshot] = Field(default_factory=list)
+    target_analysis: TargetAnalysisSnapshot = Field(default_factory=TargetAnalysisSnapshot)
+    prompt_runs: list[PromptRunSnapshot] = Field(default_factory=list)
     achievement_leads: list[dict] = Field(default_factory=list)
     source_snapshots: list[dict] = Field(default_factory=list)
     competitive_claims: list[dict] = Field(default_factory=list)

@@ -5,11 +5,17 @@ import re
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
+from ..prompts.target_analysis import (
+    TARGET_ANALYSIS_PROMPT_VERSION,
+    build_target_analysis_prompts,
+)
 from ..schemas.application import (
+    AnalyzeTargetCommand,
     ApplicationListItem,
     ApplicationSnapshot,
     BaseFactSnapshot,
@@ -17,10 +23,21 @@ from ..schemas.application import (
     ExperienceItemSnapshot,
     MergeExperienceItemsCommand,
     MoveExperienceItemCommand,
+    PromptRunSnapshot,
+    RecoverableAnalysisErrorSnapshot,
     ResumeSourceSnapshot,
+    RoleSignalSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
+    TargetAnalysisModelOutput,
+    TargetAnalysisSnapshot,
     TargetApplicationInputSnapshot,
+)
+from .application_model import (
+    ApplicationModelError,
+    ApplicationModelPort,
+    ModelInvalidOutputError,
+    get_application_model,
 )
 
 
@@ -240,8 +257,11 @@ class _ResumeStructureBuilder:
 
 
 class ApplicationStudio:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self, db: AsyncSession, model: ApplicationModelPort | None = None
+    ) -> None:
         self.db = db
+        self.model = model or get_application_model()
 
     async def execute(
         self,
@@ -250,6 +270,7 @@ class ApplicationStudio:
             | MoveExperienceItemCommand
             | SplitExperienceItemCommand
             | MergeExperienceItemsCommand
+            | AnalyzeTargetCommand
         ),
         *,
         owner_id: str,
@@ -271,6 +292,10 @@ class ApplicationStudio:
             if application_id is None:
                 raise ApplicationCommandError("合并经历项目需要目标投递")
             return await self._merge_items(command, owner_id, application_id)
+        if isinstance(command, AnalyzeTargetCommand):
+            if application_id is None:
+                raise ApplicationCommandError("Target Analysis 需要目标投递")
+            return await self._analyze_target(owner_id, application_id)
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -408,6 +433,107 @@ class ApplicationStudio:
         destination_item.base_facts.extend(source_item.base_facts)
         source_items.remove(source_item)
         return await self._save_snapshot(record, snapshot)
+
+    async def _analyze_target(
+        self, owner_id: str, application_id: str
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        system_prompt, user_prompt = build_target_analysis_prompts(
+            target_role=snapshot.target_application.target_role,
+            jd_text=snapshot.target_application.jd_text,
+        )
+        run_id = _new_id()
+        run_created_at = _now_iso()
+
+        try:
+            raw_output = await self.model.generate_json(
+                system_prompt=system_prompt, user_prompt=user_prompt
+            )
+            output = TargetAnalysisModelOutput.model_validate(raw_output)
+            for signal in output.role_signals:
+                if (
+                    signal.source_type == "explicit"
+                    and signal.jd_excerpt not in snapshot.target_application.jd_text
+                ):
+                    raise ModelInvalidOutputError("显式 Role Signal 引用的内容不在当前 JD 中")
+        except ValidationError:
+            return await self._save_analysis_failure(
+                record,
+                snapshot,
+                run_id=run_id,
+                run_created_at=run_created_at,
+                code="invalid_output",
+                message="模型返回的岗位信号格式不完整，请重试。",
+            )
+        except ApplicationModelError as exc:
+            return await self._save_analysis_failure(
+                record,
+                snapshot,
+                run_id=run_id,
+                run_created_at=run_created_at,
+                code=exc.code,
+                message=self._analysis_error_message(exc.code),
+            )
+
+        snapshot.role_signals = [
+            RoleSignalSnapshot(id=_new_id(), **signal.model_dump())
+            for signal in output.role_signals
+        ]
+        snapshot.target_analysis = TargetAnalysisSnapshot(
+            status="completed", last_error=None
+        )
+        snapshot.workflow_phase = "role_signal_review"
+        snapshot.prompt_runs.append(
+            PromptRunSnapshot(
+                id=run_id,
+                prompt_family="target_analysis",
+                prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
+                model_provider=self.model.provider_name,
+                model_name=self.model.model_name,
+                status="completed",
+                created_at=run_created_at,
+            )
+        )
+        return await self._save_snapshot(record, snapshot)
+
+    async def _save_analysis_failure(
+        self,
+        record: TargetApplication,
+        snapshot: ApplicationSnapshot,
+        *,
+        run_id: str,
+        run_created_at: str,
+        code: str,
+        message: str,
+    ) -> ApplicationSnapshot:
+        snapshot.target_analysis = TargetAnalysisSnapshot(
+            status="failed",
+            last_error=RecoverableAnalysisErrorSnapshot(
+                code=code, message=message, retryable=True
+            ),
+        )
+        snapshot.prompt_runs.append(
+            PromptRunSnapshot(
+                id=run_id,
+                prompt_family="target_analysis",
+                prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
+                model_provider=self.model.provider_name,
+                model_name=self.model.model_name,
+                status="failed",
+                error_code=code,
+                created_at=run_created_at,
+            )
+        )
+        return await self._save_snapshot(record, snapshot)
+
+    @staticmethod
+    def _analysis_error_message(code: str) -> str:
+        if code == "timeout":
+            return "模型响应超时，现有投递内容已保留，请重试。"
+        if code == "invalid_output":
+            return "模型返回的岗位信号格式不完整，请重试。"
+        return "模型服务暂时不可用，现有投递内容已保留，请稍后重试。"
 
     @staticmethod
     def _find_item(

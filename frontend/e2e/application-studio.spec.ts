@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { registerUser, type E2EUser } from "./support/auth";
+import { apiPath, registerUser, type E2EUser } from "./support/auth";
 
 const concreteJd = `AI 产品经理（智能应用方向）
 岗位职责
@@ -56,4 +56,76 @@ test("candidate creates, leaves, and reopens a Target Application", async ({ pag
 test("unauthenticated candidate is sent to login before opening the workspace", async ({ page }) => {
   await page.goto("/applications");
   await expect(page).toHaveURL(/\/auth\?next=%2Fapplications$/);
+});
+
+test("candidate can inspect explicit and interpreted Role Signal provenance", async ({ page, request }) => {
+  const user = await registerUser(request, "role-signals");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const created = await createResponse.json();
+
+  await installSession(page, user);
+  await page.goto(`/applications/${created.application_id}`);
+  await page.route(`**/api/applications/${created.application_id}/commands`, async (route) => {
+    const command = route.request().postDataJSON();
+    if (command?.type !== "analyze_target") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...created,
+        workflow_phase: "role_signal_review",
+        role_signals: [
+          {
+            id: "signal-explicit",
+            signal: "大模型工作流与质量评测设计",
+            source_type: "explicit",
+            jd_excerpt: "设计大模型工作流、质量评测方案及异常处理机制",
+            rationale: null,
+          },
+          {
+            id: "signal-interpretation",
+            signal: "从验证走向稳定交付的推进能力",
+            source_type: "interpretation",
+            jd_excerpt: null,
+            rationale: "JD 同时强调持续优化核心体验和推动产品稳定交付。",
+          },
+        ],
+        target_analysis: { status: "completed", last_error: null },
+        prompt_runs: [
+          {
+            id: "prompt-run-1",
+            prompt_family: "target_analysis",
+            prompt_version: "target-analysis-v1",
+            model_provider: "deterministic-fake",
+            model_name: "target-analysis-fixture-v1",
+            status: "completed",
+            error_code: null,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.getByRole("button", { name: "提取岗位信号" }).click();
+
+  await expect(page.getByRole("heading", { name: "大模型工作流与质量评测设计" })).toBeVisible();
+  await expect(page.getByText("JD 原文", { exact: true })).toBeVisible();
+  await expect(page.getByText("设计大模型工作流、质量评测方案及异常处理机制")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "从验证走向稳定交付的推进能力" })).toBeVisible();
+  await expect(page.getByText("AI 解读", { exact: true })).toBeVisible();
+  await expect(page.getByText("不代表招聘方确定结论", { exact: false })).toBeVisible();
+  await expect(page.getByText("匹配分", { exact: false })).toHaveCount(0);
 });

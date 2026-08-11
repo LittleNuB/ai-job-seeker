@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from httpx import AsyncClient
 
+from app.main import app
+from app.services.application_model import ModelTimeoutError, get_application_model
+
 
 CONCRETE_JD = """
 AI 产品经理（智能应用方向）
@@ -45,6 +48,21 @@ async def _create_application(client: AsyncClient, headers: dict[str, str]) -> d
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+class FakeApplicationModel:
+    provider_name = "deterministic-fake"
+    model_name = "target-analysis-fixture-v1"
+
+    def __init__(self, output: object) -> None:
+        self.output = output
+        self.calls = 0
+
+    async def generate_json(self, *, system_prompt: str, user_prompt: str) -> object:
+        self.calls += 1
+        if isinstance(self.output, Exception):
+            raise self.output
+        return self.output
 
 
 async def test_create_and_reopen_application_snapshot(client: AsyncClient, auth_headers):
@@ -325,3 +343,236 @@ async def test_application_studio_requires_authentication(client: AsyncClient):
 
     assert create_response.status_code == 401
     assert list_response.status_code == 401
+
+
+async def test_target_analysis_persists_sourced_and_inferred_role_signals(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                },
+                {
+                    "signal": "从验证走向稳定交付的推进能力",
+                    "source_type": "interpretation",
+                    "jd_excerpt": None,
+                    "rationale": "JD 同时强调持续优化核心体验和推动产品稳定交付。",
+                },
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert response.status_code == 200, response.text
+    analyzed = response.json()
+    assert analyzed["workflow_phase"] == "role_signal_review"
+    assert analyzed["role_signals"] == [
+        {
+            "id": analyzed["role_signals"][0]["id"],
+            "signal": "大模型工作流与质量评测设计",
+            "source_type": "explicit",
+            "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+            "rationale": None,
+        },
+        {
+            "id": analyzed["role_signals"][1]["id"],
+            "signal": "从验证走向稳定交付的推进能力",
+            "source_type": "interpretation",
+            "jd_excerpt": None,
+            "rationale": "JD 同时强调持续优化核心体验和推动产品稳定交付。",
+        },
+    ]
+    assert analyzed["target_analysis"] == {"status": "completed", "last_error": None}
+    assert analyzed["prompt_runs"][-1]["prompt_family"] == "target_analysis"
+    assert analyzed["prompt_runs"][-1]["prompt_version"] == "target-analysis-v1"
+    assert analyzed["prompt_runs"][-1]["model_provider"] == "deterministic-fake"
+    assert analyzed["prompt_runs"][-1]["model_name"] == "target-analysis-fixture-v1"
+    assert analyzed["prompt_runs"][-1]["status"] == "completed"
+    assert "match_score" not in analyzed
+    assert model.calls == 1
+
+    reopened = await client.get(
+        f"/api/applications/{created['application_id']}", headers=headers
+    )
+    assert reopened.status_code == 200
+    assert reopened.json() == analyzed
+
+
+async def test_invalid_target_analysis_preserves_signals_and_can_be_retried(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "跨团队推动 AI 产品稳定交付",
+                    "source_type": "explicit",
+                    "jd_excerpt": "推动产品从验证走向稳定交付",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        first_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        first = first_response.json()
+
+        model.output = {
+            "role_signals": [
+                {
+                    "signal": f"为了凑数生成的信号 {index}",
+                    "source_type": "interpretation",
+                    "jd_excerpt": None,
+                    "rationale": "这条输出仅用于验证超过三条时会被拒绝。",
+                }
+                for index in range(4)
+            ]
+        }
+        invalid_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        invalid = invalid_response.json()
+
+        model.output = {
+            "role_signals": [
+                {
+                    "signal": "模型能力边界与评测方法",
+                    "source_type": "explicit",
+                    "jd_excerpt": "理解模型能力边界与评测方法",
+                    "rationale": None,
+                }
+            ]
+        }
+        retried_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert first_response.status_code == 200
+    assert invalid_response.status_code == 200
+    assert invalid["target_analysis"]["status"] == "failed"
+    assert invalid["target_analysis"]["last_error"]["code"] == "invalid_output"
+    assert invalid["target_analysis"]["last_error"]["retryable"] is True
+    assert invalid["role_signals"] == first["role_signals"]
+    assert invalid["workflow_phase"] == "role_signal_review"
+    assert [run["status"] for run in invalid["prompt_runs"]] == ["completed", "failed"]
+
+    assert retried_response.status_code == 200
+    retried = retried_response.json()
+    assert retried["target_analysis"] == {"status": "completed", "last_error": None}
+    assert [signal["signal"] for signal in retried["role_signals"]] == [
+        "模型能力边界与评测方法"
+    ]
+    assert [run["status"] for run in retried["prompt_runs"]] == [
+        "completed",
+        "failed",
+        "completed",
+    ]
+    assert model.calls == 3
+
+
+async def test_target_analysis_rejects_an_explicit_excerpt_not_found_in_the_jd(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "招聘方保证候选人入职后直接负责全部业务",
+                    "source_type": "explicit",
+                    "jd_excerpt": "入职后直接负责全部业务并拥有最终决策权",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["role_signals"] == []
+    assert snapshot["target_analysis"]["status"] == "failed"
+    assert snapshot["target_analysis"]["last_error"]["code"] == "invalid_output"
+
+
+async def test_target_analysis_timeout_is_recoverable_and_preserves_the_application(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(ModelTimeoutError("fixture timeout"))
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["target_application"] == created["target_application"]
+    assert snapshot["experience_entries"] == created["experience_entries"]
+    assert snapshot["standalone_experience_items"] == created["standalone_experience_items"]
+    assert snapshot["target_analysis"]["status"] == "failed"
+    assert snapshot["target_analysis"]["last_error"]["code"] == "timeout"
+    assert snapshot["prompt_runs"][-1]["status"] == "failed"
+    assert snapshot["prompt_runs"][-1]["error_code"] == "timeout"
+
+
+async def test_target_analysis_without_a_configured_provider_returns_a_retryable_state(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+
+    response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={"type": "analyze_target"},
+    )
+
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["target_analysis"]["status"] == "failed"
+    assert snapshot["target_analysis"]["last_error"]["code"] == "provider_unavailable"
+    assert snapshot["role_signals"] == []
