@@ -1,4 +1,5 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { registerUser, type E2EUser } from "./support/auth";
 
 const concreteJd = `AI 产品经理（智能应用方向）
 岗位职责
@@ -18,103 +19,17 @@ const resumeText = `工作经历
 AI Job Copilot
 - 独立设计面向具体 JD 的求职准备工作流。`;
 
-const snapshot = {
-  snapshot_version: 1,
-  application_id: "application-1",
-  workflow_phase: "source_review",
-  target_application: { target_role: "AI 产品经理", jd_text: concreteJd },
-  resume_source: { text: resumeText, scope: "application_local" },
-  experience_entries: [
-    {
-      id: "entry-1",
-      organization: "知音科技",
-      role: "AI 产品实习生",
-      date_range: "2025.01-2025.06",
-      experience_items: [
-        {
-          id: "item-1",
-          title: "智能客服评测体系",
-          entry_id: "entry-1",
-          source_scope: "application_local",
-          base_facts: [
-            {
-              id: "fact-1",
-              text: "负责整理 120 条高频失败案例，定义三类评测维度。",
-              source_location: "resume:line:4",
-            },
-          ],
-        },
-      ],
-    },
-  ],
-  standalone_experience_items: [
-    {
-      id: "item-2",
-      title: "AI Job Copilot",
-      entry_id: null,
-      source_scope: "application_local",
-      base_facts: [
-        {
-          id: "fact-2",
-          text: "独立设计面向具体 JD 的求职准备工作流。",
-          source_location: "resume:line:9",
-        },
-      ],
-    },
-  ],
-  role_signals: [],
-  achievement_leads: [],
-  source_snapshots: [],
-  competitive_claims: [],
-  source_change_notices: [],
-  targeted_resume_version: { resume_claims: [] },
-  interview_rehearsal: null,
-  created_at: "2026-08-11T12:00:00Z",
-  updated_at: "2026-08-11T12:00:00Z",
-};
-
-async function installSession(page: Page) {
+async function installSession(page: Page, user: E2EUser) {
   await page.goto("/");
-  await page.evaluate(() => {
-    window.localStorage.setItem("auth_token", "e2e-token");
-    window.localStorage.setItem("auth_email", "candidate@example.com");
-  });
+  await page.evaluate(({ token, email }) => {
+    window.localStorage.setItem("auth_token", token);
+    window.localStorage.setItem("auth_email", email);
+  }, user);
 }
 
-async function applicationApi(route: Route) {
-  const url = new URL(route.request().url());
-  const method = route.request().method();
-
-  if (url.pathname === "/api/applications/commands" && method === "POST") {
-    await route.fulfill({ json: snapshot });
-    return;
-  }
-  if (url.pathname === "/api/applications/application-1" && method === "GET") {
-    await route.fulfill({ json: snapshot });
-    return;
-  }
-  if (url.pathname === "/api/applications" && method === "GET") {
-    await route.fulfill({
-      json: {
-        items: [
-          {
-            application_id: "application-1",
-            target_role: "AI 产品经理",
-            workflow_phase: "source_review",
-            experience_item_count: 2,
-            updated_at: "2026-08-11T12:00:00Z",
-          },
-        ],
-      },
-    });
-    return;
-  }
-  await route.fallback();
-}
-
-test("candidate creates, leaves, and reopens a Target Application", async ({ page }) => {
-  await installSession(page);
-  await page.route("**/api/applications**", applicationApi);
+test("candidate creates, leaves, and reopens a Target Application", async ({ page, request }) => {
+  const user = await registerUser(request, "application-studio");
+  await installSession(page, user);
 
   await page.goto("/applications");
   await page.getByLabel("目标岗位").fill("AI 产品经理");
@@ -122,7 +37,7 @@ test("candidate creates, leaves, and reopens a Target Application", async ({ pag
   await page.getByLabel("简历内容").fill(resumeText);
   await page.getByRole("button", { name: "建立投递工作台" }).click();
 
-  await expect(page).toHaveURL(/\/applications\/application-1$/);
+  await expect(page).toHaveURL(/\/applications\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: "AI 产品经理" })).toBeVisible();
   await expect(page.getByText("智能客服评测体系")).toBeVisible();
   await expect(page.getByRole("heading", { name: "AI Job Copilot", exact: true })).toBeVisible();
@@ -133,7 +48,12 @@ test("candidate creates, leaves, and reopens a Target Application", async ({ pag
   await expect(page).toHaveURL(/\/applications$/);
   await page.getByRole("link", { name: "继续准备" }).click();
 
-  await expect(page).toHaveURL(/\/applications\/application-1$/);
+  await expect(page).toHaveURL(/\/applications\/[0-9a-f-]{36}$/);
   await expect(page.getByText("已保存，可随时回来继续")).toBeVisible();
   await expect(page.getByText("段可用经历")).toBeVisible();
+});
+
+test("unauthenticated candidate is sent to login before opening the workspace", async ({ page }) => {
+  await page.goto("/applications");
+  await expect(page).toHaveURL(/\/auth\?next=%2Fapplications$/);
 });

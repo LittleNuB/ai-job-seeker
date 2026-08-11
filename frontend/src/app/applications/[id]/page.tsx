@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, GitMerge, Loader2, RotateCcw, Scissors } from "lucide-react";
 import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot } from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
 
@@ -14,12 +14,42 @@ function itemCount(snapshot: ApplicationSnapshot): number {
   );
 }
 
-function ExperienceItemCard({ item, entries, moving, onMove }: {
+function ExperienceItemCard({ item, entries, allItems, busy, onMove, onSplit, onMerge }: {
   item: ExperienceItemSnapshot;
   entries: ExperienceEntrySnapshot[];
-  moving: boolean;
+  allItems: ExperienceItemSnapshot[];
+  busy: boolean;
   onMove: (itemId: string, destinationEntryId: string | null) => void;
+  onSplit: (itemId: string, factIds: string[], newTitle: string) => Promise<boolean>;
+  onMerge: (sourceItemId: string, destinationItemId: string) => Promise<boolean>;
 }) {
+  const [editingBoundary, setEditingBoundary] = useState(false);
+  const [selectedFactIds, setSelectedFactIds] = useState<string[]>([]);
+  const [newItemTitle, setNewItemTitle] = useState("");
+  const [mergeTargetId, setMergeTargetId] = useState("");
+  const mergeTargets = allItems.filter((candidate) => candidate.id !== item.id);
+
+  function toggleFact(factId: string) {
+    setSelectedFactIds((current) => current.includes(factId)
+      ? current.filter((id) => id !== factId)
+      : [...current, factId]);
+  }
+
+  async function handleSplit() {
+    if (await onSplit(item.id, selectedFactIds, newItemTitle)) {
+      setSelectedFactIds([]);
+      setNewItemTitle("");
+      setEditingBoundary(false);
+    }
+  }
+
+  async function handleMerge() {
+    if (mergeTargetId && await onMerge(item.id, mergeTargetId)) {
+      setMergeTargetId("");
+      setEditingBoundary(false);
+    }
+  }
+
   return (
     <article className="border border-[#1c2921]/15 bg-white p-5 shadow-[3px_3px_0_#e5dfd2]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -34,14 +64,14 @@ function ExperienceItemCard({ item, entries, moving, onMove }: {
           <select
             aria-label={`${item.title} 归入`}
             value={item.entry_id || "standalone"}
-            disabled={moving}
+            disabled={busy}
             onChange={(event) => onMove(item.id, event.target.value === "standalone" ? null : event.target.value)}
             className="max-w-52 border border-[#1c2921]/20 bg-[#f7f4ed] px-2 py-1.5 font-medium text-[#26332b] outline-none focus:border-[#d24d31]"
           >
             <option value="standalone">独立项目</option>
             {entries.map((entry) => <option key={entry.id} value={entry.id}>{entry.organization} · {entry.role}</option>)}
           </select>
-          {moving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
         </label>
       </div>
       <ul className="mt-4 space-y-3 border-t border-[#1c2921]/10 pt-4">
@@ -52,6 +82,85 @@ function ExperienceItemCard({ item, entries, moving, onMove }: {
           </li>
         ))}
       </ul>
+
+      <div className="mt-4 border-t border-[#1c2921]/10 pt-3">
+        <button
+          type="button"
+          onClick={() => setEditingBoundary((current) => !current)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5f6d63] underline decoration-[#5f6d63]/30 underline-offset-4 hover:text-[#17211b]"
+        >
+          <Scissors className="h-3.5 w-3.5" /> 调整项目边界
+        </button>
+
+        {editingBoundary && (
+          <div className="mt-4 grid gap-4 bg-[#f7f4ed] p-4 lg:grid-cols-2">
+            <div>
+              <div className="text-xs font-semibold text-[#26332b]">拆出新的经历项目</div>
+              {item.base_facts.length > 1 ? (
+                <>
+                  <div className="mt-3 space-y-2">
+                    {item.base_facts.map((fact) => (
+                      <label key={fact.id} className="flex items-start gap-2 text-xs leading-5 text-[#4c5a51]">
+                        <input
+                          type="checkbox"
+                          checked={selectedFactIds.includes(fact.id)}
+                          onChange={() => toggleFact(fact.id)}
+                          className="mt-1 accent-[#d24d31]"
+                        />
+                        <span>{fact.text}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <input
+                    aria-label={`${item.title} 新项目名称`}
+                    value={newItemTitle}
+                    onChange={(event) => setNewItemTitle(event.target.value)}
+                    placeholder="新的项目或责任模块名称"
+                    className="mt-3 w-full border border-[#1c2921]/20 bg-white px-3 py-2 text-xs outline-none focus:border-[#d24d31]"
+                  />
+                  <button
+                    type="button"
+                    disabled={busy || !newItemTitle.trim() || selectedFactIds.length === 0 || selectedFactIds.length === item.base_facts.length}
+                    onClick={handleSplit}
+                    className="mt-2 inline-flex items-center gap-1.5 bg-[#17211b] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Scissors className="h-3.5 w-3.5" /> 保存拆分
+                  </button>
+                </>
+              ) : (
+                <p className="mt-2 text-xs leading-5 text-[#6b786e]">至少有两条 Base Fact 时才能拆分。</p>
+              )}
+            </div>
+
+            <div className="border-t border-[#1c2921]/10 pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+              <div className="text-xs font-semibold text-[#26332b]">合并到已有项目</div>
+              {mergeTargets.length ? (
+                <>
+                  <select
+                    aria-label={`${item.title} 合并到`}
+                    value={mergeTargetId}
+                    onChange={(event) => setMergeTargetId(event.target.value)}
+                    className="mt-3 w-full border border-[#1c2921]/20 bg-white px-2 py-2 text-xs outline-none focus:border-[#d24d31]"
+                  >
+                    <option value="">选择目标项目</option>
+                    {mergeTargets.map((target) => <option key={target.id} value={target.id}>{target.title}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={busy || !mergeTargetId}
+                    onClick={handleMerge}
+                    className="mt-2 inline-flex items-center gap-1.5 border border-[#17211b]/25 bg-white px-3 py-2 text-xs font-semibold text-[#26332b] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <GitMerge className="h-3.5 w-3.5" /> 合并材料
+                  </button>
+                </>
+              ) : (
+                <p className="mt-2 text-xs leading-5 text-[#6b786e]">当前没有其他项目可供合并。</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </article>
   );
 }
@@ -62,7 +171,7 @@ export default function ApplicationWorkspacePage() {
   const applicationId = params.id;
   const [snapshot, setSnapshot] = useState<ApplicationSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [movingItemId, setMovingItemId] = useState<string | null>(null);
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -81,18 +190,52 @@ export default function ApplicationWorkspacePage() {
   }, [applicationId, router]);
 
   const totalItems = useMemo(() => (snapshot ? itemCount(snapshot) : 0), [snapshot]);
+  const allItems = useMemo(() => snapshot ? [
+    ...snapshot.experience_entries.flatMap((entry) => entry.experience_items),
+    ...snapshot.standalone_experience_items,
+  ] : [], [snapshot]);
 
-  async function moveItem(itemId: string, destinationEntryId: string | null) {
-    setMovingItemId(itemId);
+  async function applyItemMutation(
+    itemId: string,
+    fallbackMessage: string,
+    mutation: () => Promise<ApplicationSnapshot>,
+  ): Promise<boolean> {
+    setPendingItemId(itemId);
     setError("");
     try {
-      setSnapshot(await applications.moveExperienceItem(applicationId, itemId, destinationEntryId));
+      setSnapshot(await mutation());
+      return true;
     } catch (err: unknown) {
       if (err instanceof AuthRequiredError) router.push(getLoginPath(`/applications/${applicationId}`));
-      else setError(err instanceof Error ? err.message : "经历归组没有保存，请重试");
+      else setError(err instanceof Error ? err.message : fallbackMessage);
+      return false;
     } finally {
-      setMovingItemId(null);
+      setPendingItemId(null);
     }
+  }
+
+  async function moveItem(itemId: string, destinationEntryId: string | null) {
+    await applyItemMutation(
+      itemId,
+      "经历归组没有保存，请重试",
+      () => applications.moveExperienceItem(applicationId, itemId, destinationEntryId),
+    );
+  }
+
+  function splitItem(itemId: string, factIds: string[], newTitle: string) {
+    return applyItemMutation(
+      itemId,
+      "经历项目没有拆分成功，请重试",
+      () => applications.splitExperienceItem(applicationId, itemId, factIds, newTitle),
+    );
+  }
+
+  function mergeItems(sourceItemId: string, destinationItemId: string) {
+    return applyItemMutation(
+      sourceItemId,
+      "经历项目没有合并成功，请重试",
+      () => applications.mergeExperienceItems(applicationId, sourceItemId, destinationItemId),
+    );
   }
 
   if (loading) {
@@ -165,7 +308,7 @@ export default function ApplicationWorkspacePage() {
                 </div>
                 <div className="space-y-3 sm:pl-5">
                   {entry.experience_items.length ? entry.experience_items.map((item) => (
-                    <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} moving={movingItemId === item.id} onMove={moveItem} />
+                    <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} />
                   )) : <div className="border border-dashed border-[#17211b]/25 px-5 py-6 text-sm text-[#657168]">这段经历暂时没有项目材料，可从下方独立项目中调整归入。</div>}
                 </div>
               </section>
@@ -175,7 +318,7 @@ export default function ApplicationWorkspacePage() {
               <div className="mb-3 flex items-center gap-2 border-l-4 border-[#d24d31] pl-4"><FolderKanban className="h-4 w-4 text-[#b44128]" /><h3 className="text-xl font-semibold">独立项目</h3></div>
               <div className="space-y-3 sm:pl-5">
                 {snapshot.standalone_experience_items.length ? snapshot.standalone_experience_items.map((item) => (
-                  <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} moving={movingItemId === item.id} onMove={moveItem} />
+                  <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} />
                 )) : <div className="border border-dashed border-[#17211b]/25 px-5 py-6 text-sm text-[#657168]">当前没有独立项目，所有材料都已归入工作或实习经历。</div>}
               </div>
             </section>

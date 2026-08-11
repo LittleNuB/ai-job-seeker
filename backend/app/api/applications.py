@@ -5,8 +5,8 @@ from ..database import get_db
 from ..middleware.auth import get_current_user
 from ..schemas.application import (
     ApplicationListResponse,
+    ApplicationMutationCommand,
     ApplicationSnapshot,
-    MoveExperienceItemCommand,
     StartApplicationCommand,
 )
 from ..services.application_studio import (
@@ -56,7 +56,7 @@ async def get_application(
 @router.post("/{application_id}/commands", response_model=ApplicationSnapshot)
 async def execute_application_command(
     application_id: str,
-    command: MoveExperienceItemCommand,
+    command: ApplicationMutationCommand,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):

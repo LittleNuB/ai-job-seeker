@@ -15,8 +15,10 @@ from ..schemas.application import (
     BaseFactSnapshot,
     ExperienceEntrySnapshot,
     ExperienceItemSnapshot,
+    MergeExperienceItemsCommand,
     MoveExperienceItemCommand,
     ResumeSourceSnapshot,
+    SplitExperienceItemCommand,
     StartApplicationCommand,
     TargetApplicationInputSnapshot,
 )
@@ -40,8 +42,41 @@ _SECTION_NAMES = {
     "个人项目": "project",
     "project experience": "project",
     "projects": "project",
+    "教育经历": "ignored",
+    "教育背景": "ignored",
+    "学历信息": "ignored",
+    "education": "ignored",
+    "专业技能": "ignored",
+    "技能清单": "ignored",
+    "技能": "ignored",
+    "skills": "ignored",
+    "个人信息": "ignored",
+    "个人简介": "ignored",
+    "自我评价": "ignored",
+    "summary": "ignored",
 }
 _BULLET_PREFIX = re.compile(r"^(?:[-*•·▪◦]|\d+[.)、])\s*")
+_EXPERIENCE_ACTION_MARKERS = (
+    "负责",
+    "设计",
+    "实现",
+    "推动",
+    "主导",
+    "协同",
+    "协作",
+    "优化",
+    "搭建",
+    "建立",
+    "完成",
+    "开发",
+    "运营",
+    "led ",
+    "built ",
+    "designed ",
+    "implemented ",
+    "improved ",
+    "launched ",
+)
 
 
 def _now_iso() -> str:
@@ -63,6 +98,13 @@ def _is_bullet(line: str) -> bool:
 
 def _bullet_text(line: str) -> str:
     return _BULLET_PREFIX.sub("", line.strip()).strip()
+
+
+def _looks_like_experience_fact(line: str) -> bool:
+    if not _is_bullet(line):
+        return False
+    lowered = f"{_bullet_text(line).lower()} "
+    return any(marker in lowered for marker in _EXPERIENCE_ACTION_MARKERS)
 
 
 def _parse_entry_header(line: str) -> tuple[str, str, str | None] | None:
@@ -101,12 +143,16 @@ class _ResumeStructureBuilder:
                 self._consume_employment_line(line_number, line)
             elif self.section == "project":
                 self._consume_project_line(line_number, line)
-            else:
+            elif self.section is None:
                 self.unplaced_lines.append((line_number, line))
 
         self._ensure_items_have_facts()
         if not self.entries and not self.standalone_items:
-            facts = [self._fact(number, line) for number, line in self.unplaced_lines]
+            facts = [
+                self._fact(number, _bullet_text(line))
+                for number, line in self.unplaced_lines
+                if _looks_like_experience_fact(line)
+            ]
             if facts:
                 self.standalone_items.append(
                     ExperienceItemSnapshot(
@@ -199,7 +245,12 @@ class ApplicationStudio:
 
     async def execute(
         self,
-        command: StartApplicationCommand | MoveExperienceItemCommand,
+        command: (
+            StartApplicationCommand
+            | MoveExperienceItemCommand
+            | SplitExperienceItemCommand
+            | MergeExperienceItemsCommand
+        ),
         *,
         owner_id: str,
         application_id: str | None = None,
@@ -212,6 +263,14 @@ class ApplicationStudio:
             if application_id is None:
                 raise ApplicationCommandError("修正经历归属需要目标投递")
             return await self._move_item(command, owner_id, application_id)
+        if isinstance(command, SplitExperienceItemCommand):
+            if application_id is None:
+                raise ApplicationCommandError("拆分经历项目需要目标投递")
+            return await self._split_item(command, owner_id, application_id)
+        if isinstance(command, MergeExperienceItemsCommand):
+            if application_id is None:
+                raise ApplicationCommandError("合并经历项目需要目标投递")
+            return await self._merge_items(command, owner_id, application_id)
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -289,36 +348,10 @@ class ApplicationStudio:
             if destination is None:
                 raise ApplicationCommandError("目标工作经历不存在")
 
-        selected_item = None
-        for entry in snapshot.experience_entries:
-            for item in entry.experience_items:
-                if item.id == command.experience_item_id:
-                    selected_item = item
-                    break
-            if selected_item is not None:
-                entry.experience_items = [
-                    item for item in entry.experience_items if item.id != selected_item.id
-                ]
-                break
-
-        if selected_item is None:
-            selected_item = next(
-                (
-                    item
-                    for item in snapshot.standalone_experience_items
-                    if item.id == command.experience_item_id
-                ),
-                None,
-            )
-            if selected_item is not None:
-                snapshot.standalone_experience_items = [
-                    item
-                    for item in snapshot.standalone_experience_items
-                    if item.id != selected_item.id
-                ]
-
-        if selected_item is None:
-            raise ApplicationCommandError("经历项目不存在")
+        selected_item, source_items = self._find_item(
+            snapshot, command.experience_item_id
+        )
+        source_items.remove(selected_item)
 
         selected_item.entry_id = destination.id if destination else None
         if destination:
@@ -326,6 +359,71 @@ class ApplicationStudio:
         else:
             snapshot.standalone_experience_items.append(selected_item)
 
+        return await self._save_snapshot(record, snapshot)
+
+    async def _split_item(
+        self,
+        command: SplitExperienceItemCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        source_item, source_items = self._find_item(snapshot, command.source_item_id)
+        selected_ids = set(command.base_fact_ids)
+        available_ids = {fact.id for fact in source_item.base_facts}
+        if not selected_ids.issubset(available_ids):
+            raise ApplicationCommandError("待拆分的 Base Fact 不属于该经历项目")
+        if selected_ids == available_ids:
+            raise ApplicationCommandError("拆分后原经历项目至少保留一条 Base Fact")
+
+        split_facts = [fact for fact in source_item.base_facts if fact.id in selected_ids]
+        source_item.base_facts = [
+            fact for fact in source_item.base_facts if fact.id not in selected_ids
+        ]
+        new_item = ExperienceItemSnapshot(
+            id=_new_id(),
+            title=command.new_item_title,
+            entry_id=source_item.entry_id,
+            base_facts=split_facts,
+        )
+        source_index = source_items.index(source_item)
+        source_items.insert(source_index + 1, new_item)
+        return await self._save_snapshot(record, snapshot)
+
+    async def _merge_items(
+        self,
+        command: MergeExperienceItemsCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        if command.source_item_id == command.destination_item_id:
+            raise ApplicationCommandError("经历项目不能与自身合并")
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        source_item, source_items = self._find_item(snapshot, command.source_item_id)
+        destination_item, _ = self._find_item(snapshot, command.destination_item_id)
+        destination_item.base_facts.extend(source_item.base_facts)
+        source_items.remove(source_item)
+        return await self._save_snapshot(record, snapshot)
+
+    @staticmethod
+    def _find_item(
+        snapshot: ApplicationSnapshot, item_id: str
+    ) -> tuple[ExperienceItemSnapshot, list[ExperienceItemSnapshot]]:
+        item_collections = [
+            *(entry.experience_items for entry in snapshot.experience_entries),
+            snapshot.standalone_experience_items,
+        ]
+        for items in item_collections:
+            item = next((candidate for candidate in items if candidate.id == item_id), None)
+            if item is not None:
+                return item, items
+        raise ApplicationCommandError("经历项目不存在")
+
+    async def _save_snapshot(
+        self, record: TargetApplication, snapshot: ApplicationSnapshot
+    ) -> ApplicationSnapshot:
         snapshot.updated_at = _now_iso()
         record.snapshot_json = snapshot.model_dump_json()
         await self.db.commit()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -71,6 +71,44 @@ class MoveExperienceItemCommand(BaseModel):
     type: Literal["move_experience_item"]
     experience_item_id: str
     destination_entry_id: str | None = None
+
+
+class SplitExperienceItemCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["split_experience_item"]
+    source_item_id: str
+    base_fact_ids: list[str] = Field(min_length=1)
+    new_item_title: str = Field(min_length=1, max_length=160)
+
+    @field_validator("base_fact_ids")
+    @classmethod
+    def require_unique_facts(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value):
+            raise ValueError("拆分材料不能包含重复事实")
+        return value
+
+    @field_validator("new_item_title")
+    @classmethod
+    def validate_new_item_title(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("请填写新的经历项目名称")
+        return normalized
+
+
+class MergeExperienceItemsCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["merge_experience_items"]
+    source_item_id: str
+    destination_item_id: str
+
+
+ApplicationMutationCommand = Annotated[
+    MoveExperienceItemCommand | SplitExperienceItemCommand | MergeExperienceItemsCommand,
+    Field(discriminator="type"),
+]
 
 
 class BaseFactSnapshot(BaseModel):

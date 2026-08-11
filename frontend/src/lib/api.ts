@@ -314,6 +314,34 @@ export const applications = {
         destination_entry_id: destinationEntryId,
       }),
     }),
+  splitExperienceItem: (
+    applicationId: string,
+    sourceItemId: string,
+    baseFactIds: string[],
+    newItemTitle: string,
+  ) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "split_experience_item",
+        source_item_id: sourceItemId,
+        base_fact_ids: baseFactIds,
+        new_item_title: newItemTitle,
+      }),
+    }),
+  mergeExperienceItems: (
+    applicationId: string,
+    sourceItemId: string,
+    destinationItemId: string,
+  ) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "merge_experience_items",
+        source_item_id: sourceItemId,
+        destination_item_id: destinationItemId,
+      }),
+    }),
 };
 
 // Streaming Chat

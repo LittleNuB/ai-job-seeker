@@ -126,6 +126,111 @@ async def test_correct_item_grouping_and_persist_it(client: AsyncClient, auth_he
     assert reopened.json() == moved
 
 
+async def test_correct_imported_item_boundaries_by_splitting_and_merging(client: AsyncClient, auth_headers):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    original_item = created["experience_entries"][0]["experience_items"][0]
+    first_fact_id = original_item["base_facts"][0]["id"]
+
+    split_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "split_experience_item",
+            "source_item_id": original_item["id"],
+            "base_fact_ids": [first_fact_id],
+            "new_item_title": "评测样本设计",
+        },
+    )
+
+    assert split_response.status_code == 200, split_response.text
+    split = split_response.json()
+    entry_items = split["experience_entries"][0]["experience_items"]
+    assert [item["title"] for item in entry_items] == ["智能客服评测体系", "评测样本设计"]
+    assert [fact["id"] for fact in entry_items[0]["base_facts"]] != [first_fact_id]
+    assert [fact["id"] for fact in entry_items[1]["base_facts"]] == [first_fact_id]
+
+    merge_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "merge_experience_items",
+            "source_item_id": entry_items[1]["id"],
+            "destination_item_id": entry_items[0]["id"],
+        },
+    )
+
+    assert merge_response.status_code == 200, merge_response.text
+    merged = merge_response.json()
+    merged_items = merged["experience_entries"][0]["experience_items"]
+    assert len(merged_items) == 1
+    assert {fact["id"] for fact in merged_items[0]["base_facts"]} == {
+        fact["id"] for fact in original_item["base_facts"]
+    }
+
+    reopened = await client.get(
+        f"/api/applications/{created['application_id']}", headers=headers
+    )
+    assert reopened.status_code == 200
+    assert reopened.json() == merged
+
+
+async def test_import_does_not_promote_education_or_skills_to_experience_items(client: AsyncClient, auth_headers):
+    headers = await auth_headers(client)
+    response = await client.post(
+        "/api/applications/commands",
+        headers=headers,
+        json={
+            "type": "start_application",
+            "target_role": "AI 产品经理",
+            "jd_text": CONCRETE_JD,
+            "resume_text": """
+教育经历
+同济大学｜软件工程｜2021.09-2025.06
+- 主修数据结构、数据库与人机交互课程。
+
+专业技能
+- Python、SQL、Figma、Prompt Engineering
+
+项目经历
+AI Job Copilot
+- 独立设计面向具体 JD 的求职准备工作流。
+""".strip(),
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    snapshot = response.json()
+    assert snapshot["experience_entries"] == []
+    assert [item["title"] for item in snapshot["standalone_experience_items"]] == ["AI Job Copilot"]
+    all_fact_text = [
+        fact["text"]
+        for item in snapshot["standalone_experience_items"]
+        for fact in item["base_facts"]
+    ]
+    assert not any("同济大学" in text or "Python、SQL" in text for text in all_fact_text)
+
+    ignored_only = await client.post(
+        "/api/applications/commands",
+        headers=headers,
+        json={
+            "type": "start_application",
+            "target_role": "AI 产品经理",
+            "jd_text": CONCRETE_JD,
+            "resume_text": """
+教育经历
+同济大学｜软件工程｜2021.09-2025.06
+- 主修数据结构、数据库与人机交互课程。
+专业技能
+- 熟悉 Python、SQL、Figma 和 Prompt Engineering。
+""".strip(),
+        },
+    )
+    assert ignored_only.status_code == 200, ignored_only.text
+    assert ignored_only.json()["experience_entries"] == []
+    assert ignored_only.json()["standalone_experience_items"] == []
+
+
 async def test_requires_concrete_jd_text(client: AsyncClient, auth_headers):
     headers = await auth_headers(client)
 
