@@ -403,6 +403,8 @@ class ApplicationStudio:
         snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
         source_item, source_items = self._find_item(snapshot, command.source_item_id)
         destination_item, _ = self._find_item(snapshot, command.destination_item_id)
+        if source_item.entry_id != destination_item.entry_id:
+            raise ApplicationCommandError("只能合并同一工作经历内的项目，跨经历请先调整归属")
         destination_item.base_facts.extend(source_item.base_facts)
         source_items.remove(source_item)
         return await self._save_snapshot(record, snapshot)

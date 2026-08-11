@@ -174,6 +174,19 @@ async def test_correct_imported_item_boundaries_by_splitting_and_merging(client:
     assert reopened.status_code == 200
     assert reopened.json() == merged
 
+    standalone_item_id = merged["standalone_experience_items"][0]["id"]
+    cross_context_merge = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "merge_experience_items",
+            "source_item_id": standalone_item_id,
+            "destination_item_id": merged_items[0]["id"],
+        },
+    )
+    assert cross_context_merge.status_code == 422
+    assert "先调整归属" in cross_context_merge.json()["detail"]
+
 
 async def test_import_does_not_promote_education_or_skills_to_experience_items(client: AsyncClient, auth_headers):
     headers = await auth_headers(client)

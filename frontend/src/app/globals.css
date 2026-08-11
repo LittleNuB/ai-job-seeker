@@ -2,12 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --studio-ink: #17211b;
+  --studio-paper: #fffdf8;
+  --studio-canvas: #f2efe8;
+  --studio-sage: #e4efcf;
+  --studio-accent: #d24d31;
+  --studio-muted: #657168;
+  --studio-line: #1c2921;
+}
+
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  background: #f2efe8;
+  background: var(--studio-canvas);
 }
 
 ::selection {
   background: #ddefbb;
-  color: #17211b;
+  color: var(--studio-ink);
 }

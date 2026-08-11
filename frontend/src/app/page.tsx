@@ -7,7 +7,7 @@ const features = [
     desc: "用具体 JD 建立一次投递，把工作、实习和项目经历整理成可调整的材料单元。",
     icon: BriefcaseBusiness,
     href: "/applications",
-    color: "bg-[#e4efcf] text-[#2f4a2d]",
+    color: "bg-studio-sage text-[#2f4a2d]",
   },
   {
     title: "AI 岗位资料库",

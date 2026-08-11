@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} bg-[#f2efe8] font-sans text-[#17211b] antialiased`}>
+      <body className={`${geistSans.variable} bg-studio-canvas font-sans text-studio-ink antialiased`}>
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <main className="flex-1">{children}</main>
