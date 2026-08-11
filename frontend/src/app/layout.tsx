@@ -12,7 +12,7 @@ const geistSans = localFont({
 
 export const metadata: Metadata = {
   title: "AI Job Copilot",
-  description: "AI 岗位投递准备工作台 — 岗位资料 / JD 解析 / 简历匹配",
+  description: "围绕一份具体 JD，整理经历、强化简历主张并准备面试故事。",
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
+      <body className={`${geistSans.variable} bg-[#f2efe8] font-sans text-[#17211b] antialiased`}>
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <main className="flex-1">{children}</main>

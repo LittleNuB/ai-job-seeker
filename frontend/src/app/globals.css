@@ -4,4 +4,10 @@
 
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: #f2efe8;
+}
+
+::selection {
+  background: #ddefbb;
+  color: #17211b;
 }

@@ -9,6 +9,10 @@ function normalizeError(detail: unknown, fallback: string): string {
     return detail;
   }
   if (Array.isArray(detail) && detail.length > 0) {
+    const message = detail.find((item) => typeof item?.msg === "string")?.msg;
+    if (message) {
+      return message.replace(/^Value error,\s*/i, "");
+    }
     return "提交内容格式不正确，请检查后再试";
   }
   return fallback;
@@ -237,6 +241,79 @@ export const records = {
   },
   getDetail: (id: string) => request<any>(`/api/records/${id}`),
   deleteRecord: (id: string) => request<any>(`/api/records/${id}`, { method: "DELETE" }),
+};
+
+export interface BaseFactSnapshot {
+  id: string;
+  text: string;
+  source_location: string;
+}
+
+export interface ExperienceItemSnapshot {
+  id: string;
+  title: string;
+  entry_id: string | null;
+  source_scope: "application_local";
+  base_facts: BaseFactSnapshot[];
+}
+
+export interface ExperienceEntrySnapshot {
+  id: string;
+  organization: string;
+  role: string;
+  date_range?: string | null;
+  experience_items: ExperienceItemSnapshot[];
+}
+
+export interface ApplicationSnapshot {
+  snapshot_version: 1;
+  application_id: string;
+  workflow_phase: "source_review";
+  target_application: { target_role: string; jd_text: string };
+  resume_source: { text: string; scope: "application_local" };
+  experience_entries: ExperienceEntrySnapshot[];
+  standalone_experience_items: ExperienceItemSnapshot[];
+  role_signals: Record<string, unknown>[];
+  achievement_leads: Record<string, unknown>[];
+  source_snapshots: Record<string, unknown>[];
+  competitive_claims: Record<string, unknown>[];
+  source_change_notices: Record<string, unknown>[];
+  targeted_resume_version: { resume_claims: Record<string, unknown>[] };
+  interview_rehearsal: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApplicationListItem {
+  application_id: string;
+  target_role: string;
+  workflow_phase: string;
+  experience_item_count: number;
+  updated_at: string;
+}
+
+export const applications = {
+  start: (data: { target_role: string; jd_text: string; resume_text: string }) =>
+    request<ApplicationSnapshot>("/api/applications/commands", {
+      method: "POST",
+      body: JSON.stringify({ type: "start_application", ...data }),
+    }),
+  list: () => request<{ items: ApplicationListItem[] }>("/api/applications"),
+  get: (applicationId: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}`),
+  moveExperienceItem: (
+    applicationId: string,
+    experienceItemId: string,
+    destinationEntryId: string | null,
+  ) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "move_experience_item",
+        experience_item_id: experienceItemId,
+        destination_entry_id: destinationEntryId,
+      }),
+    }),
 };
 
 // Streaming Chat
