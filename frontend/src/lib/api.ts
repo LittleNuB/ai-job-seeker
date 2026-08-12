@@ -265,15 +265,47 @@ export interface ExperienceEntrySnapshot {
   experience_items: ExperienceItemSnapshot[];
 }
 
+export interface RoleSignalSnapshot {
+  id: string;
+  signal: string;
+  source_type: "explicit" | "interpretation";
+  jd_excerpt: string | null;
+  rationale: string | null;
+}
+
+export interface RecoverableAnalysisErrorSnapshot {
+  code: "invalid_output" | "timeout" | "provider_unavailable";
+  message: string;
+  retryable: true;
+}
+
+export interface TargetAnalysisSnapshot {
+  status: "not_started" | "completed" | "failed";
+  last_error: RecoverableAnalysisErrorSnapshot | null;
+}
+
+export interface PromptRunSnapshot {
+  id: string;
+  prompt_family: "target_analysis";
+  prompt_version: string;
+  model_provider: string;
+  model_name: string;
+  status: "completed" | "failed";
+  error_code: RecoverableAnalysisErrorSnapshot["code"] | null;
+  created_at: string;
+}
+
 export interface ApplicationSnapshot {
   snapshot_version: 1;
   application_id: string;
-  workflow_phase: "source_review";
+  workflow_phase: "source_review" | "role_signal_review";
   target_application: { target_role: string; jd_text: string };
   resume_source: { text: string; scope: "application_local" };
   experience_entries: ExperienceEntrySnapshot[];
   standalone_experience_items: ExperienceItemSnapshot[];
-  role_signals: Record<string, unknown>[];
+  role_signals: RoleSignalSnapshot[];
+  target_analysis: TargetAnalysisSnapshot;
+  prompt_runs: PromptRunSnapshot[];
   achievement_leads: Record<string, unknown>[];
   source_snapshots: Record<string, unknown>[];
   competitive_claims: Record<string, unknown>[];
@@ -341,6 +373,11 @@ export const applications = {
         source_item_id: sourceItemId,
         destination_item_id: destinationItemId,
       }),
+    }),
+  analyzeTarget: (applicationId: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({ type: "analyze_target" }),
     }),
 };
 

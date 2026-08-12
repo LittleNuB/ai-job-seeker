@@ -5,11 +5,17 @@ import re
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from pydantic import ValidationError
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
+from ..prompts.target_analysis import (
+    TARGET_ANALYSIS_PROMPT_VERSION,
+    build_target_analysis_prompts,
+)
 from ..schemas.application import (
+    AnalyzeTargetCommand,
     ApplicationListItem,
     ApplicationSnapshot,
     BaseFactSnapshot,
@@ -17,10 +23,21 @@ from ..schemas.application import (
     ExperienceItemSnapshot,
     MergeExperienceItemsCommand,
     MoveExperienceItemCommand,
+    PromptRunSnapshot,
+    RecoverableAnalysisErrorSnapshot,
     ResumeSourceSnapshot,
+    RoleSignalSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
+    TargetAnalysisModelOutput,
+    TargetAnalysisSnapshot,
     TargetApplicationInputSnapshot,
+)
+from .application_model import (
+    ApplicationModelError,
+    ApplicationModelPort,
+    ModelInvalidOutputError,
+    get_application_model,
 )
 
 
@@ -29,6 +46,10 @@ class ApplicationNotFoundError(Exception):
 
 
 class ApplicationCommandError(Exception):
+    pass
+
+
+class ApplicationConflictError(Exception):
     pass
 
 
@@ -240,8 +261,11 @@ class _ResumeStructureBuilder:
 
 
 class ApplicationStudio:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self, db: AsyncSession, model: ApplicationModelPort | None = None
+    ) -> None:
         self.db = db
+        self.model = model or get_application_model()
 
     async def execute(
         self,
@@ -250,6 +274,7 @@ class ApplicationStudio:
             | MoveExperienceItemCommand
             | SplitExperienceItemCommand
             | MergeExperienceItemsCommand
+            | AnalyzeTargetCommand
         ),
         *,
         owner_id: str,
@@ -271,6 +296,10 @@ class ApplicationStudio:
             if application_id is None:
                 raise ApplicationCommandError("合并经历项目需要目标投递")
             return await self._merge_items(command, owner_id, application_id)
+        if isinstance(command, AnalyzeTargetCommand):
+            if application_id is None:
+                raise ApplicationCommandError("Target Analysis 需要目标投递")
+            return await self._analyze_target(owner_id, application_id)
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -409,6 +438,128 @@ class ApplicationStudio:
         source_items.remove(source_item)
         return await self._save_snapshot(record, snapshot)
 
+    async def _analyze_target(
+        self, owner_id: str, application_id: str
+    ) -> ApplicationSnapshot:
+        initial_record = await self._get_record(application_id, owner_id)
+        initial_snapshot = ApplicationSnapshot.model_validate_json(
+            initial_record.snapshot_json
+        )
+        system_prompt, user_prompt = build_target_analysis_prompts(
+            target_role=initial_snapshot.target_application.target_role,
+            jd_text=initial_snapshot.target_application.jd_text,
+        )
+        run_id = _new_id()
+        run_created_at = _now_iso()
+        output: TargetAnalysisModelOutput | None = None
+        failure_code: str | None = None
+        failure_message: str | None = None
+
+        try:
+            raw_output = await self.model.generate_json(
+                system_prompt=system_prompt, user_prompt=user_prompt
+            )
+            output = TargetAnalysisModelOutput.model_validate(raw_output)
+            for signal in output.role_signals:
+                if (
+                    signal.source_type == "explicit"
+                    and signal.jd_excerpt
+                    not in initial_snapshot.target_application.jd_text
+                ):
+                    raise ModelInvalidOutputError("显式 Role Signal 引用的内容不在当前 JD 中")
+        except ValidationError:
+            failure_code = "invalid_output"
+            failure_message = "模型返回的岗位信号格式不完整，请重试。"
+        except ApplicationModelError as exc:
+            failure_code = exc.code
+            failure_message = self._analysis_error_message(exc.code)
+
+        if output is None:
+            if not (failure_code and failure_message):
+                raise ApplicationCommandError("Target Analysis 未返回可保存的结果")
+
+        return await self._save_analysis_outcome(
+            application_id=application_id,
+            owner_id=owner_id,
+            output=output,
+            failure_code=failure_code,
+            failure_message=failure_message,
+            run_id=run_id,
+            run_created_at=run_created_at,
+        )
+
+    async def _save_analysis_outcome(
+        self,
+        *,
+        application_id: str,
+        owner_id: str,
+        output: TargetAnalysisModelOutput | None,
+        failure_code: str | None,
+        failure_message: str | None,
+        run_id: str,
+        run_created_at: str,
+    ) -> ApplicationSnapshot:
+        # A model call can overlap with candidate edits. Compare-and-swap makes
+        # the save atomic; on conflict, analysis-only fields are merged onto the
+        # latest owner snapshot and retried without replaying the provider call.
+        for attempt in range(3):
+            await self.db.rollback()
+            record = await self._get_record(application_id, owner_id)
+            snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+
+            if failure_code and failure_message:
+                snapshot.target_analysis = TargetAnalysisSnapshot(
+                    status="failed",
+                    last_error=RecoverableAnalysisErrorSnapshot(
+                        code=failure_code,
+                        message=failure_message,
+                        retryable=True,
+                    ),
+                )
+                run_status = "failed"
+            else:
+                if output is None:
+                    raise ApplicationCommandError(
+                        "Target Analysis 未返回可保存的结果"
+                    )
+                snapshot.role_signals = [
+                    RoleSignalSnapshot(id=_new_id(), **signal.model_dump())
+                    for signal in output.role_signals
+                ]
+                snapshot.target_analysis = TargetAnalysisSnapshot(
+                    status="completed", last_error=None
+                )
+                snapshot.workflow_phase = "role_signal_review"
+                run_status = "completed"
+
+            snapshot.prompt_runs.append(
+                PromptRunSnapshot(
+                    id=run_id,
+                    prompt_family="target_analysis",
+                    prompt_version=TARGET_ANALYSIS_PROMPT_VERSION,
+                    model_provider=self.model.provider_name,
+                    model_name=self.model.model_name,
+                    status=run_status,
+                    error_code=failure_code,
+                    created_at=run_created_at,
+                )
+            )
+            try:
+                return await self._save_snapshot(record, snapshot)
+            except ApplicationConflictError:
+                if attempt == 2:
+                    raise
+
+        raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
+
+    @staticmethod
+    def _analysis_error_message(code: str) -> str:
+        if code == "timeout":
+            return "模型响应超时，现有投递内容已保留，请重试。"
+        if code == "invalid_output":
+            return "模型返回的岗位信号格式不完整，请重试。"
+        return "模型服务暂时不可用，现有投递内容已保留，请稍后重试。"
+
     @staticmethod
     def _find_item(
         snapshot: ApplicationSnapshot, item_id: str
@@ -426,17 +577,32 @@ class ApplicationStudio:
     async def _save_snapshot(
         self, record: TargetApplication, snapshot: ApplicationSnapshot
     ) -> ApplicationSnapshot:
+        expected_snapshot_json = record.snapshot_json
         snapshot.updated_at = _now_iso()
-        record.snapshot_json = snapshot.model_dump_json()
+        next_snapshot_json = snapshot.model_dump_json()
+        result = await self.db.execute(
+            update(TargetApplication)
+            .where(
+                TargetApplication.id == record.id,
+                TargetApplication.user_id == record.user_id,
+                TargetApplication.snapshot_json == expected_snapshot_json,
+            )
+            .values(snapshot_json=next_snapshot_json)
+        )
+        if result.rowcount != 1:
+            await self.db.rollback()
+            raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
         await self.db.commit()
         return snapshot
 
     async def _get_record(self, application_id: str, owner_id: str) -> TargetApplication:
         result = await self.db.execute(
-            select(TargetApplication).where(
+            select(TargetApplication)
+            .where(
                 TargetApplication.id == application_id,
                 TargetApplication.user_id == owner_id,
             )
+            .execution_options(populate_existing=True)
         )
         record = result.scalar_one_or_none()
         if record is None:

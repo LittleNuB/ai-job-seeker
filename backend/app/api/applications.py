@@ -11,9 +11,11 @@ from ..schemas.application import (
 )
 from ..services.application_studio import (
     ApplicationCommandError,
+    ApplicationConflictError,
     ApplicationNotFoundError,
     ApplicationStudio,
 )
+from ..services.application_model import ApplicationModelPort, get_application_model
 
 router = APIRouter()
 
@@ -59,12 +61,15 @@ async def execute_application_command(
     command: ApplicationMutationCommand,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user),
+    model: ApplicationModelPort = Depends(get_application_model),
 ):
     try:
-        return await ApplicationStudio(db).execute(
+        return await ApplicationStudio(db, model).execute(
             command, owner_id=user_id, application_id=application_id
         )
     except ApplicationNotFoundError as exc:
         raise _not_found() from exc
+    except ApplicationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ApplicationCommandError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
