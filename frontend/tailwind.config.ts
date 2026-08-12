@@ -10,6 +10,13 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        "studio-ink": "var(--studio-ink)",
+        "studio-paper": "var(--studio-paper)",
+        "studio-canvas": "var(--studio-canvas)",
+        "studio-sage": "var(--studio-sage)",
+        "studio-accent": "var(--studio-accent)",
+        "studio-muted": "var(--studio-muted)",
+        "studio-line": "var(--studio-line)",
       },
     },
   },

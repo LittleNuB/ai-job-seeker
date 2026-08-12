@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models.analysis import AnalysisRecord
+from ..models.application import TargetApplication
 from ..models.chat import ChatConversation, ChatMessage
 from ..models.user import User
 from ..schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserProfileResponse, UserProfileStats
@@ -220,6 +221,7 @@ async def delete_account(user_id: str = Depends(get_current_user), db: AsyncSess
 
     await db.execute(delete(ChatConversation).where(ChatConversation.user_id == user_id))
     await db.execute(delete(AnalysisRecord).where(AnalysisRecord.user_id == user_id))
+    await db.execute(delete(TargetApplication).where(TargetApplication.user_id == user_id))
     await db.delete(user)
     await db.commit()
 

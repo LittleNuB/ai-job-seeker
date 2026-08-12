@@ -1,7 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, Brain, Compass, FileText, History, Target } from "lucide-react";
+import { ArrowRight, Brain, BriefcaseBusiness, Compass, FileText, History, Target } from "lucide-react";
 
 const features = [
+  {
+    title: "投递工作台",
+    desc: "用具体 JD 建立一次投递，把工作、实习和项目经历整理成可调整的材料单元。",
+    icon: BriefcaseBusiness,
+    href: "/applications",
+    color: "bg-studio-sage text-[#2f4a2d]",
+  },
   {
     title: "AI 岗位资料库",
     desc: "查询 46 个结构化岗位样例，了解能力要求、面试主题和相关 JD。",
@@ -50,10 +57,10 @@ export default function Home() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/jd"
+                href="/applications"
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-3 font-medium text-white transition-colors hover:bg-slate-800"
               >
-                粘贴目标 JD
+                建立投递工作台
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -80,7 +87,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (

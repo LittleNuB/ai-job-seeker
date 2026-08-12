@@ -88,6 +88,7 @@ The tests set their own environment:
 - Anonymous users cannot access protected JD, export, or chat history routes.
 - Export records are scoped to the current user.
 - Chat history is scoped to the current user.
+- Application Studio API coverage includes creation, import grouping, split/merge correction, persistence, reopening, concrete-JD input, and owner isolation.
 - Readiness health reports database connectivity, position data availability, and non-secret configuration status.
 - Position search falls back to keyword search when `GLM_API_KEY` is missing.
 - Position taxonomy validation covers duplicate IDs, required fields, salary shape, and warning-only quality notes.
@@ -130,5 +131,6 @@ Current E2E coverage:
 - Resume match results render scores, advantages, gaps, improvement plan, and report download action.
 - Account page shows real profile stats and exports real user data via the backend (no mocks).
 - Account deletion confirms with "DELETE" input, redirects to home, clears session, and invalidates the token.
+- Target Application creation and reopening run through the live FastAPI service and temporary test database; anonymous workspace access returns to login.
 - History records list is owner-scoped; owner can delete records, intruders and anonymous users are rejected.
 - History page renders seeded JD and match records, supports type filtering, and deletes records via confirmation dialog.
