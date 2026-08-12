@@ -111,11 +111,18 @@ class AnalyzeTargetCommand(BaseModel):
     type: Literal["analyze_target"]
 
 
+class GenerateClaimsCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["generate_claims"]
+
+
 ApplicationMutationCommand = Annotated[
     MoveExperienceItemCommand
     | SplitExperienceItemCommand
     | MergeExperienceItemsCommand
-    | AnalyzeTargetCommand,
+    | AnalyzeTargetCommand
+    | GenerateClaimsCommand,
     Field(discriminator="type"),
 ]
 
@@ -196,6 +203,132 @@ class RoleSignalSnapshot(RoleSignalModelOutput):
     id: str
 
 
+class StretchDirectionModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    expression_gap: str = Field(min_length=1, max_length=500)
+    why_it_matters: str = Field(min_length=1, max_length=500)
+    expansion_direction: str = Field(min_length=1, max_length=500)
+
+
+class CompetitiveClaimModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    experience_item_id: str = Field(min_length=1)
+    primary_role_signal_id: str = Field(min_length=1)
+    source_focus: str = Field(min_length=1, max_length=240)
+    opportunity_value: str = Field(min_length=1, max_length=300)
+    supported_base_fact_ids: list[str] = Field(min_length=1)
+    competitive_claim: str = Field(min_length=1, max_length=1200)
+    stretch_direction: StretchDirectionModelOutput
+
+    @field_validator("supported_base_fact_ids")
+    @classmethod
+    def require_distinct_fact_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("Competitive Claim 不能重复引用同一 Base Fact")
+        return value
+
+
+class ClaimStudioModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    competitive_claims: list[CompetitiveClaimModelOutput] = Field(max_length=3)
+
+    @model_validator(mode="after")
+    def reject_duplicate_opportunities(self) -> "ClaimStudioModelOutput":
+        claim_texts = [
+            "".join(claim.competitive_claim.casefold().split())
+            for claim in self.competitive_claims
+        ]
+        if len(claim_texts) != len(set(claim_texts)):
+            raise ValueError("Competitive Claim 不能包含语义重复的表述")
+
+        opportunity_keys = [
+            (
+                claim.experience_item_id,
+                claim.primary_role_signal_id,
+                "".join(claim.source_focus.casefold().split()),
+                "".join(claim.opportunity_value.casefold().split()),
+            )
+            for claim in self.competitive_claims
+        ]
+        if len(opportunity_keys) != len(set(opportunity_keys)):
+            raise ValueError("同一经历项目的重复机会必须有不同来源重点或 Role Signal")
+        return self
+
+
+class ClaimStudioReviewViolation(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    code: Literal["semantic_duplicate", "unsupported_material_fact"]
+    claim_indexes: list[int] = Field(min_length=1)
+    explanation: str = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def require_violation_scope(self) -> "ClaimStudioReviewViolation":
+        if any(index < 0 for index in self.claim_indexes):
+            raise ValueError("Claim Studio 审查索引不能为负数")
+        if self.code == "semantic_duplicate" and len(set(self.claim_indexes)) < 2:
+            raise ValueError("语义重复审查必须指出至少两条主张")
+        return self
+
+
+class ClaimStudioReviewModelOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    verdict: Literal["approved", "rejected"]
+    violations: list[ClaimStudioReviewViolation] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_consistent_verdict(self) -> "ClaimStudioReviewModelOutput":
+        if self.verdict == "approved" and self.violations:
+            raise ValueError("通过的 Claim Studio 审查不能包含违规项")
+        if self.verdict == "rejected" and not self.violations:
+            raise ValueError("拒绝的 Claim Studio 审查必须说明违规项")
+        return self
+
+
+class ExperienceEntryContextSnapshot(BaseModel):
+    organization: str
+    role: str
+    date_range: str | None = None
+
+
+class ClaimSourceSnapshot(BaseModel):
+    id: str
+    prompt_run_id: str
+    experience_item_id: str
+    source_scope: Literal["application_local"] = "application_local"
+    item_title: str
+    entry_context: ExperienceEntryContextSnapshot | None = None
+    base_facts: list[BaseFactSnapshot]
+    captured_at: str
+
+
+class CompetitiveClaimSnapshot(BaseModel):
+    id: str
+    source_snapshot_id: str
+    experience_item_id: str
+    source_focus: str
+    opportunity_value: str
+    supported_base_fact_ids: list[str]
+    primary_role_signal_id: str
+    primary_role_signal: RoleSignalSnapshot
+    competitive_claim: str
+    stretch_direction: StretchDirectionModelOutput
+
+
+class SourceChangeNoticeSnapshot(BaseModel):
+    claim_id: str
+    source_snapshot_id: str
+    experience_item_id: str
+    changed_dimensions: list[
+        Literal["item_title", "entry_context", "base_facts", "source_removed"]
+    ] = Field(min_length=1)
+    message: str
+
+
 class RecoverableAnalysisErrorSnapshot(BaseModel):
     code: Literal["invalid_output", "timeout", "provider_unavailable"]
     message: str
@@ -207,13 +340,18 @@ class TargetAnalysisSnapshot(BaseModel):
     last_error: RecoverableAnalysisErrorSnapshot | None = None
 
 
+class ClaimStudioSnapshot(BaseModel):
+    status: Literal["not_started", "running", "completed", "failed"] = "not_started"
+    last_error: RecoverableAnalysisErrorSnapshot | None = None
+
+
 class PromptRunSnapshot(BaseModel):
     id: str
-    prompt_family: Literal["target_analysis"]
+    prompt_family: Literal["target_analysis", "claim_studio"]
     prompt_version: str
     model_provider: str
     model_name: str
-    status: Literal["completed", "failed"]
+    status: Literal["running", "completed", "failed"]
     error_code: Literal["invalid_output", "timeout", "provider_unavailable"] | None = None
     created_at: str
 
@@ -221,18 +359,19 @@ class PromptRunSnapshot(BaseModel):
 class ApplicationSnapshot(BaseModel):
     snapshot_version: Literal[1] = 1
     application_id: str
-    workflow_phase: Literal["source_review", "role_signal_review"] = "source_review"
+    workflow_phase: Literal["source_review", "role_signal_review", "claim_review"] = "source_review"
     target_application: TargetApplicationInputSnapshot
     resume_source: ResumeSourceSnapshot
     experience_entries: list[ExperienceEntrySnapshot]
     standalone_experience_items: list[ExperienceItemSnapshot]
     role_signals: list[RoleSignalSnapshot] = Field(default_factory=list)
     target_analysis: TargetAnalysisSnapshot = Field(default_factory=TargetAnalysisSnapshot)
+    claim_studio: ClaimStudioSnapshot = Field(default_factory=ClaimStudioSnapshot)
     prompt_runs: list[PromptRunSnapshot] = Field(default_factory=list)
     achievement_leads: list[dict] = Field(default_factory=list)
-    source_snapshots: list[dict] = Field(default_factory=list)
-    competitive_claims: list[dict] = Field(default_factory=list)
-    source_change_notices: list[dict] = Field(default_factory=list)
+    source_snapshots: list[ClaimSourceSnapshot] = Field(default_factory=list)
+    competitive_claims: list[CompetitiveClaimSnapshot] = Field(default_factory=list)
+    source_change_notices: list[SourceChangeNoticeSnapshot] = Field(default_factory=list)
     targeted_resume_version: TargetedResumeVersionSnapshot = Field(
         default_factory=TargetedResumeVersionSnapshot
     )

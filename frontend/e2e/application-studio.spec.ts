@@ -176,3 +176,135 @@ test("candidate recovers from an unavailable provider and inspects Role Signal p
   await expect(page.getByText("不代表招聘方确定结论", { exact: false })).toBeVisible();
   await expect(page.getByText("匹配分", { exact: false })).toHaveCount(0);
 });
+
+test("candidate sees traceable claims and a separate non-copyable Stretch Direction", async ({ page, request }) => {
+  const user = await registerUser(request, "claim-studio");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const created = await createResponse.json();
+  const employmentItem = created.experience_entries[0].experience_items[0];
+  const projectItem = created.standalone_experience_items[0];
+  const roleSignal = {
+    id: "signal-quality",
+    signal: "大模型工作流与质量评测设计",
+    source_type: "explicit",
+    jd_excerpt: "建立质量评测和异常处理机制",
+    rationale: null,
+  };
+  const sources = [
+    {
+      id: "source-employment",
+      prompt_run_id: "claim-run-1",
+      experience_item_id: employmentItem.id,
+      source_scope: "application_local",
+      item_title: employmentItem.title,
+      entry_context: {
+        organization: "知音科技",
+        role: "AI 产品实习生",
+        date_range: "2025.01-2025.06",
+      },
+      base_facts: employmentItem.base_facts,
+      captured_at: new Date().toISOString(),
+    },
+    {
+      id: "source-project",
+      prompt_run_id: "claim-run-1",
+      experience_item_id: projectItem.id,
+      source_scope: "application_local",
+      item_title: projectItem.title,
+      entry_context: null,
+      base_facts: projectItem.base_facts,
+      captured_at: new Date().toISOString(),
+    },
+  ];
+
+  await page.route(`**/api/applications/${created.application_id}/commands`, async (route) => {
+    const command = route.request().postDataJSON();
+    if (command?.type === "analyze_target") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...created,
+          workflow_phase: "role_signal_review",
+          role_signals: [roleSignal],
+          target_analysis: { status: "completed", last_error: null },
+        }),
+      });
+      return;
+    }
+    if (command?.type === "generate_claims") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...created,
+          workflow_phase: "claim_review",
+          role_signals: [roleSignal],
+          target_analysis: { status: "completed", last_error: null },
+          claim_studio: { status: "completed", last_error: null },
+          source_snapshots: sources,
+          competitive_claims: [
+            {
+              id: "claim-1",
+              source_snapshot_id: sources[0].id,
+              experience_item_id: employmentItem.id,
+              source_focus: "评测样本与维度设计",
+              opportunity_value: "体现质量评测驱动模型迭代的完整闭环。",
+              supported_base_fact_ids: employmentItem.base_facts.map((fact: { id: string }) => fact.id),
+              primary_role_signal_id: roleSignal.id,
+              primary_role_signal: roleSignal,
+              competitive_claim: "围绕 120 条高频失败案例定义三类评测维度，并协同算法与运营完成两轮提示词迭代。",
+              stretch_direction: {
+                expression_gap: "尚未说明评测结论如何改变迭代优先级。",
+                why_it_matters: "能更直接体现质量判断如何转化为产品决策。",
+                expansion_direction: "回想一次由评测结论改变提示词或异常处理方案的具体取舍。",
+              },
+            },
+            {
+              id: "claim-2",
+              source_snapshot_id: sources[1].id,
+              experience_item_id: projectItem.id,
+              source_focus: "具体 JD 工作流",
+              opportunity_value: "体现岗位理解、工作流设计与产品结构化能力。",
+              supported_base_fact_ids: projectItem.base_facts.map((fact: { id: string }) => fact.id),
+              primary_role_signal_id: roleSignal.id,
+              primary_role_signal: roleSignal,
+              competitive_claim: "独立设计面向具体 JD 的求职准备工作流，将岗位信号、经历材料和主张生成串成可复用流程。",
+              stretch_direction: {
+                expression_gap: "当前表述没有呈现工作流如何验证输出质量。",
+                why_it_matters: "岗位明确重视大模型工作流与质量评测。",
+                expansion_direction: "梳理一个评测结果驱动流程节点调整的实例。",
+              },
+            },
+          ],
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await installSession(page, user);
+  await page.goto(`/applications/${created.application_id}`);
+  await page.getByRole("button", { name: "提取岗位信号" }).click();
+  await page.getByRole("button", { name: "生成竞争主张" }).click();
+
+  await expect(page.getByText("2 条高价值主张", { exact: false })).toBeVisible();
+  await expect(page.getByText("智能客服评测体系", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("大模型工作流与质量评测设计", { exact: true }).last()).toBeVisible();
+  await expect(page.getByText("围绕 120 条高频失败案例定义三类评测维度", { exact: false })).toBeVisible();
+  await expect(page.getByText("尚未说明评测结论如何改变迭代优先级", { exact: false })).toBeVisible();
+  await expect(page.getByText("第 3 条", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /复制.*冲刺方向/ })).toHaveCount(0);
+  await expect(page.getByText("匹配分", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("录用概率", { exact: false })).toHaveCount(0);
+});

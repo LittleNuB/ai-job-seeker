@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, GitMerge, Loader2, RotateCcw, Scissors } from "lucide-react";
 import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot } from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
+import ClaimStudioPanel from "@/components/applications/ClaimStudioPanel";
 import TargetAnalysisPanel from "@/components/applications/TargetAnalysisPanel";
 
 function itemCount(snapshot: ApplicationSnapshot): number {
@@ -176,6 +177,7 @@ export default function ApplicationWorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const [analyzingTarget, setAnalyzingTarget] = useState(false);
+  const [generatingClaims, setGeneratingClaims] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -255,6 +257,19 @@ export default function ApplicationWorkspacePage() {
     }
   }
 
+  async function generateClaims() {
+    setGeneratingClaims(true);
+    setError("");
+    try {
+      setSnapshot(await applications.generateClaims(applicationId));
+    } catch (err: unknown) {
+      if (err instanceof AuthRequiredError) router.push(getLoginPath(`/applications/${applicationId}`));
+      else setError(err instanceof Error ? err.message : "竞争主张没有生成成功，请重试");
+    } finally {
+      setGeneratingClaims(false);
+    }
+  }
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center bg-studio-canvas text-sm text-[#5f6d63]"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 正在打开投递工作台</div>;
   }
@@ -277,7 +292,7 @@ export default function ApplicationWorkspacePage() {
             <div>
               <Link href="/applications" className="inline-flex items-center gap-1 text-xs font-semibold text-studio-muted hover:text-studio-ink"><ArrowLeft className="h-3.5 w-3.5" /> 所有投递</Link>
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <span className="bg-[#ddefbb] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#30472c]">{snapshot.workflow_phase === "role_signal_review" ? "Role signal review" : "Source review"}</span>
+                <span className="bg-[#ddefbb] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#30472c]">{snapshot.workflow_phase === "claim_review" ? "Claim review" : snapshot.workflow_phase === "role_signal_review" ? "Role signal review" : "Source review"}</span>
                 <span className="inline-flex items-center gap-1.5 text-xs text-studio-muted"><Check className="h-3.5 w-3.5 text-[#42763b]" /> 已保存，可随时回来继续</span>
               </div>
               <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[#132019] md:text-5xl">{snapshot.target_application.target_role}</h1>
@@ -285,7 +300,7 @@ export default function ApplicationWorkspacePage() {
             <div className="flex items-center gap-5 border-l-2 border-studio-accent pl-4 text-sm">
               <div><div className="text-2xl font-semibold tabular-nums">{totalItems}</div><div className="text-xs text-studio-muted">段可用经历</div></div>
               <ChevronRight className="h-5 w-5 text-[#9aa39c]" />
-              <div><div className="font-semibold">{snapshot.role_signals.length ? "核对岗位信号" : "先确认材料结构"}</div><div className="mt-1 text-xs text-studio-muted">{snapshot.role_signals.length ? "区分 JD 原文与 AI 解读" : "系统已提出分组，你可以直接调整"}</div></div>
+              <div><div className="font-semibold">{snapshot.competitive_claims.length ? "查看竞争主张" : snapshot.role_signals.length ? "生成竞争主张" : "先确认材料结构"}</div><div className="mt-1 text-xs text-studio-muted">{snapshot.competitive_claims.length ? "主张与冲刺方向严格分开" : snapshot.role_signals.length ? "从高价值经历中选择，不会凑数" : "系统已提出分组，你可以直接调整"}</div></div>
             </div>
           </div>
         </div>
@@ -309,6 +324,16 @@ export default function ApplicationWorkspacePage() {
             roleSignals={snapshot.role_signals}
             busy={analyzingTarget}
             onAnalyze={analyzeTarget}
+          />
+
+          <ClaimStudioPanel
+            studio={snapshot.claim_studio}
+            claims={snapshot.competitive_claims}
+            sources={snapshot.source_snapshots}
+            sourceChangeNotices={snapshot.source_change_notices}
+            canGenerate={snapshot.role_signals.length > 0}
+            busy={generatingClaims}
+            onGenerate={generateClaims}
           />
 
           <div className="mb-6 flex flex-col gap-3 border-b border-studio-ink/15 pb-5 sm:flex-row sm:items-end sm:justify-between">
