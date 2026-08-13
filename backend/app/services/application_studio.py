@@ -10,6 +10,14 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
+from ..prompts.claim_studio import (
+    CLAIM_STUDIO_PROMPT_VERSION,
+    build_claim_studio_prompts,
+)
+from ..prompts.claim_studio_review import (
+    CLAIM_STUDIO_REVIEW_PROMPT_VERSION,
+    build_claim_studio_review_prompts,
+)
 from ..prompts.target_analysis import (
     TARGET_ANALYSIS_PROMPT_VERSION,
     build_target_analysis_prompts,
@@ -19,14 +27,22 @@ from ..schemas.application import (
     ApplicationListItem,
     ApplicationSnapshot,
     BaseFactSnapshot,
+    ClaimSourceSnapshot,
+    ClaimStudioModelOutput,
+    ClaimStudioReviewModelOutput,
+    ClaimStudioSnapshot,
+    CompetitiveClaimSnapshot,
+    ExperienceEntryContextSnapshot,
     ExperienceEntrySnapshot,
     ExperienceItemSnapshot,
+    GenerateClaimsCommand,
     MergeExperienceItemsCommand,
     MoveExperienceItemCommand,
     PromptRunSnapshot,
     RecoverableAnalysisErrorSnapshot,
     ResumeSourceSnapshot,
     RoleSignalSnapshot,
+    SourceChangeNoticeSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
     TargetAnalysisModelOutput,
@@ -275,6 +291,7 @@ class ApplicationStudio:
             | SplitExperienceItemCommand
             | MergeExperienceItemsCommand
             | AnalyzeTargetCommand
+            | GenerateClaimsCommand
         ),
         *,
         owner_id: str,
@@ -300,6 +317,10 @@ class ApplicationStudio:
             if application_id is None:
                 raise ApplicationCommandError("Target Analysis 需要目标投递")
             return await self._analyze_target(owner_id, application_id)
+        if isinstance(command, GenerateClaimsCommand):
+            if application_id is None:
+                raise ApplicationCommandError("Claim Studio 需要目标投递")
+            return await self._generate_claims(owner_id, application_id)
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -388,6 +409,7 @@ class ApplicationStudio:
         else:
             snapshot.standalone_experience_items.append(selected_item)
 
+        snapshot.source_change_notices = self._source_change_notices(snapshot)
         return await self._save_snapshot(record, snapshot)
 
     async def _split_item(
@@ -418,6 +440,7 @@ class ApplicationStudio:
         )
         source_index = source_items.index(source_item)
         source_items.insert(source_index + 1, new_item)
+        snapshot.source_change_notices = self._source_change_notices(snapshot)
         return await self._save_snapshot(record, snapshot)
 
     async def _merge_items(
@@ -436,6 +459,7 @@ class ApplicationStudio:
             raise ApplicationCommandError("只能合并同一工作经历内的项目，跨经历请先调整归属")
         destination_item.base_facts.extend(source_item.base_facts)
         source_items.remove(source_item)
+        snapshot.source_change_notices = self._source_change_notices(snapshot)
         return await self._save_snapshot(record, snapshot)
 
     async def _analyze_target(
@@ -552,6 +576,288 @@ class ApplicationStudio:
 
         raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
 
+    async def _generate_claims(
+        self, owner_id: str, application_id: str
+    ) -> ApplicationSnapshot:
+        prepared_snapshot, prepared_sources, run_id, run_created_at = (
+            await self._prepare_claim_generation(owner_id, application_id)
+        )
+        system_prompt, user_prompt = build_claim_studio_prompts(
+            target_role=prepared_snapshot.target_application.target_role,
+            jd_text=prepared_snapshot.target_application.jd_text,
+            role_signals=prepared_snapshot.role_signals,
+            source_snapshots=prepared_sources,
+        )
+        claims: list[CompetitiveClaimSnapshot] | None = None
+        failure_code: str | None = None
+        failure_message: str | None = None
+        review_run: PromptRunSnapshot | None = None
+
+        try:
+            raw_output = await self.model.generate_json(
+                system_prompt=system_prompt, user_prompt=user_prompt
+            )
+            output = ClaimStudioModelOutput.model_validate(raw_output)
+            claims = self._validated_claim_snapshots(
+                output=output,
+                source_snapshots=prepared_sources,
+                role_signals=prepared_snapshot.role_signals,
+            )
+        except ValidationError:
+            failure_code = "invalid_output"
+            failure_message = self._claim_error_message(failure_code)
+        except ApplicationModelError as exc:
+            failure_code = exc.code
+            failure_message = self._claim_error_message(exc.code)
+
+        if claims:
+            review_run = PromptRunSnapshot(
+                id=_new_id(),
+                prompt_family="claim_studio",
+                prompt_version=CLAIM_STUDIO_REVIEW_PROMPT_VERSION,
+                model_provider=self.model.provider_name,
+                model_name=self.model.model_name,
+                status="running",
+                error_code=None,
+                created_at=_now_iso(),
+            )
+            review_system_prompt, review_user_prompt = (
+                build_claim_studio_review_prompts(
+                    source_snapshots=prepared_sources,
+                    claims=claims,
+                )
+            )
+            try:
+                raw_review = await self.model.generate_json(
+                    system_prompt=review_system_prompt,
+                    user_prompt=review_user_prompt,
+                )
+                review = ClaimStudioReviewModelOutput.model_validate(raw_review)
+                if any(
+                    any(index >= len(claims) for index in violation.claim_indexes)
+                    for violation in review.violations
+                ):
+                    raise ModelInvalidOutputError(
+                        "Claim Studio 审查引用了不存在的主张"
+                    )
+                review_run.status = "completed"
+                if review.verdict == "rejected":
+                    failure_code = "invalid_output"
+                    failure_message = (
+                        "独立审查发现竞争主张包含语义重复或来源未支持的事实升级，请重试。"
+                    )
+            except ValidationError:
+                failure_code = "invalid_output"
+                failure_message = "竞争主张独立审查返回的格式不完整，请重试。"
+                review_run.status = "failed"
+                review_run.error_code = "invalid_output"
+            except ApplicationModelError as exc:
+                failure_code = exc.code
+                failure_message = self._claim_review_error_message(exc.code)
+                review_run.status = "failed"
+                review_run.error_code = exc.code
+
+        if claims is None and not (failure_code and failure_message):
+            raise ApplicationCommandError("Claim Studio 未返回可保存的结果")
+
+        return await self._save_claim_outcome(
+            application_id=application_id,
+            owner_id=owner_id,
+            claims=claims,
+            failure_code=failure_code,
+            failure_message=failure_message,
+            run_id=run_id,
+            review_run=review_run,
+        )
+
+    async def _prepare_claim_generation(
+        self, owner_id: str, application_id: str
+    ) -> tuple[ApplicationSnapshot, list[ClaimSourceSnapshot], str, str]:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        if not snapshot.role_signals:
+            raise ApplicationCommandError("请先完成 Target Analysis，再生成竞争主张")
+
+        all_items = [
+            *(item for entry in snapshot.experience_entries for item in entry.experience_items),
+            *snapshot.standalone_experience_items,
+        ]
+        if not all_items:
+            raise ApplicationCommandError("当前没有可用于 Claim Studio 的 Experience Item")
+
+        run_id = _new_id()
+        run_created_at = _now_iso()
+        source_snapshots = self._capture_claim_sources(
+            snapshot=snapshot,
+            run_id=run_id,
+            captured_at=run_created_at,
+        )
+        snapshot.source_snapshots.extend(source_snapshots)
+        snapshot.claim_studio = ClaimStudioSnapshot(status="running", last_error=None)
+        snapshot.prompt_runs.append(
+            PromptRunSnapshot(
+                id=run_id,
+                prompt_family="claim_studio",
+                prompt_version=CLAIM_STUDIO_PROMPT_VERSION,
+                model_provider=self.model.provider_name,
+                model_name=self.model.model_name,
+                status="running",
+                error_code=None,
+                created_at=run_created_at,
+            )
+        )
+        saved = await self._save_snapshot(record, snapshot)
+        return saved, source_snapshots, run_id, run_created_at
+
+    @staticmethod
+    def _capture_claim_sources(
+        *, snapshot: ApplicationSnapshot, run_id: str, captured_at: str
+    ) -> list[ClaimSourceSnapshot]:
+        captured: list[ClaimSourceSnapshot] = []
+        for entry in snapshot.experience_entries:
+            entry_context = ExperienceEntryContextSnapshot(
+                organization=entry.organization,
+                role=entry.role,
+                date_range=entry.date_range,
+            )
+            captured.extend(
+                ClaimSourceSnapshot(
+                    id=_new_id(),
+                    prompt_run_id=run_id,
+                    experience_item_id=item.id,
+                    item_title=item.title,
+                    entry_context=entry_context,
+                    base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
+                    captured_at=captured_at,
+                )
+                for item in entry.experience_items
+            )
+        captured.extend(
+            ClaimSourceSnapshot(
+                id=_new_id(),
+                prompt_run_id=run_id,
+                experience_item_id=item.id,
+                item_title=item.title,
+                entry_context=None,
+                base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
+                captured_at=captured_at,
+            )
+            for item in snapshot.standalone_experience_items
+        )
+        return captured
+
+    @staticmethod
+    def _validated_claim_snapshots(
+        *,
+        output: ClaimStudioModelOutput,
+        source_snapshots: list[ClaimSourceSnapshot],
+        role_signals: list[RoleSignalSnapshot],
+    ) -> list[CompetitiveClaimSnapshot]:
+        sources_by_item = {
+            source.experience_item_id: source for source in source_snapshots
+        }
+        signals_by_id = {signal.id: signal for signal in role_signals}
+        claims: list[CompetitiveClaimSnapshot] = []
+        for claim in output.competitive_claims:
+            source = sources_by_item.get(claim.experience_item_id)
+            if source is None:
+                raise ModelInvalidOutputError(
+                    "Competitive Claim 引用了本次输入之外的 Experience Item"
+                )
+            signal = signals_by_id.get(claim.primary_role_signal_id)
+            if signal is None:
+                raise ModelInvalidOutputError(
+                    "Competitive Claim 引用了本次输入之外的 Role Signal"
+                )
+            available_fact_ids = {fact.id for fact in source.base_facts}
+            if not set(claim.supported_base_fact_ids).issubset(available_fact_ids):
+                raise ModelInvalidOutputError(
+                    "Competitive Claim 引用了来源中不存在的 Base Fact"
+                )
+            claims.append(
+                CompetitiveClaimSnapshot(
+                    id=_new_id(),
+                    source_snapshot_id=source.id,
+                    experience_item_id=claim.experience_item_id,
+                    source_focus=claim.source_focus,
+                    opportunity_value=claim.opportunity_value,
+                    supported_base_fact_ids=claim.supported_base_fact_ids,
+                    primary_role_signal_id=signal.id,
+                    primary_role_signal=signal.model_copy(deep=True),
+                    competitive_claim=claim.competitive_claim,
+                    stretch_direction=claim.stretch_direction,
+                )
+            )
+        return claims
+
+    async def _save_claim_outcome(
+        self,
+        *,
+        application_id: str,
+        owner_id: str,
+        claims: list[CompetitiveClaimSnapshot] | None,
+        failure_code: str | None,
+        failure_message: str | None,
+        run_id: str,
+        review_run: PromptRunSnapshot | None,
+    ) -> ApplicationSnapshot:
+        # Source Snapshots and the running Prompt Run are saved before the
+        # provider call. Merge only the result fields onto the latest snapshot
+        # so concurrent candidate edits cannot be overwritten by a slow model.
+        for attempt in range(3):
+            await self.db.rollback()
+            record = await self._get_record(application_id, owner_id)
+            snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+            prompt_run = next(
+                (run for run in snapshot.prompt_runs if run.id == run_id), None
+            )
+            if prompt_run is None:
+                raise ApplicationConflictError("Claim Studio 运行记录不存在，请重试")
+
+            if failure_code and failure_message:
+                snapshot.claim_studio = ClaimStudioSnapshot(
+                    status="failed",
+                    last_error=RecoverableAnalysisErrorSnapshot(
+                        code=failure_code,
+                        message=failure_message,
+                        retryable=True,
+                    ),
+                )
+                if claims is None:
+                    prompt_run.status = "failed"
+                    prompt_run.error_code = failure_code
+                else:
+                    prompt_run.status = "completed"
+                    prompt_run.error_code = None
+            else:
+                if claims is None:
+                    raise ApplicationCommandError(
+                        "Claim Studio 未返回可保存的结果"
+                    )
+                snapshot.competitive_claims = [
+                    claim.model_copy(deep=True) for claim in claims
+                ]
+                snapshot.claim_studio = ClaimStudioSnapshot(
+                    status="completed", last_error=None
+                )
+                snapshot.workflow_phase = "claim_review"
+                prompt_run.status = "completed"
+                prompt_run.error_code = None
+                snapshot.source_change_notices = self._source_change_notices(
+                    snapshot
+                )
+
+            if review_run is not None:
+                snapshot.prompt_runs.append(review_run.model_copy(deep=True))
+
+            try:
+                return await self._save_snapshot(record, snapshot)
+            except ApplicationConflictError:
+                if attempt == 2:
+                    raise
+
+        raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
+
     @staticmethod
     def _analysis_error_message(code: str) -> str:
         if code == "timeout":
@@ -559,6 +865,80 @@ class ApplicationStudio:
         if code == "invalid_output":
             return "模型返回的岗位信号格式不完整，请重试。"
         return "模型服务暂时不可用，现有投递内容已保留，请稍后重试。"
+
+    @staticmethod
+    def _claim_error_message(code: str) -> str:
+        if code == "timeout":
+            return "竞争主张生成超时，已捕获的来源和现有主张均已保留，请重试。"
+        if code == "invalid_output":
+            return "模型返回的竞争主张格式或来源引用不完整，请重试。"
+        return "模型服务暂时不可用，已捕获的来源和现有主张均已保留，请稍后重试。"
+
+    @staticmethod
+    def _claim_review_error_message(code: str) -> str:
+        if code == "timeout":
+            return "竞争主张独立审查超时，已捕获的来源和现有主张均已保留，请重试。"
+        if code == "invalid_output":
+            return "竞争主张独立审查返回的格式不完整，请重试。"
+        return "竞争主张独立审查服务暂时不可用，已捕获的来源和现有主张均已保留，请稍后重试。"
+
+    @staticmethod
+    def _source_change_notices(
+        snapshot: ApplicationSnapshot,
+    ) -> list[SourceChangeNoticeSnapshot]:
+        sources_by_id = {source.id: source for source in snapshot.source_snapshots}
+        current_sources: dict[
+            str, tuple[ExperienceItemSnapshot, ExperienceEntryContextSnapshot | None]
+        ] = {}
+        for entry in snapshot.experience_entries:
+            context = ExperienceEntryContextSnapshot(
+                organization=entry.organization,
+                role=entry.role,
+                date_range=entry.date_range,
+            )
+            current_sources.update(
+                {item.id: (item, context) for item in entry.experience_items}
+            )
+        current_sources.update(
+            {
+                item.id: (item, None)
+                for item in snapshot.standalone_experience_items
+            }
+        )
+
+        notices: list[SourceChangeNoticeSnapshot] = []
+        for claim in snapshot.competitive_claims:
+            captured = sources_by_id.get(claim.source_snapshot_id)
+            if captured is None:
+                continue
+            current = current_sources.get(claim.experience_item_id)
+            changed_dimensions: list[
+                str
+            ] = []
+            if current is None:
+                changed_dimensions.append("source_removed")
+            else:
+                current_item, current_context = current
+                if current_item.title != captured.item_title:
+                    changed_dimensions.append("item_title")
+                if current_context != captured.entry_context:
+                    changed_dimensions.append("entry_context")
+                if current_item.base_facts != captured.base_facts:
+                    changed_dimensions.append("base_facts")
+            if changed_dimensions:
+                notices.append(
+                    SourceChangeNoticeSnapshot(
+                        claim_id=claim.id,
+                        source_snapshot_id=captured.id,
+                        experience_item_id=claim.experience_item_id,
+                        changed_dimensions=changed_dimensions,
+                        message=(
+                            "当前经历材料已变化；这条主张仍保留生成时的来源，"
+                            "只有你明确重新分析时才会使用新材料。"
+                        ),
+                    )
+                )
+        return notices
 
     @staticmethod
     def _find_item(

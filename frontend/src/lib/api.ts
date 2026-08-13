@@ -284,13 +284,62 @@ export interface TargetAnalysisSnapshot {
   last_error: RecoverableAnalysisErrorSnapshot | null;
 }
 
+export interface ClaimStudioSnapshot {
+  status: "not_started" | "running" | "completed" | "failed";
+  last_error: RecoverableAnalysisErrorSnapshot | null;
+}
+
+export interface ExperienceEntryContextSnapshot {
+  organization: string;
+  role: string;
+  date_range: string | null;
+}
+
+export interface ClaimSourceSnapshot {
+  id: string;
+  prompt_run_id: string;
+  experience_item_id: string;
+  source_scope: "application_local";
+  item_title: string;
+  entry_context: ExperienceEntryContextSnapshot | null;
+  base_facts: BaseFactSnapshot[];
+  captured_at: string;
+}
+
+export interface StretchDirectionSnapshot {
+  expression_gap: string;
+  why_it_matters: string;
+  expansion_direction: string;
+}
+
+export interface CompetitiveClaimSnapshot {
+  id: string;
+  source_snapshot_id: string;
+  experience_item_id: string;
+  source_focus: string;
+  opportunity_value: string;
+  supported_base_fact_ids: string[];
+  primary_role_signal_id: string;
+  primary_role_signal: RoleSignalSnapshot;
+  competitive_claim: string;
+  stretch_direction: StretchDirectionSnapshot;
+}
+
+export interface SourceChangeNoticeSnapshot {
+  claim_id: string;
+  source_snapshot_id: string;
+  experience_item_id: string;
+  changed_dimensions: ("item_title" | "entry_context" | "base_facts" | "source_removed")[];
+  message: string;
+}
+
 export interface PromptRunSnapshot {
   id: string;
-  prompt_family: "target_analysis";
+  prompt_family: "target_analysis" | "claim_studio";
   prompt_version: string;
   model_provider: string;
   model_name: string;
-  status: "completed" | "failed";
+  status: "running" | "completed" | "failed";
   error_code: RecoverableAnalysisErrorSnapshot["code"] | null;
   created_at: string;
 }
@@ -298,18 +347,19 @@ export interface PromptRunSnapshot {
 export interface ApplicationSnapshot {
   snapshot_version: 1;
   application_id: string;
-  workflow_phase: "source_review" | "role_signal_review";
+  workflow_phase: "source_review" | "role_signal_review" | "claim_review";
   target_application: { target_role: string; jd_text: string };
   resume_source: { text: string; scope: "application_local" };
   experience_entries: ExperienceEntrySnapshot[];
   standalone_experience_items: ExperienceItemSnapshot[];
   role_signals: RoleSignalSnapshot[];
   target_analysis: TargetAnalysisSnapshot;
+  claim_studio: ClaimStudioSnapshot;
   prompt_runs: PromptRunSnapshot[];
   achievement_leads: Record<string, unknown>[];
-  source_snapshots: Record<string, unknown>[];
-  competitive_claims: Record<string, unknown>[];
-  source_change_notices: Record<string, unknown>[];
+  source_snapshots: ClaimSourceSnapshot[];
+  competitive_claims: CompetitiveClaimSnapshot[];
+  source_change_notices: SourceChangeNoticeSnapshot[];
   targeted_resume_version: { resume_claims: Record<string, unknown>[] };
   interview_rehearsal: Record<string, unknown> | null;
   created_at: string;
@@ -378,6 +428,11 @@ export const applications = {
     request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
       method: "POST",
       body: JSON.stringify({ type: "analyze_target" }),
+    }),
+  generateClaims: (applicationId: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({ type: "generate_claims" }),
     }),
 };
 

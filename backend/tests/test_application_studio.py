@@ -66,9 +66,10 @@ class FakeApplicationModel:
 
     async def generate_json(self, *, system_prompt: str, user_prompt: str) -> object:
         self.calls += 1
-        if isinstance(self.output, Exception):
-            raise self.output
-        return self.output
+        output = self.output.pop(0) if isinstance(self.output, list) else self.output
+        if isinstance(output, Exception):
+            raise output
+        return output
 
 
 class BlockingApplicationModel(FakeApplicationModel):
@@ -81,6 +82,8 @@ class BlockingApplicationModel(FakeApplicationModel):
         self.calls += 1
         self.started.set()
         await self.release.wait()
+        if isinstance(self.output, Exception):
+            raise self.output
         return self.output
 
 
@@ -665,3 +668,596 @@ async def test_target_analysis_keeps_experience_changes_saved_while_the_model_ru
     )
     assert reopened.status_code == 200
     assert reopened.json() == analyzed
+
+
+async def test_claim_studio_generates_fewer_than_three_traceable_claims(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                },
+                {
+                    "signal": "从验证走向稳定交付的推进能力",
+                    "source_type": "interpretation",
+                    "jd_excerpt": None,
+                    "rationale": "JD 同时强调持续优化核心体验和推动产品稳定交付。",
+                },
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        source_item = analyzed["experience_entries"][0]["experience_items"][0]
+        standalone_item = analyzed["standalone_experience_items"][0]
+        first_signal, second_signal = analyzed["role_signals"]
+        model.output = [
+            {
+                "competitive_claims": [
+                {
+                    "experience_item_id": source_item["id"],
+                    "primary_role_signal_id": first_signal["id"],
+                    "source_focus": "评测样本与质量维度设计",
+                    "opportunity_value": "体现用质量评测驱动模型迭代的完整闭环。",
+                    "supported_base_fact_ids": [
+                        fact["id"] for fact in source_item["base_facts"]
+                    ],
+                    "competitive_claim": "围绕 120 条高频失败案例建立三维质量评测框架，并协同算法与运营完成两轮提示词迭代，将严重错误案例从 18 条降至 7 条。",
+                    "stretch_direction": {
+                        "expression_gap": "尚未说明三类评测维度如何影响迭代优先级。",
+                        "why_it_matters": "能更直接体现质量判断如何转化为产品决策。",
+                        "expansion_direction": "回想一次由评测结论改变提示词或异常处理方案的具体取舍。",
+                    },
+                },
+                {
+                    "experience_item_id": standalone_item["id"],
+                    "primary_role_signal_id": second_signal["id"],
+                    "source_focus": "从工作流设计到评测基线",
+                    "opportunity_value": "体现从产品工作流设计到评测治理的系统能力。",
+                    "supported_base_fact_ids": [
+                        fact["id"] for fact in standalone_item["base_facts"]
+                    ],
+                    "competitive_claim": "独立设计面向具体 JD 的求职准备工作流，并建立版本化样本与 rubric 比较系统提示词和通用改写基线。",
+                    "stretch_direction": {
+                        "expression_gap": "当前表述没有呈现评测结果如何驱动工作流迭代。",
+                        "why_it_matters": "岗位需要候选人说明如何结合质量评测推动产品稳定交付。",
+                        "expansion_direction": "梳理一项因评测结果而调整的节点、交互或提示词决策。",
+                    },
+                },
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200, analyzed_response.text
+    assert response.status_code == 200, response.text
+    snapshot = response.json()
+    assert snapshot["workflow_phase"] == "claim_review"
+    assert snapshot["claim_studio"] == {"status": "completed", "last_error": None}
+    assert len(snapshot["competitive_claims"]) == 2
+    assert len(snapshot["competitive_claims"]) < 3
+    assert snapshot["targeted_resume_version"]["resume_claims"] == []
+    assert [run["prompt_family"] for run in snapshot["prompt_runs"][-2:]] == [
+        "claim_studio",
+        "claim_studio",
+    ]
+    assert [run["prompt_version"] for run in snapshot["prompt_runs"][-2:]] == [
+        "claim-studio-v1",
+        "claim-studio-review-v1",
+    ]
+    assert [run["status"] for run in snapshot["prompt_runs"][-2:]] == [
+        "completed",
+        "completed",
+    ]
+
+    sources_by_id = {source["id"]: source for source in snapshot["source_snapshots"]}
+    signals_by_id = {signal["id"]: signal for signal in snapshot["role_signals"]}
+    for claim in snapshot["competitive_claims"]:
+        source = sources_by_id[claim["source_snapshot_id"]]
+        assert source["experience_item_id"] == claim["experience_item_id"]
+        assert claim["primary_role_signal_id"] in signals_by_id
+        assert set(claim["supported_base_fact_ids"]).issubset(
+            {fact["id"] for fact in source["base_facts"]}
+        )
+        assert set(claim["stretch_direction"]) == {
+            "expression_gap",
+            "why_it_matters",
+            "expansion_direction",
+        }
+        assert "question" not in claim
+        assert "score" not in claim
+
+
+async def test_claim_studio_rejects_duplicate_opportunities_and_can_be_retried(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        duplicate = {
+            "experience_item_id": item["id"],
+            "primary_role_signal_id": signal["id"],
+            "source_focus": "评测样本与质量维度设计",
+            "opportunity_value": "体现用质量评测驱动模型迭代的完整闭环。",
+            "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+            "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+            "stretch_direction": {
+                "expression_gap": "没有说明评测如何驱动决策。",
+                "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+            },
+        }
+        model.output = {
+            "competitive_claims": [
+                duplicate,
+                {
+                    **duplicate,
+                    "competitive_claim": "基于 120 条失败案例定义三类质量评测维度。",
+                },
+            ]
+        }
+        invalid_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+
+        model.output = [
+            {"competitive_claims": [duplicate]},
+            {"verdict": "approved", "violations": []},
+        ]
+        retried_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert invalid_response.status_code == 200
+    invalid = invalid_response.json()
+    assert invalid["claim_studio"]["status"] == "failed"
+    assert invalid["claim_studio"]["last_error"]["code"] == "invalid_output"
+    assert invalid["competitive_claims"] == []
+    assert invalid["prompt_runs"][-1]["status"] == "failed"
+
+    assert retried_response.status_code == 200
+    retried = retried_response.json()
+    assert retried["claim_studio"] == {"status": "completed", "last_error": None}
+    assert len(retried["competitive_claims"]) == 1
+    assert [run["status"] for run in retried["prompt_runs"][-3:]] == [
+        "failed",
+        "completed",
+        "completed",
+    ]
+
+
+async def test_claim_studio_persists_sources_before_a_provider_failure(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    analysis_model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: analysis_model
+    analyzed_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={"type": "analyze_target"},
+    )
+    assert analyzed_response.status_code == 200
+    analyzed = analyzed_response.json()
+    item = analyzed["experience_entries"][0]["experience_items"][0]
+    signal = analyzed["role_signals"][0]
+    analysis_model.output = [
+        {
+            "competitive_claims": [
+            {
+                "experience_item_id": item["id"],
+                "primary_role_signal_id": signal["id"],
+                "source_focus": "评测样本与质量维度设计",
+                "opportunity_value": "体现用质量评测驱动模型迭代的完整闭环。",
+                "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                "stretch_direction": {
+                    "expression_gap": "没有说明评测如何驱动决策。",
+                    "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                    "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                },
+            }
+            ]
+        },
+        {"verdict": "approved", "violations": []},
+    ]
+    initial_claim_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={"type": "generate_claims"},
+    )
+    assert initial_claim_response.status_code == 200
+    initial_claims = initial_claim_response.json()["competitive_claims"]
+
+    blocking_model = BlockingApplicationModel(
+        ModelProviderUnavailableError("fixture unavailable")
+    )
+    app.dependency_overrides[get_application_model] = lambda: blocking_model
+    try:
+        generation_task = asyncio.create_task(
+            client.post(
+                f"/api/applications/{created['application_id']}/commands",
+                headers=headers,
+                json={"type": "generate_claims"},
+            )
+        )
+        await asyncio.wait_for(blocking_model.started.wait(), timeout=2)
+
+        running_response = await client.get(
+            f"/api/applications/{created['application_id']}", headers=headers
+        )
+        running = running_response.json()
+        assert running_response.status_code == 200
+        assert running["claim_studio"] == {"status": "running", "last_error": None}
+        assert running["prompt_runs"][-1]["prompt_family"] == "claim_studio"
+        assert running["prompt_runs"][-1]["status"] == "running"
+        run_id = running["prompt_runs"][-1]["id"]
+        assert len(running["source_snapshots"]) == 4
+        assert {
+            source["experience_item_id"]
+            for source in running["source_snapshots"]
+            if source["prompt_run_id"] == run_id
+        } == {
+            item["id"],
+            analyzed["standalone_experience_items"][0]["id"],
+        }
+        assert running["competitive_claims"] == initial_claims
+
+        blocking_model.release.set()
+        failed_response = await asyncio.wait_for(generation_task, timeout=2)
+    finally:
+        blocking_model.release.set()
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert failed_response.status_code == 200
+    failed = failed_response.json()
+    assert failed["claim_studio"]["status"] == "failed"
+    assert failed["claim_studio"]["last_error"]["code"] == "provider_unavailable"
+    assert failed["competitive_claims"] == initial_claims
+    assert failed["source_snapshots"] == running["source_snapshots"]
+    assert failed["prompt_runs"][-1]["status"] == "failed"
+
+
+async def test_claim_studio_rejects_a_claim_with_an_unknown_base_fact(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = {
+            "competitive_claims": [
+                {
+                    "experience_item_id": item["id"],
+                    "primary_role_signal_id": signal["id"],
+                    "source_focus": "模型尝试引用不存在的材料",
+                    "opportunity_value": "测试来源引用边界。",
+                    "supported_base_fact_ids": ["fabricated-fact-id"],
+                    "competitive_claim": "声称使用了来源中不存在的事实。",
+                    "stretch_direction": {
+                        "expression_gap": "测试用缺口。",
+                        "why_it_matters": "测试用原因。",
+                        "expansion_direction": "测试用方向。",
+                    },
+                }
+            ]
+        }
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["claim_studio"]["status"] == "failed"
+    assert snapshot["claim_studio"]["last_error"]["code"] == "invalid_output"
+    assert snapshot["competitive_claims"] == []
+
+
+async def test_claim_studio_independent_review_rejects_semantic_duplicates_and_fact_upgrades(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        base_claim = {
+            "experience_item_id": item["id"],
+            "primary_role_signal_id": signal["id"],
+            "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+            "stretch_direction": {
+                "expression_gap": "没有说明评测如何驱动决策。",
+                "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+            },
+        }
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        **base_claim,
+                        "source_focus": "评测维度设计",
+                        "opportunity_value": "体现评测体系设计能力。",
+                        "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                    },
+                    {
+                        **base_claim,
+                        "source_focus": "失败样本归纳",
+                        "opportunity_value": "体现评测体系设计能力。",
+                        "competitive_claim": "从 120 条高频失败案例中归纳出三类质量评测标准。",
+                    },
+                ]
+            },
+            {
+                "verdict": "rejected",
+                "violations": [
+                    {
+                        "code": "semantic_duplicate",
+                        "claim_indexes": [0, 1],
+                        "explanation": "两条主张表达相同的评测体系价值，只改变了措辞和来源重点名称。",
+                    }
+                ],
+            },
+        ]
+        duplicate_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        **base_claim,
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现企业级 AI 战略与商业结果。",
+                        "competitive_claim": "独立主导全公司 AI 质量战略，令业务收入翻倍。",
+                    }
+                ]
+            },
+            {
+                "verdict": "rejected",
+                "violations": [
+                    {
+                        "code": "unsupported_material_fact",
+                        "claim_indexes": [0],
+                        "explanation": "来源不支持全公司所有权、质量战略范围或收入翻倍结果。",
+                    }
+                ],
+            },
+        ]
+        upgrade_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    for response in (duplicate_response, upgrade_response):
+        assert response.status_code == 200
+        snapshot = response.json()
+        assert snapshot["claim_studio"]["status"] == "failed"
+        assert snapshot["claim_studio"]["last_error"]["code"] == "invalid_output"
+        assert snapshot["competitive_claims"] == []
+        assert [run["prompt_version"] for run in snapshot["prompt_runs"][-2:]] == [
+            "claim-studio-v1",
+            "claim-studio-review-v1",
+        ]
+        assert [run["status"] for run in snapshot["prompt_runs"][-2:]] == [
+            "completed",
+            "completed",
+        ]
+
+
+async def test_source_edit_preserves_claim_and_emits_a_non_blocking_notice_without_model_call(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        calls_before_source_edit = model.calls
+
+        moved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "move_experience_item",
+                "experience_item_id": item["id"],
+                "destination_entry_id": None,
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert moved_response.status_code == 200
+    moved = moved_response.json()
+    assert moved["competitive_claims"] == generated["competitive_claims"]
+    assert model.calls == calls_before_source_edit
+    assert moved["source_change_notices"] == [
+        {
+            "claim_id": generated["competitive_claims"][0]["id"],
+            "source_snapshot_id": generated["competitive_claims"][0][
+                "source_snapshot_id"
+            ],
+            "experience_item_id": item["id"],
+            "changed_dimensions": ["entry_context"],
+            "message": "当前经历材料已变化；这条主张仍保留生成时的来源，只有你明确重新分析时才会使用新材料。",
+        }
+    ]
+
+
+async def test_claim_studio_requires_role_signals(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel({"competitive_claims": []})
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert response.status_code == 422
+    assert "Target Analysis" in response.json()["detail"]
+    assert model.calls == 0
