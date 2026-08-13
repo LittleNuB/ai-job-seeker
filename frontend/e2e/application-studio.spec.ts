@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { apiPath, registerUser, type E2EUser } from "./support/auth";
 
 const concreteJd = `AI 产品经理（智能应用方向）
@@ -307,4 +308,193 @@ test("candidate sees traceable claims and a separate non-copyable Stretch Direct
   await expect(page.getByRole("button", { name: /复制.*冲刺方向/ })).toHaveCount(0);
   await expect(page.getByText("匹配分", { exact: false })).toHaveCount(0);
   await expect(page.getByText("录用概率", { exact: false })).toHaveCount(0);
+});
+
+test("candidate edits, saves, reopens, copies, and exports a Targeted Resume Version", async ({ page, request, context }) => {
+  const user = await registerUser(request, "targeted-resume");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const created = await createResponse.json();
+  const item = created.experience_entries[0].experience_items[0];
+  const roleSignal = {
+    id: "signal-targeted-resume",
+    signal: "大模型工作流与质量评测设计",
+    source_type: "explicit",
+    jd_excerpt: "建立质量评测和异常处理机制",
+    rationale: null,
+  };
+  const source = {
+    id: "source-targeted-resume",
+    prompt_run_id: "claim-run-targeted-resume",
+    experience_item_id: item.id,
+    source_scope: "application_local",
+    item_title: item.title,
+    entry_context: {
+      organization: "知音科技",
+      role: "AI 产品实习生",
+      date_range: "2025.01-2025.06",
+    },
+    base_facts: item.base_facts,
+    captured_at: new Date().toISOString(),
+  };
+  const generatedText = "围绕 120 条高频失败案例定义三类评测维度。";
+  const editedText = "从 120 条高频失败案例中定义三类评测维度，并据此推进两轮提示词迭代。";
+  const stretchText = "回想一次评测结论改变方案优先级的具体取舍。";
+  const claim = {
+    id: "claim-targeted-resume",
+    source_snapshot_id: source.id,
+    experience_item_id: item.id,
+    source_focus: "评测样本与维度设计",
+    opportunity_value: "体现质量评测驱动迭代的完整闭环。",
+    supported_base_fact_ids: item.base_facts.map((fact: { id: string }) => fact.id),
+    primary_role_signal_id: roleSignal.id,
+    primary_role_signal: roleSignal,
+    competitive_claim: generatedText,
+    selected_resume_claim: generatedText,
+    selected_resume_claim_is_edited: false,
+    selected_resume_claim_updated_at: null,
+    stretch_direction: {
+      expression_gap: "尚未说明评测如何改变迭代优先级。",
+      why_it_matters: "能体现质量判断如何转化为产品决策。",
+      expansion_direction: stretchText,
+    },
+  };
+  let currentSnapshot = created;
+  const observedCommands: string[] = [];
+
+  await page.route(`**/api/applications/${created.application_id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(currentSnapshot),
+    });
+  });
+  await page.route(`**/api/applications/${created.application_id}/commands`, async (route) => {
+    const command = route.request().postDataJSON();
+    observedCommands.push(command.type);
+    if (command.type === "analyze_target") {
+      currentSnapshot = {
+        ...currentSnapshot,
+        workflow_phase: "role_signal_review",
+        role_signals: [roleSignal],
+        target_analysis: { status: "completed", last_error: null },
+      };
+    } else if (command.type === "generate_claims") {
+      currentSnapshot = {
+        ...currentSnapshot,
+        workflow_phase: "claim_review",
+        claim_studio: { status: "completed", last_error: null },
+        source_snapshots: [source],
+        competitive_claims: [claim],
+      };
+    } else if (command.type === "edit_resume_claim") {
+      currentSnapshot = {
+        ...currentSnapshot,
+        competitive_claims: [{
+          ...currentSnapshot.competitive_claims[0],
+          selected_resume_claim: command.resume_claim,
+          selected_resume_claim_is_edited: command.resume_claim !== generatedText,
+          selected_resume_claim_updated_at: new Date().toISOString(),
+        }],
+      };
+    } else if (command.type === "save_targeted_resume_claims") {
+      currentSnapshot = {
+        ...currentSnapshot,
+        targeted_resume_version: {
+          resume_claims: [{
+            id: "saved-claim-targeted-resume",
+            source_claim_id: claim.id,
+            resume_claim: currentSnapshot.competitive_claims[0].selected_resume_claim,
+            experience_item_id: claim.experience_item_id,
+            source_snapshot_id: source.id,
+            primary_role_signal: roleSignal,
+            prompt_run_id: source.prompt_run_id,
+            selected_resume_claim_is_edited: true,
+            saved_at: new Date().toISOString(),
+          }],
+          updated_at: new Date().toISOString(),
+        },
+        behavior_events: [{
+          id: "event-claim-saved",
+          event_type: "claim_saved",
+          claim_ids: [claim.id],
+          created_at: new Date().toISOString(),
+        }],
+      };
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(currentSnapshot),
+    });
+  });
+  await page.route(`**/api/applications/${created.application_id}/targeted-resume.txt`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      body: `AI 产品经理 · 目标简历\n\n• ${editedText}\n`,
+    });
+  });
+  await page.route(`**/api/applications/${created.application_id}/targeted-resume.md`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/markdown; charset=utf-8",
+      headers: { "Content-Disposition": "attachment; filename=targeted-resume.md" },
+      body: `# AI 产品经理 · 目标简历\n\n- ${editedText}\n`,
+    });
+  });
+
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await installSession(page, user);
+  await page.goto(`/applications/${created.application_id}`);
+  await page.getByRole("button", { name: "提取岗位信号" }).click();
+  await page.getByRole("button", { name: "生成竞争主张" }).click();
+
+  const claimEditor = page.getByLabel("竞争主张 1");
+  await expect(claimEditor).toHaveValue(generatedText);
+  await claimEditor.fill(editedText);
+  await page.getByRole("heading", { name: "这份简历，只收录你明确保存的主张" }).click();
+  await expect.poll(() => observedCommands).toEqual([
+    "analyze_target",
+    "generate_claims",
+    "edit_resume_claim",
+  ]);
+
+  await page.reload();
+  await expect(page.getByLabel("竞争主张 1")).toHaveValue(editedText);
+  await expect(page.getByText("还没有保存任何主张", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "保存到目标简历" }).click();
+
+  await expect(page.getByText("已保存到目标简历", { exact: true })).toBeVisible();
+  expect(observedCommands).toEqual([
+    "analyze_target",
+    "generate_claims",
+    "edit_resume_claim",
+    "save_targeted_resume_claims",
+  ]);
+
+  await page.reload();
+  await expect(page.getByLabel("竞争主张 1")).toHaveValue(editedText);
+  await expect(page.getByText(editedText, { exact: true }).last()).toBeVisible();
+
+  await page.getByRole("button", { name: "复制目标简历" }).click();
+  await expect(page.getByText("已复制", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(editedText);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "下载 Markdown" }).click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const markdown = await readFile(downloadPath!, "utf8");
+  expect(markdown).toContain(editedText);
+  expect(markdown).not.toContain(stretchText);
 });

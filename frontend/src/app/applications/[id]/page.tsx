@@ -7,6 +7,7 @@ import { ArrowLeft, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText,
 import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot } from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
 import ClaimStudioPanel from "@/components/applications/ClaimStudioPanel";
+import TargetedResumePanel from "@/components/applications/TargetedResumePanel";
 import TargetAnalysisPanel from "@/components/applications/TargetAnalysisPanel";
 
 function itemCount(snapshot: ApplicationSnapshot): number {
@@ -176,6 +177,7 @@ export default function ApplicationWorkspacePage() {
   const [snapshot, setSnapshot] = useState<ApplicationSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+  const [pendingClaimId, setPendingClaimId] = useState<string | null>(null);
   const [analyzingTarget, setAnalyzingTarget] = useState(false);
   const [generatingClaims, setGeneratingClaims] = useState(false);
   const [error, setError] = useState("");
@@ -270,6 +272,73 @@ export default function ApplicationWorkspacePage() {
     }
   }
 
+  function handleClaimActionError(err: unknown, fallback: string) {
+    if (err instanceof AuthRequiredError) router.push(getLoginPath(`/applications/${applicationId}`));
+    else setError(err instanceof Error ? err.message : fallback);
+  }
+
+  async function editClaim(claimId: string, resumeClaim: string): Promise<boolean> {
+    const currentClaim = snapshot?.competitive_claims.find((claim) => claim.id === claimId);
+    if (!currentClaim || currentClaim.selected_resume_claim === resumeClaim) return Boolean(currentClaim);
+
+    setPendingClaimId(claimId);
+    setError("");
+    try {
+      setSnapshot(await applications.editResumeClaim(applicationId, claimId, resumeClaim));
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, "主张修改没有保存，请重试");
+      return false;
+    } finally {
+      setPendingClaimId(null);
+    }
+  }
+
+  async function saveClaim(claimId: string, resumeClaim: string): Promise<boolean> {
+    const currentClaim = snapshot?.competitive_claims.find((claim) => claim.id === claimId);
+    if (!currentClaim) return false;
+
+    setPendingClaimId(claimId);
+    setError("");
+    try {
+      let nextSnapshot = snapshot;
+      if (currentClaim.selected_resume_claim !== resumeClaim) {
+        nextSnapshot = await applications.editResumeClaim(applicationId, claimId, resumeClaim);
+      }
+      nextSnapshot = await applications.saveTargetedResumeClaims(applicationId, [claimId]);
+      setSnapshot(nextSnapshot);
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, "目标简历没有保存，请重试");
+      return false;
+    } finally {
+      setPendingClaimId(null);
+    }
+  }
+
+  async function copyTargetedResume(): Promise<boolean> {
+    setError("");
+    try {
+      const content = await applications.getTargetedResumeText(applicationId);
+      await navigator.clipboard.writeText(content);
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, "目标简历没有复制成功，请重试");
+      return false;
+    }
+  }
+
+  async function downloadTargetedResume(): Promise<boolean> {
+    setError("");
+    try {
+      await applications.downloadTargetedResumeMarkdown(applicationId);
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, "目标简历没有下载成功，请重试");
+      return false;
+    }
+  }
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center bg-studio-canvas text-sm text-[#5f6d63]"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 正在打开投递工作台</div>;
   }
@@ -331,9 +400,20 @@ export default function ApplicationWorkspacePage() {
             claims={snapshot.competitive_claims}
             sources={snapshot.source_snapshots}
             sourceChangeNotices={snapshot.source_change_notices}
+            savedClaims={snapshot.targeted_resume_version.resume_claims}
             canGenerate={snapshot.role_signals.length > 0}
             busy={generatingClaims}
+            pendingClaimId={pendingClaimId}
             onGenerate={generateClaims}
+            onEditClaim={editClaim}
+            onSaveClaim={saveClaim}
+          />
+
+          <TargetedResumePanel
+            version={snapshot.targeted_resume_version}
+            sources={snapshot.source_snapshots}
+            onCopy={copyTargetedResume}
+            onDownload={downloadTargetedResume}
           />
 
           <div className="mb-6 flex flex-col gap-3 border-b border-studio-ink/15 pb-5 sm:flex-row sm:items-end sm:justify-between">

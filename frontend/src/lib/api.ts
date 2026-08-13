@@ -18,16 +18,14 @@ function normalizeError(detail: unknown, fallback: string): string {
   return fallback;
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  let res: Response;
+async function authenticatedFetch(path: string, options?: RequestInit): Promise<Response> {
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    return await fetch(`${API_BASE}${path}`, {
+      ...options,
       headers: {
-        "Content-Type": "application/json",
         ...getAuthHeaders(),
         ...options?.headers,
       },
-      ...options,
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
@@ -39,30 +37,38 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
     throw new Error("无法连接服务器，请确认后端已启动");
   }
+}
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }));
-    if (res.status === 401) {
-      clearAuthSession();
-      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再继续操作"));
-    }
-    throw new Error(normalizeError(error.detail, "请求失败，请稍后重试"));
+async function throwResponseError(res: Response, fallback: string): Promise<never> {
+  const error = await res.json().catch(() => ({ detail: res.statusText }));
+  if (res.status === 401) {
+    clearAuthSession();
+    throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再继续操作"));
   }
+  throw new Error(normalizeError(error.detail, fallback));
+}
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await authenticatedFetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  });
+  if (!res.ok) await throwResponseError(res, "请求失败，请稍后重试");
   return res.json();
 }
 
+async function requestText(path: string, fallbackError: string): Promise<string> {
+  const res = await authenticatedFetch(path);
+  if (!res.ok) await throwResponseError(res, fallbackError);
+  return res.text();
+}
+
 async function downloadFile(path: string, fallbackFilename: string, fallbackError: string): Promise<void> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }));
-    if (res.status === 401) {
-      clearAuthSession();
-      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再继续操作"));
-    }
-    throw new Error(normalizeError(error.detail, fallbackError));
-  }
+  const res = await authenticatedFetch(path);
+  if (!res.ok) await throwResponseError(res, fallbackError);
   const blob = await res.blob();
   const disposition = res.headers.get("content-disposition") || "";
   const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
@@ -81,25 +87,11 @@ export async function uploadFile(file: File): Promise<{ text?: string }> {
   const formData = new FormData();
   formData.append("file", file);
 
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/api/files/upload`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-  } catch {
-    throw new Error("无法连接服务器，请确认后端已启动");
-  }
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }));
-    if (res.status === 401) {
-      clearAuthSession();
-      throw new AuthRequiredError(normalizeError(error.detail, "请先登录后再上传文件"));
-    }
-    throw new Error(normalizeError(error.detail, "上传失败"));
-  }
+  const res = await authenticatedFetch("/api/files/upload", {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) await throwResponseError(res, "上传失败");
 
   return res.json();
 }
@@ -322,7 +314,34 @@ export interface CompetitiveClaimSnapshot {
   primary_role_signal_id: string;
   primary_role_signal: RoleSignalSnapshot;
   competitive_claim: string;
+  selected_resume_claim: string;
+  selected_resume_claim_is_edited: boolean;
+  selected_resume_claim_updated_at: string | null;
   stretch_direction: StretchDirectionSnapshot;
+}
+
+export interface TargetedResumeClaimSnapshot {
+  id: string;
+  source_claim_id: string;
+  resume_claim: string;
+  experience_item_id: string;
+  source_snapshot_id: string;
+  primary_role_signal: RoleSignalSnapshot;
+  prompt_run_id: string;
+  selected_resume_claim_is_edited: boolean;
+  saved_at: string;
+}
+
+export interface TargetedResumeVersionSnapshot {
+  resume_claims: TargetedResumeClaimSnapshot[];
+  updated_at: string | null;
+}
+
+export interface ApplicationBehaviorEventSnapshot {
+  id: string;
+  event_type: "claim_saved";
+  claim_ids: string[];
+  created_at: string;
 }
 
 export interface SourceChangeNoticeSnapshot {
@@ -360,7 +379,8 @@ export interface ApplicationSnapshot {
   source_snapshots: ClaimSourceSnapshot[];
   competitive_claims: CompetitiveClaimSnapshot[];
   source_change_notices: SourceChangeNoticeSnapshot[];
-  targeted_resume_version: { resume_claims: Record<string, unknown>[] };
+  targeted_resume_version: TargetedResumeVersionSnapshot;
+  behavior_events: ApplicationBehaviorEventSnapshot[];
   interview_rehearsal: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -434,6 +454,34 @@ export const applications = {
       method: "POST",
       body: JSON.stringify({ type: "generate_claims" }),
     }),
+  editResumeClaim: (applicationId: string, claimId: string, resumeClaim: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "edit_resume_claim",
+        claim_id: claimId,
+        resume_claim: resumeClaim,
+      }),
+    }),
+  saveTargetedResumeClaims: (applicationId: string, claimIds: string[]) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "save_targeted_resume_claims",
+        claim_ids: claimIds,
+      }),
+    }),
+  getTargetedResumeText: (applicationId: string) =>
+    requestText(
+      `/api/applications/${applicationId}/targeted-resume.txt`,
+      "目标简历暂时无法复制，请重试",
+    ),
+  downloadTargetedResumeMarkdown: (applicationId: string) =>
+    downloadFile(
+      `/api/applications/${applicationId}/targeted-resume.md`,
+      `targeted-resume-${applicationId}.md`,
+      "目标简历暂时无法下载，请重试",
+    ),
 };
 
 // Streaming Chat

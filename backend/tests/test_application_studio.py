@@ -5,6 +5,7 @@ import asyncio
 from httpx import AsyncClient
 
 from app.main import app
+from app.schemas.application import ApplicationSnapshot
 from app.services.application_model import (
     ModelProviderUnavailableError,
     ModelTimeoutError,
@@ -1261,3 +1262,368 @@ async def test_claim_studio_requires_role_signals(
     assert response.status_code == 422
     assert "Target Analysis" in response.json()["detail"]
     assert model.calls == 0
+
+
+async def test_editing_a_claim_persists_the_selected_resume_claim_without_saving_or_model_work(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        original_claim = "围绕 120 条失败案例建立三类质量评测维度。"
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": original_claim,
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        claim = generated["competitive_claims"][0]
+        calls_before_edit = model.calls
+
+        edited_text = "从 120 条高频失败案例中定义准确性、完整性和可执行性三类评测维度。"
+        edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": claim["id"],
+                "resume_claim": edited_text,
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert edited_response.status_code == 200, edited_response.text
+    edited = edited_response.json()
+    edited_claim = edited["competitive_claims"][0]
+    assert edited_claim["competitive_claim"] == original_claim
+    assert edited_claim["selected_resume_claim"] == edited_text
+    assert edited_claim["selected_resume_claim_is_edited"] is True
+    assert edited["targeted_resume_version"]["resume_claims"] == []
+    assert edited["behavior_events"] == []
+    assert model.calls == calls_before_edit
+
+    reopened_response = await client.get(
+        f"/api/applications/{created['application_id']}", headers=headers
+    )
+    assert reopened_response.status_code == 200
+    assert reopened_response.json() == edited
+
+
+async def test_issue_nine_claim_snapshots_open_with_the_generated_claim_selected(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    legacy_snapshot = {
+        **created,
+        "competitive_claims": [
+            {
+                "id": "legacy-claim",
+                "source_snapshot_id": "legacy-source",
+                "experience_item_id": created["experience_entries"][0]["experience_items"][0]["id"],
+                "source_focus": "质量评测体系",
+                "opportunity_value": "体现质量评测方法设计能力。",
+                "supported_base_fact_ids": [],
+                "primary_role_signal_id": "legacy-signal",
+                "primary_role_signal": {
+                    "id": "legacy-signal",
+                    "signal": "质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计质量评测方案",
+                    "rationale": None,
+                },
+                "competitive_claim": "建立三类质量评测维度。",
+                "stretch_direction": {
+                    "expression_gap": "没有说明如何驱动决策。",
+                    "why_it_matters": "岗位重视迭代闭环。",
+                    "expansion_direction": "回想一次具体取舍。",
+                },
+            }
+        ],
+    }
+
+    reopened = ApplicationSnapshot.model_validate(legacy_snapshot)
+
+    assert reopened.competitive_claims[0].selected_resume_claim == "建立三类质量评测维度。"
+    assert reopened.competitive_claims[0].selected_resume_claim_is_edited is False
+    assert reopened.competitive_claims[0].selected_resume_claim_updated_at is None
+
+
+async def test_explicit_save_preserves_claim_provenance_and_emits_the_saved_claim_event(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        claim = generated["competitive_claims"][0]
+        edited_text = "从 120 条高频失败案例中定义三类评测维度，并据此推进两轮提示词迭代。"
+        edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": claim["id"],
+                "resume_claim": edited_text,
+            },
+        )
+        calls_before_save = model.calls
+
+        saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert edited_response.status_code == 200
+    assert saved_response.status_code == 200, saved_response.text
+    saved = saved_response.json()
+    resume_claims = saved["targeted_resume_version"]["resume_claims"]
+    assert len(resume_claims) == 1
+    saved_claim = resume_claims[0]
+    assert saved_claim["source_claim_id"] == claim["id"]
+    assert saved_claim["resume_claim"] == edited_text
+    assert saved_claim["experience_item_id"] == claim["experience_item_id"]
+    assert saved_claim["source_snapshot_id"] == claim["source_snapshot_id"]
+    assert saved_claim["primary_role_signal"] == claim["primary_role_signal"]
+    source = next(
+        source
+        for source in generated["source_snapshots"]
+        if source["id"] == claim["source_snapshot_id"]
+    )
+    assert saved_claim["prompt_run_id"] == source["prompt_run_id"]
+    assert saved_claim["selected_resume_claim_is_edited"] is True
+    assert "stretch_direction" not in saved_claim
+    assert saved["behavior_events"] == [
+        {
+            "id": saved["behavior_events"][0]["id"],
+            "event_type": "claim_saved",
+            "claim_ids": [claim["id"]],
+            "created_at": saved["behavior_events"][0]["created_at"],
+        }
+    ]
+    assert model.calls == calls_before_save
+
+
+async def test_targeted_resume_text_and_markdown_export_only_saved_claims_for_the_owner(
+    client: AsyncClient, auth_headers
+):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+    created = await _create_application(client, owner_headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=owner_headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        saved_text = "从 120 条失败案例中定义三类评测维度，并协同算法与运营推进两轮提示词迭代。"
+        unsaved_text = "独立设计面向具体 JD 的求职准备工作流。"
+        stretch_text = "回想评测结论改变提示词方案的具体取舍。"
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": saved_text,
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": stretch_text,
+                        },
+                    },
+                    {
+                        "experience_item_id": analyzed["standalone_experience_items"][0]["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "具体 JD 工作流",
+                        "opportunity_value": "体现岗位理解与工作流设计能力。",
+                        "supported_base_fact_ids": [
+                            analyzed["standalone_experience_items"][0]["base_facts"][0]["id"]
+                        ],
+                        "competitive_claim": unsaved_text,
+                        "stretch_direction": {
+                            "expression_gap": "没有说明工作流如何验证质量。",
+                            "why_it_matters": "岗位重视评测方法。",
+                            "expansion_direction": "梳理一次评测驱动工作流调整的实例。",
+                        },
+                    },
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=owner_headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        saved_claim_id = generated["competitive_claims"][0]["id"]
+        forbidden_save_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=other_headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [saved_claim_id],
+            },
+        )
+        saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=owner_headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [saved_claim_id],
+            },
+        )
+        calls_before_export = model.calls
+
+        text_response = await client.get(
+            f"/api/applications/{created['application_id']}/targeted-resume.txt",
+            headers=owner_headers,
+        )
+        markdown_response = await client.get(
+            f"/api/applications/{created['application_id']}/targeted-resume.md",
+            headers=owner_headers,
+        )
+        forbidden_response = await client.get(
+            f"/api/applications/{created['application_id']}/targeted-resume.md",
+            headers=other_headers,
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert forbidden_save_response.status_code == 404
+    assert saved_response.status_code == 200
+    assert text_response.status_code == 200, text_response.text
+    assert text_response.headers["content-type"].startswith("text/plain")
+    assert saved_text in text_response.text
+    assert unsaved_text not in text_response.text
+    assert stretch_text not in text_response.text
+
+    assert markdown_response.status_code == 200, markdown_response.text
+    assert markdown_response.headers["content-type"].startswith("text/markdown")
+    assert markdown_response.headers["content-disposition"].startswith("attachment;")
+    assert "# AI 产品经理 · 目标简历" in markdown_response.text
+    assert f"- {saved_text}" in markdown_response.text
+    assert unsaved_text not in markdown_response.text
+    assert stretch_text not in markdown_response.text
+    assert forbidden_response.status_code == 404
+    assert model.calls == calls_before_export

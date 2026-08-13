@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -53,6 +53,51 @@ async def get_application(
         return await ApplicationStudio(db).get_snapshot(application_id, user_id)
     except ApplicationNotFoundError as exc:
         raise _not_found() from exc
+
+
+async def _targeted_resume_response(
+    application_id: str,
+    export_format: str,
+    db: AsyncSession,
+    user_id: str,
+) -> Response:
+    try:
+        export = await ApplicationStudio(db).render_targeted_resume(
+            application_id,
+            user_id,
+            export_format=export_format,
+        )
+    except ApplicationNotFoundError as exc:
+        raise _not_found() from exc
+    except ApplicationCommandError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return Response(
+        content=export.content,
+        media_type=export.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{export.filename}"'
+        },
+    )
+
+
+@router.get("/{application_id}/targeted-resume.txt")
+async def export_targeted_resume_text(
+    application_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    return await _targeted_resume_response(application_id, "text", db, user_id)
+
+
+@router.get("/{application_id}/targeted-resume.md")
+async def export_targeted_resume_markdown(
+    application_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    return await _targeted_resume_response(
+        application_id, "markdown", db, user_id
+    )
 
 
 @router.post("/{application_id}/commands", response_model=ApplicationSnapshot)

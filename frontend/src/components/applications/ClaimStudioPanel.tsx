@@ -1,12 +1,25 @@
 "use client";
 
-import { AlertTriangle, ArrowUpRight, FileCheck2, Lightbulb, Link2, Loader2, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  CheckCircle2,
+  FileCheck2,
+  Lightbulb,
+  Link2,
+  Loader2,
+  PencilLine,
+  Save,
+  Sparkles,
+} from "lucide-react";
 
 import type {
   ClaimSourceSnapshot,
   ClaimStudioSnapshot,
   CompetitiveClaimSnapshot,
   SourceChangeNoticeSnapshot,
+  TargetedResumeClaimSnapshot,
 } from "@/lib/api";
 
 
@@ -15,9 +28,13 @@ interface ClaimStudioPanelProps {
   claims: CompetitiveClaimSnapshot[];
   sources: ClaimSourceSnapshot[];
   sourceChangeNotices: SourceChangeNoticeSnapshot[];
+  savedClaims: TargetedResumeClaimSnapshot[];
   canGenerate: boolean;
   busy: boolean;
+  pendingClaimId: string | null;
   onGenerate: () => void;
+  onEditClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
+  onSaveClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
 }
 
 
@@ -36,17 +53,144 @@ function SourceLabel({ source }: { source?: ClaimSourceSnapshot }) {
 }
 
 
+function ClaimCard({
+  claim,
+  index,
+  source,
+  sourceChangeNotice,
+  savedClaim,
+  busy,
+  onEditClaim,
+  onSaveClaim,
+}: {
+  claim: CompetitiveClaimSnapshot;
+  index: number;
+  source?: ClaimSourceSnapshot;
+  sourceChangeNotice?: SourceChangeNoticeSnapshot;
+  savedClaim?: TargetedResumeClaimSnapshot;
+  busy: boolean;
+  onEditClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
+  onSaveClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
+}) {
+  const persistedText = claim.selected_resume_claim || claim.competitive_claim;
+  const [draft, setDraft] = useState(persistedText);
+
+  useEffect(() => {
+    setDraft(persistedText);
+  }, [claim.id, persistedText]);
+
+  const normalizedDraft = draft.trim();
+  const hasUnsavedEdit = normalizedDraft !== persistedText;
+  const savedIsCurrent = savedClaim?.resume_claim === normalizedDraft;
+
+  async function persistDraft() {
+    if (!normalizedDraft || !hasUnsavedEdit || busy) return;
+    await onEditClaim(claim.id, normalizedDraft);
+  }
+
+  return (
+    <article className="overflow-hidden bg-[#f8f4eb] text-studio-ink">
+      {sourceChangeNotice && (
+        <div className="flex items-start gap-2 border-b border-[#c5792d]/25 bg-[#fff0cf] px-5 py-3 text-xs leading-5 text-[#764818] sm:px-6">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{sourceChangeNotice.message}</span>
+        </div>
+      )}
+      <header className="flex flex-col gap-3 border-b border-studio-ink/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="font-serif text-3xl leading-none text-[#ba4d35]">{String(index + 1).padStart(2, "0")}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-studio-muted"><Link2 className="h-3 w-3" /> 来源 Experience Item</div>
+            <div className="mt-1 truncate text-sm font-semibold"><SourceLabel source={source} /></div>
+          </div>
+        </div>
+        <div className="max-w-md border-l-2 border-[#8eb068] pl-3 text-xs leading-5 text-[#425047]">
+          <span className="font-semibold text-[#2d3d31]">主 Role Signal</span>
+          <span className="ml-2">{claim.primary_role_signal.signal}</span>
+        </div>
+      </header>
+
+      <div className="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
+        <div className="px-5 py-6 sm:px-6 sm:py-7">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3f7041]">
+              <PencilLine className="h-4 w-4" /> Resume claim · 你的当前版本
+            </div>
+            <span className={`text-[11px] font-semibold ${hasUnsavedEdit ? "text-[#a64831]" : "text-[#647168]"}`}>
+              {hasUnsavedEdit ? "修改尚未同步" : claim.selected_resume_claim_is_edited ? "你的改写已同步" : "AI 初稿，可直接改写"}
+            </span>
+          </div>
+          <textarea
+            aria-label={`竞争主张 ${index + 1}`}
+            value={draft}
+            disabled={busy}
+            rows={4}
+            maxLength={1200}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={persistDraft}
+            className="mt-4 w-full resize-y border-0 border-l-4 border-[#8eb068] bg-white/70 px-4 py-3 text-lg font-semibold leading-8 tracking-[-0.014em] text-[#17231b] outline-none transition focus:border-[#ba4d35] focus:bg-white sm:text-xl"
+          />
+          <div className="mt-4 flex flex-col gap-3 border-t border-studio-ink/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs leading-5 text-[#647168]">
+              <span className="font-semibold text-[#3e4c42]">切入重点</span>
+              <span className="ml-2">{claim.source_focus}</span>
+              {source && <span className="ml-2">· 引用 {claim.supported_base_fact_ids.length}/{source.base_facts.length} 条 Base Fact</span>}
+            </div>
+            <button
+              type="button"
+              disabled={busy || !normalizedDraft || Boolean(savedIsCurrent && !hasUnsavedEdit)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => onSaveClaim(claim.id, normalizedDraft)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#17231b] px-4 py-2.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#2d4534] disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-[#d8d9d3] disabled:text-[#6d746f]"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : savedIsCurrent && !hasUnsavedEdit ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+              {busy ? "正在保存" : savedIsCurrent && !hasUnsavedEdit ? "已保存到目标简历" : savedClaim ? "更新目标简历" : "保存到目标简历"}
+            </button>
+          </div>
+
+          {claim.selected_resume_claim_is_edited && (
+            <details className="mt-4 border-t border-dashed border-studio-ink/15 pt-3 text-xs text-[#667269]">
+              <summary className="cursor-pointer font-semibold">查看 AI 初稿</summary>
+              <p className="mt-2 leading-5">{claim.competitive_claim}</p>
+            </details>
+          )}
+        </div>
+
+        <aside className="relative border-t border-[#c75d42]/25 bg-[#f3d8ca] px-5 py-6 lg:border-l lg:border-t-0 sm:px-6 sm:py-7">
+          <div className="absolute right-0 top-0 border-l-[34px] border-t-[34px] border-l-transparent border-t-[#c95d42]" />
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9c3825]">
+            <Lightbulb className="h-4 w-4" /> Stretch direction · 不属于履历事实
+          </div>
+          <p className="mt-4 text-base font-semibold leading-7 text-[#4a251d]">{claim.stretch_direction.expression_gap}</p>
+          <p className="mt-3 text-sm leading-6 text-[#674138]">{claim.stretch_direction.why_it_matters}</p>
+          <div className="mt-5 border-t border-[#9c3825]/20 pt-4">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#85321f]"><ArrowUpRight className="h-3.5 w-3.5" /> 可以往这里想</div>
+            <p className="mt-2 text-sm leading-6 text-[#57342c]">{claim.stretch_direction.expansion_direction}</p>
+          </div>
+          <p className="mt-5 text-[11px] leading-5 text-[#81584e]">这是供你自行拓展的方向，不会作为候选人历史进入目标简历。</p>
+        </aside>
+      </div>
+    </article>
+  );
+}
+
+
 export default function ClaimStudioPanel({
   studio,
   claims,
   sources,
   sourceChangeNotices,
+  savedClaims,
   canGenerate,
   busy,
+  pendingClaimId,
   onGenerate,
+  onEditClaim,
+  onSaveClaim,
 }: ClaimStudioPanelProps) {
   const sourcesById = new Map(sources.map((source) => [source.id, source]));
   const noticesByClaimId = new Map(sourceChangeNotices.map((notice) => [notice.claim_id, notice]));
+  const savedByClaimId = new Map(savedClaims.map((claim) => [claim.source_claim_id, claim]));
 
   return (
     <section className="mb-10 overflow-hidden border border-studio-ink/15 bg-[#151d18] text-white shadow-[6px_6px_0_#cfc7b8]">
@@ -59,12 +203,12 @@ export default function ClaimStudioPanel({
             </div>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em]">把可用经历，压成值得被看见的主张</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[#bec8c1]">
-              AI 会优先挑选不超过三段高价值材料。主张只使用当前事实；缺少的高价值信息会留在冲刺方向里，不会被偷偷写进履历。
+              AI 会优先挑选不超过三段高价值材料。你可以直接改写主张；只有点击保存，当前版本才会进入目标简历。
             </p>
           </div>
           <button
             type="button"
-            disabled={busy || !canGenerate}
+            disabled={busy || Boolean(pendingClaimId) || !canGenerate}
             onClick={onGenerate}
             className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#dcefaa] px-5 py-3 text-sm font-semibold text-[#182019] transition-all hover:-translate-y-0.5 hover:bg-[#e7f7bf] disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-white/10 disabled:text-white/40"
           >
@@ -79,7 +223,7 @@ export default function ClaimStudioPanel({
           </button>
         </div>
         <p className="relative mt-4 text-xs leading-5 text-[#9eaaa2]">
-          点击后，当前 JD、Role Signals、Experience Items 和 Base Facts 会发送给你配置的模型服务商，并经过独立的事实边界与重复性审查。
+          点击生成后，当前 JD、Role Signals、Experience Items 和 Base Facts 会发送给你配置的模型服务商。编辑与保存均为本地确定性操作，不会再次调用模型。
         </p>
         {!canGenerate && (
           <p className="relative mt-5 border-l-2 border-[#d97757] pl-3 text-xs leading-5 text-[#e3c9c0]">
@@ -106,63 +250,19 @@ export default function ClaimStudioPanel({
           </div>
 
           <div className="space-y-5">
-            {claims.map((claim, index) => {
-              const source = sourcesById.get(claim.source_snapshot_id);
-              const sourceChangeNotice = noticesByClaimId.get(claim.id);
-              return (
-                <article key={claim.id} className="overflow-hidden bg-[#f8f4eb] text-studio-ink">
-                  {sourceChangeNotice && (
-                    <div className="flex items-start gap-2 border-b border-[#c5792d]/25 bg-[#fff0cf] px-5 py-3 text-xs leading-5 text-[#764818] sm:px-6">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>{sourceChangeNotice.message}</span>
-                    </div>
-                  )}
-                  <header className="flex flex-col gap-3 border-b border-studio-ink/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="font-serif text-3xl leading-none text-[#ba4d35]">{String(index + 1).padStart(2, "0")}</span>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-studio-muted"><Link2 className="h-3 w-3" /> 来源 Experience Item</div>
-                        <div className="mt-1 truncate text-sm font-semibold"><SourceLabel source={source} /></div>
-                      </div>
-                    </div>
-                    <div className="max-w-md border-l-2 border-[#8eb068] pl-3 text-xs leading-5 text-[#425047]">
-                      <span className="font-semibold text-[#2d3d31]">主 Role Signal</span>
-                      <span className="ml-2">{claim.primary_role_signal.signal}</span>
-                    </div>
-                  </header>
-
-                  <div className="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.75fr)]">
-                    <div className="px-5 py-6 sm:px-6 sm:py-7">
-                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3f7041]">
-                        <FileCheck2 className="h-4 w-4" /> Competitive claim · 当前可用
-                      </div>
-                      <p className="mt-4 text-xl font-semibold leading-9 tracking-[-0.018em] text-[#17231b] sm:text-[22px]">
-                        {claim.competitive_claim}
-                      </p>
-                      <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-studio-ink/10 pt-4 text-xs text-[#647168]">
-                        <span className="font-semibold text-[#3e4c42]">切入重点</span>
-                        <span>{claim.source_focus}</span>
-                        {source && <span className="ml-auto">引用 {claim.supported_base_fact_ids.length}/{source.base_facts.length} 条 Base Fact</span>}
-                      </div>
-                    </div>
-
-                    <aside className="relative border-t border-[#c75d42]/25 bg-[#f3d8ca] px-5 py-6 lg:border-l lg:border-t-0 sm:px-6 sm:py-7">
-                      <div className="absolute right-0 top-0 border-l-[34px] border-t-[34px] border-l-transparent border-t-[#c95d42]" />
-                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9c3825]">
-                        <Lightbulb className="h-4 w-4" /> Stretch direction · 不属于履历事实
-                      </div>
-                      <p className="mt-4 text-base font-semibold leading-7 text-[#4a251d]">{claim.stretch_direction.expression_gap}</p>
-                      <p className="mt-3 text-sm leading-6 text-[#674138]">{claim.stretch_direction.why_it_matters}</p>
-                      <div className="mt-5 border-t border-[#9c3825]/20 pt-4">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#85321f]"><ArrowUpRight className="h-3.5 w-3.5" /> 可以往这里想</div>
-                        <p className="mt-2 text-sm leading-6 text-[#57342c]">{claim.stretch_direction.expansion_direction}</p>
-                      </div>
-                      <p className="mt-5 text-[11px] leading-5 text-[#81584e]">这是供你自行拓展的方向，不会作为候选人历史进入目标简历。</p>
-                    </aside>
-                  </div>
-                </article>
-              );
-            })}
+            {claims.map((claim, index) => (
+              <ClaimCard
+                key={claim.id}
+                claim={claim}
+                index={index}
+                source={sourcesById.get(claim.source_snapshot_id)}
+                sourceChangeNotice={noticesByClaimId.get(claim.id)}
+                savedClaim={savedByClaimId.get(claim.id)}
+                busy={pendingClaimId === claim.id}
+                onEditClaim={onEditClaim}
+                onSaveClaim={onSaveClaim}
+              />
+            ))}
           </div>
         </div>
       ) : studio.status === "completed" ? (
