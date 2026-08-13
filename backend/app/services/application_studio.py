@@ -24,6 +24,7 @@ from ..prompts.target_analysis import (
 )
 from ..schemas.application import (
     AnalyzeTargetCommand,
+    ApplicationBehaviorEventSnapshot,
     ApplicationListItem,
     ApplicationSnapshot,
     BaseFactSnapshot,
@@ -32,6 +33,7 @@ from ..schemas.application import (
     ClaimStudioReviewModelOutput,
     ClaimStudioSnapshot,
     CompetitiveClaimSnapshot,
+    EditResumeClaimCommand,
     ExperienceEntryContextSnapshot,
     ExperienceEntrySnapshot,
     ExperienceItemSnapshot,
@@ -42,12 +44,15 @@ from ..schemas.application import (
     RecoverableAnalysisErrorSnapshot,
     ResumeSourceSnapshot,
     RoleSignalSnapshot,
+    SaveTargetedResumeClaimsCommand,
     SourceChangeNoticeSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
     TargetAnalysisModelOutput,
     TargetAnalysisSnapshot,
     TargetApplicationInputSnapshot,
+    TargetedResumeExport,
+    TargetedResumeClaimSnapshot,
 )
 from .application_model import (
     ApplicationModelError,
@@ -292,6 +297,8 @@ class ApplicationStudio:
             | MergeExperienceItemsCommand
             | AnalyzeTargetCommand
             | GenerateClaimsCommand
+            | EditResumeClaimCommand
+            | SaveTargetedResumeClaimsCommand
         ),
         *,
         owner_id: str,
@@ -321,6 +328,16 @@ class ApplicationStudio:
             if application_id is None:
                 raise ApplicationCommandError("Claim Studio 需要目标投递")
             return await self._generate_claims(owner_id, application_id)
+        if isinstance(command, EditResumeClaimCommand):
+            if application_id is None:
+                raise ApplicationCommandError("编辑 Resume Claim 需要目标投递")
+            return await self._edit_resume_claim(command, owner_id, application_id)
+        if isinstance(command, SaveTargetedResumeClaimsCommand):
+            if application_id is None:
+                raise ApplicationCommandError("保存 Targeted Resume Version 需要目标投递")
+            return await self._save_targeted_resume_claims(
+                command, owner_id, application_id
+            )
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -349,6 +366,48 @@ class ApplicationStudio:
                 )
             )
         return items
+
+    async def render_targeted_resume(
+        self,
+        application_id: str,
+        owner_id: str,
+        *,
+        export_format: str,
+    ) -> TargetedResumeExport:
+        snapshot = await self.get_snapshot(application_id, owner_id)
+        resume_claims = snapshot.targeted_resume_version.resume_claims
+        if not resume_claims:
+            raise ApplicationCommandError("请先显式保存至少一条 Resume Claim")
+
+        if export_format == "text":
+            content = "\n".join(
+                [
+                    f"{snapshot.target_application.target_role} · 目标简历",
+                    "",
+                    *(f"• {claim.resume_claim}" for claim in resume_claims),
+                    "",
+                ]
+            )
+            return TargetedResumeExport(
+                content=content,
+                media_type="text/plain",
+                filename=f"targeted-resume-{application_id}.txt",
+            )
+        if export_format == "markdown":
+            content = "\n".join(
+                [
+                    f"# {snapshot.target_application.target_role} · 目标简历",
+                    "",
+                    *(f"- {claim.resume_claim}" for claim in resume_claims),
+                    "",
+                ]
+            )
+            return TargetedResumeExport(
+                content=content,
+                media_type="text/markdown",
+                filename=f"targeted-resume-{application_id}.md",
+            )
+        raise ApplicationCommandError("不支持的目标简历导出格式")
 
     async def _start(
         self, command: StartApplicationCommand, owner_id: str
@@ -785,6 +844,9 @@ class ApplicationStudio:
                     primary_role_signal_id=signal.id,
                     primary_role_signal=signal.model_copy(deep=True),
                     competitive_claim=claim.competitive_claim,
+                    selected_resume_claim=claim.competitive_claim,
+                    selected_resume_claim_is_edited=False,
+                    selected_resume_claim_updated_at=None,
                     stretch_direction=claim.stretch_direction,
                 )
             )
@@ -857,6 +919,95 @@ class ApplicationStudio:
                     raise
 
         raise ApplicationConflictError("投递内容刚刚发生变化，请重试")
+
+    async def _edit_resume_claim(
+        self,
+        command: EditResumeClaimCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        claim = next(
+            (
+                candidate
+                for candidate in snapshot.competitive_claims
+                if candidate.id == command.claim_id
+            ),
+            None,
+        )
+        if claim is None:
+            raise ApplicationCommandError("Competitive Claim 不存在")
+
+        claim.selected_resume_claim = command.resume_claim
+        claim.selected_resume_claim_is_edited = (
+            command.resume_claim != claim.competitive_claim
+        )
+        claim.selected_resume_claim_updated_at = _now_iso()
+        return await self._save_snapshot(record, snapshot)
+
+    async def _save_targeted_resume_claims(
+        self,
+        command: SaveTargetedResumeClaimsCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        claims_by_id = {claim.id: claim for claim in snapshot.competitive_claims}
+        missing_claim_ids = [
+            claim_id for claim_id in command.claim_ids if claim_id not in claims_by_id
+        ]
+        if missing_claim_ids:
+            raise ApplicationCommandError("待保存的 Competitive Claim 不存在")
+
+        sources_by_id = {source.id: source for source in snapshot.source_snapshots}
+        existing_by_source_claim_id = {
+            claim.source_claim_id: claim
+            for claim in snapshot.targeted_resume_version.resume_claims
+        }
+        saved_at = _now_iso()
+        for claim_id in command.claim_ids:
+            claim = claims_by_id[claim_id]
+            source = sources_by_id.get(claim.source_snapshot_id)
+            if source is None:
+                raise ApplicationCommandError("Competitive Claim 的 Source Snapshot 不存在")
+            saved_claim = TargetedResumeClaimSnapshot(
+                id=(
+                    existing_by_source_claim_id[claim_id].id
+                    if claim_id in existing_by_source_claim_id
+                    else _new_id()
+                ),
+                source_claim_id=claim.id,
+                resume_claim=claim.selected_resume_claim,
+                experience_item_id=claim.experience_item_id,
+                source_snapshot_id=claim.source_snapshot_id,
+                primary_role_signal=claim.primary_role_signal.model_copy(deep=True),
+                prompt_run_id=source.prompt_run_id,
+                selected_resume_claim_is_edited=(
+                    claim.selected_resume_claim_is_edited
+                ),
+                saved_at=saved_at,
+            )
+            if claim_id in existing_by_source_claim_id:
+                index = snapshot.targeted_resume_version.resume_claims.index(
+                    existing_by_source_claim_id[claim_id]
+                )
+                snapshot.targeted_resume_version.resume_claims[index] = saved_claim
+            else:
+                snapshot.targeted_resume_version.resume_claims.append(saved_claim)
+            existing_by_source_claim_id[claim_id] = saved_claim
+
+        snapshot.targeted_resume_version.updated_at = saved_at
+        snapshot.behavior_events.append(
+            ApplicationBehaviorEventSnapshot(
+                id=_new_id(),
+                event_type="claim_saved",
+                claim_ids=command.claim_ids,
+                created_at=saved_at,
+            )
+        )
+        return await self._save_snapshot(record, snapshot)
 
     @staticmethod
     def _analysis_error_message(code: str) -> str:

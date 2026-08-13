@@ -117,12 +117,44 @@ class GenerateClaimsCommand(BaseModel):
     type: Literal["generate_claims"]
 
 
+class EditResumeClaimCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["edit_resume_claim"]
+    claim_id: str
+    resume_claim: str = Field(min_length=1, max_length=1200)
+
+    @field_validator("resume_claim")
+    @classmethod
+    def validate_resume_claim(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Resume Claim 不能为空")
+        return normalized
+
+
+class SaveTargetedResumeClaimsCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["save_targeted_resume_claims"]
+    claim_ids: list[str] = Field(min_length=1)
+
+    @field_validator("claim_ids")
+    @classmethod
+    def require_unique_claim_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("保存目标简历不能包含重复主张")
+        return value
+
+
 ApplicationMutationCommand = Annotated[
     MoveExperienceItemCommand
     | SplitExperienceItemCommand
     | MergeExperienceItemsCommand
     | AnalyzeTargetCommand
-    | GenerateClaimsCommand,
+    | GenerateClaimsCommand
+    | EditResumeClaimCommand
+    | SaveTargetedResumeClaimsCommand,
     Field(discriminator="type"),
 ]
 
@@ -157,10 +189,6 @@ class TargetApplicationInputSnapshot(BaseModel):
 class ResumeSourceSnapshot(BaseModel):
     text: str
     scope: Literal["application_local"] = "application_local"
-
-
-class TargetedResumeVersionSnapshot(BaseModel):
-    resume_claims: list[dict] = Field(default_factory=list)
 
 
 class RoleSignalModelOutput(BaseModel):
@@ -201,6 +229,23 @@ class TargetAnalysisModelOutput(BaseModel):
 
 class RoleSignalSnapshot(RoleSignalModelOutput):
     id: str
+
+
+class TargetedResumeClaimSnapshot(BaseModel):
+    id: str
+    source_claim_id: str
+    resume_claim: str
+    experience_item_id: str
+    source_snapshot_id: str
+    primary_role_signal: RoleSignalSnapshot
+    prompt_run_id: str
+    selected_resume_claim_is_edited: bool
+    saved_at: str
+
+
+class TargetedResumeVersionSnapshot(BaseModel):
+    resume_claims: list[TargetedResumeClaimSnapshot] = Field(default_factory=list)
+    updated_at: str | None = None
 
 
 class StretchDirectionModelOutput(BaseModel):
@@ -316,7 +361,17 @@ class CompetitiveClaimSnapshot(BaseModel):
     primary_role_signal_id: str
     primary_role_signal: RoleSignalSnapshot
     competitive_claim: str
+    selected_resume_claim: str
+    selected_resume_claim_is_edited: bool = False
+    selected_resume_claim_updated_at: str | None = None
     stretch_direction: StretchDirectionModelOutput
+
+    @model_validator(mode="before")
+    @classmethod
+    def select_generated_claim_for_legacy_snapshots(cls, data: object) -> object:
+        if not isinstance(data, dict) or "selected_resume_claim" in data:
+            return data
+        return {**data, "selected_resume_claim": data.get("competitive_claim")}
 
 
 class SourceChangeNoticeSnapshot(BaseModel):
@@ -356,6 +411,13 @@ class PromptRunSnapshot(BaseModel):
     created_at: str
 
 
+class ApplicationBehaviorEventSnapshot(BaseModel):
+    id: str
+    event_type: Literal["claim_saved"]
+    claim_ids: list[str] = Field(min_length=1)
+    created_at: str
+
+
 class ApplicationSnapshot(BaseModel):
     snapshot_version: Literal[1] = 1
     application_id: str
@@ -375,6 +437,7 @@ class ApplicationSnapshot(BaseModel):
     targeted_resume_version: TargetedResumeVersionSnapshot = Field(
         default_factory=TargetedResumeVersionSnapshot
     )
+    behavior_events: list[ApplicationBehaviorEventSnapshot] = Field(default_factory=list)
     interview_rehearsal: dict | None = None
     created_at: str
     updated_at: str
@@ -390,3 +453,9 @@ class ApplicationListItem(BaseModel):
 
 class ApplicationListResponse(BaseModel):
     items: list[ApplicationListItem]
+
+
+class TargetedResumeExport(BaseModel):
+    content: str
+    media_type: Literal["text/plain", "text/markdown"]
+    filename: str
