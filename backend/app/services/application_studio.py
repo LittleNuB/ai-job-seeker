@@ -10,6 +10,11 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
+from ..models.experience_library import (
+    ExperienceLibraryBaseFact,
+    ExperienceLibraryEntry,
+    ExperienceLibraryItem,
+)
 from ..prompts.claim_studio import (
     CLAIM_STUDIO_PROMPT_VERSION,
     build_claim_studio_prompts,
@@ -34,6 +39,10 @@ from ..schemas.application import (
     ClaimStudioSnapshot,
     CompetitiveClaimSnapshot,
     EditResumeClaimCommand,
+    ExperienceLibraryEntrySnapshot,
+    ExperienceLibraryItemSnapshot,
+    ExperienceLibraryLinkSnapshot,
+    ExperienceLibrarySnapshot,
     ExperienceEntryContextSnapshot,
     ExperienceEntrySnapshot,
     ExperienceItemSnapshot,
@@ -45,6 +54,7 @@ from ..schemas.application import (
     ResumeSourceSnapshot,
     RoleSignalSnapshot,
     SaveTargetedResumeClaimsCommand,
+    SaveExperienceToLibraryCommand,
     SourceChangeNoticeSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
@@ -53,6 +63,7 @@ from ..schemas.application import (
     TargetApplicationInputSnapshot,
     TargetedResumeExport,
     TargetedResumeClaimSnapshot,
+    UpdateExperienceLibraryItemCommand,
 )
 from .application_model import (
     ApplicationModelError,
@@ -71,6 +82,10 @@ class ApplicationCommandError(Exception):
 
 
 class ApplicationConflictError(Exception):
+    pass
+
+
+class ExperienceLibraryNotFoundError(Exception):
     pass
 
 
@@ -299,6 +314,7 @@ class ApplicationStudio:
             | GenerateClaimsCommand
             | EditResumeClaimCommand
             | SaveTargetedResumeClaimsCommand
+            | SaveExperienceToLibraryCommand
         ),
         *,
         owner_id: str,
@@ -338,6 +354,12 @@ class ApplicationStudio:
             return await self._save_targeted_resume_claims(
                 command, owner_id, application_id
             )
+        if isinstance(command, SaveExperienceToLibraryCommand):
+            if application_id is None:
+                raise ApplicationCommandError("保存到 Experience Library 需要目标投递")
+            return await self._save_experience_to_library(
+                command, owner_id, application_id
+            )
         raise ApplicationCommandError("不支持的工作台命令")
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
@@ -366,6 +388,167 @@ class ApplicationStudio:
                 )
             )
         return items
+
+    async def get_experience_library(
+        self, owner_id: str
+    ) -> ExperienceLibrarySnapshot:
+        entries = list(
+            (
+                await self.db.execute(
+                    select(ExperienceLibraryEntry)
+                    .where(ExperienceLibraryEntry.user_id == owner_id)
+                    .order_by(
+                        ExperienceLibraryEntry.updated_at.desc(),
+                        ExperienceLibraryEntry.created_at.asc(),
+                    )
+                    .execution_options(populate_existing=True)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        items = list(
+            (
+                await self.db.execute(
+                    select(ExperienceLibraryItem)
+                    .where(ExperienceLibraryItem.user_id == owner_id)
+                    .order_by(
+                        ExperienceLibraryItem.updated_at.desc(),
+                        ExperienceLibraryItem.created_at.asc(),
+                    )
+                    .execution_options(populate_existing=True)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        item_ids = [item.id for item in items]
+        facts = (
+            list(
+                (
+                    await self.db.execute(
+                        select(ExperienceLibraryBaseFact)
+                        .where(ExperienceLibraryBaseFact.item_id.in_(item_ids))
+                        .order_by(ExperienceLibraryBaseFact.created_at.asc())
+                        .execution_options(populate_existing=True)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            if item_ids
+            else []
+        )
+        facts_by_item: dict[str, list[BaseFactSnapshot]] = {}
+        for fact in facts:
+            facts_by_item.setdefault(fact.item_id, []).append(
+                BaseFactSnapshot(
+                    id=fact.id,
+                    text=fact.text,
+                    source_location=fact.source_location,
+                    library_base_fact_id=fact.id,
+                )
+            )
+
+        item_snapshots = {
+            item.id: ExperienceLibraryItemSnapshot(
+                id=item.id,
+                title=item.title,
+                entry_id=item.entry_id,
+                base_facts=facts_by_item.get(item.id, []),
+                updated_at=item.updated_at.isoformat(),
+            )
+            for item in items
+        }
+        entry_snapshots = [
+            ExperienceLibraryEntrySnapshot(
+                id=entry.id,
+                organization=entry.organization,
+                role=entry.role,
+                date_range=entry.date_range,
+                experience_items=[
+                    item_snapshots[item.id]
+                    for item in items
+                    if item.entry_id == entry.id
+                ],
+                updated_at=entry.updated_at.isoformat(),
+            )
+            for entry in entries
+        ]
+        standalone = [
+            item_snapshots[item.id] for item in items if item.entry_id is None
+        ]
+        return ExperienceLibrarySnapshot(
+            experience_entries=entry_snapshots,
+            standalone_experience_items=standalone,
+        )
+
+    async def update_experience_library_item(
+        self,
+        command: UpdateExperienceLibraryItemCommand,
+        owner_id: str,
+    ) -> ExperienceLibrarySnapshot:
+        item = (
+            (
+                await self.db.execute(
+                    select(ExperienceLibraryItem).where(
+                        ExperienceLibraryItem.id == command.experience_item_id,
+                        ExperienceLibraryItem.user_id == owner_id,
+                    )
+                )
+            )
+            .scalars()
+            .one_or_none()
+        )
+        if item is None:
+            raise ExperienceLibraryNotFoundError
+
+        facts = list(
+            (
+                await self.db.execute(
+                    select(ExperienceLibraryBaseFact).where(
+                        ExperienceLibraryBaseFact.item_id == item.id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        facts_by_id = {fact.id: fact for fact in facts}
+        if set(facts_by_id) != {fact.id for fact in command.base_facts}:
+            raise ApplicationCommandError(
+                "Experience Library 更新必须保留当前 Base Fact 集合"
+            )
+
+        if item.entry_id is None:
+            if command.entry_context is not None:
+                raise ApplicationCommandError("独立项目不能填写工作经历上下文")
+        else:
+            if command.entry_context is None:
+                raise ApplicationCommandError("工作经历项目必须保留 Experience Entry 上下文")
+            entry = (
+                (
+                    await self.db.execute(
+                        select(ExperienceLibraryEntry).where(
+                            ExperienceLibraryEntry.id == item.entry_id,
+                            ExperienceLibraryEntry.user_id == owner_id,
+                        )
+                    )
+                )
+                .scalars()
+                .one_or_none()
+            )
+            if entry is None:
+                raise ExperienceLibraryNotFoundError
+            entry.organization = command.entry_context.organization
+            entry.role = command.entry_context.role
+            entry.date_range = command.entry_context.date_range
+
+        item.title = command.title
+        for fact_input in command.base_facts:
+            facts_by_id[fact_input.id].text = fact_input.text
+        await self.db.commit()
+        return await self.get_experience_library(owner_id)
 
     async def render_targeted_resume(
         self,
@@ -412,7 +595,125 @@ class ApplicationStudio:
     async def _start(
         self, command: StartApplicationCommand, owner_id: str
     ) -> ApplicationSnapshot:
-        entries, standalone_items = _ResumeStructureBuilder().parse(command.resume_text)
+        entries, standalone_items = (
+            _ResumeStructureBuilder().parse(command.resume_text)
+            if command.resume_text
+            else ([], [])
+        )
+        selected_links: list[ExperienceLibraryLinkSnapshot] = []
+        selected_sources: list[ClaimSourceSnapshot] = []
+        if command.library_experience_item_ids:
+            library = await self.get_experience_library(owner_id)
+            library_items = {
+                item.id: item
+                for entry in library.experience_entries
+                for item in entry.experience_items
+            }
+            library_items.update(
+                {item.id: item for item in library.standalone_experience_items}
+            )
+            missing_ids = [
+                item_id
+                for item_id in command.library_experience_item_ids
+                if item_id not in library_items
+            ]
+            if missing_ids:
+                raise ApplicationCommandError(
+                    "选择的 Experience Library 项目不存在或不属于当前用户"
+                )
+
+            selected_ids = set(command.library_experience_item_ids)
+            captured_at = _now_iso()
+
+            def copy_library_item(
+                item: ExperienceLibraryItemSnapshot,
+                application_entry_id: str | None,
+                library_entry_id: str | None,
+                entry_context: ExperienceEntryContextSnapshot | None,
+            ) -> ExperienceItemSnapshot:
+                application_item_id = _new_id()
+                copied_facts = [
+                    BaseFactSnapshot(
+                        id=_new_id(),
+                        text=fact.text,
+                        source_location=f"experience-library:base-fact:{fact.id}",
+                        library_base_fact_id=fact.id,
+                    )
+                    for fact in item.base_facts
+                ]
+                copied_item = ExperienceItemSnapshot(
+                    id=application_item_id,
+                    title=item.title,
+                    entry_id=application_entry_id,
+                    source_scope="experience_library",
+                    library_experience_item_id=item.id,
+                    base_facts=copied_facts,
+                )
+                source_snapshot_id = _new_id()
+                selected_sources.append(
+                    ClaimSourceSnapshot(
+                        id=source_snapshot_id,
+                        prompt_run_id=None,
+                        experience_item_id=application_item_id,
+                        source_scope="experience_library",
+                        library_experience_item_id=item.id,
+                        item_title=item.title,
+                        entry_context=entry_context,
+                        base_facts=[
+                            fact.model_copy(deep=True) for fact in copied_facts
+                        ],
+                        captured_at=captured_at,
+                    )
+                )
+                selected_links.append(
+                    ExperienceLibraryLinkSnapshot(
+                        application_experience_item_id=application_item_id,
+                        library_experience_item_id=item.id,
+                        library_experience_entry_id=library_entry_id,
+                        source_snapshot_id=source_snapshot_id,
+                        relationship="selected_for_application",
+                    )
+                )
+                return copied_item
+
+            for library_entry in library.experience_entries:
+                selected_items = [
+                    item
+                    for item in library_entry.experience_items
+                    if item.id in selected_ids
+                ]
+                if not selected_items:
+                    continue
+                application_entry_id = _new_id()
+                entry_context = ExperienceEntryContextSnapshot(
+                    organization=library_entry.organization,
+                    role=library_entry.role,
+                    date_range=library_entry.date_range,
+                )
+                entries.append(
+                    ExperienceEntrySnapshot(
+                        id=application_entry_id,
+                        organization=library_entry.organization,
+                        role=library_entry.role,
+                        date_range=library_entry.date_range,
+                        experience_items=[
+                            copy_library_item(
+                                item,
+                                application_entry_id,
+                                library_entry.id,
+                                entry_context,
+                            )
+                            for item in selected_items
+                        ],
+                    )
+                )
+
+            standalone_items.extend(
+                copy_library_item(item, None, None, None)
+                for item in library.standalone_experience_items
+                if item.id in selected_ids
+            )
+
         application_id = _new_id()
         created_at = _now_iso()
         snapshot = ApplicationSnapshot(
@@ -423,6 +724,8 @@ class ApplicationStudio:
             resume_source=ResumeSourceSnapshot(text=command.resume_text),
             experience_entries=entries,
             standalone_experience_items=standalone_items,
+            experience_library_links=selected_links,
+            source_snapshots=selected_sources,
             created_at=created_at,
             updated_at=created_at,
         )
@@ -784,6 +1087,8 @@ class ApplicationStudio:
                     id=_new_id(),
                     prompt_run_id=run_id,
                     experience_item_id=item.id,
+                    source_scope=item.source_scope,
+                    library_experience_item_id=item.library_experience_item_id,
                     item_title=item.title,
                     entry_context=entry_context,
                     base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
@@ -796,6 +1101,8 @@ class ApplicationStudio:
                 id=_new_id(),
                 prompt_run_id=run_id,
                 experience_item_id=item.id,
+                source_scope=item.source_scope,
+                library_experience_item_id=item.library_experience_item_id,
                 item_title=item.title,
                 entry_context=None,
                 base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
@@ -972,6 +1279,10 @@ class ApplicationStudio:
             source = sources_by_id.get(claim.source_snapshot_id)
             if source is None:
                 raise ApplicationCommandError("Competitive Claim 的 Source Snapshot 不存在")
+            if source.prompt_run_id is None:
+                raise ApplicationCommandError(
+                    "Competitive Claim 的 Source Snapshot 缺少 prompt-run 来源"
+                )
             saved_claim = TargetedResumeClaimSnapshot(
                 id=(
                     existing_by_source_claim_id[claim_id].id
@@ -1007,6 +1318,87 @@ class ApplicationStudio:
                 created_at=saved_at,
             )
         )
+        return await self._save_snapshot(record, snapshot)
+
+    async def _save_experience_to_library(
+        self,
+        command: SaveExperienceToLibraryCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        selected_items: list[ExperienceItemSnapshot] = []
+        for item_id in command.experience_item_ids:
+            item, _ = self._find_item(snapshot, item_id)
+            selected_items.append(item)
+
+        existing_links = {
+            link.application_experience_item_id: link
+            for link in snapshot.experience_library_links
+        }
+        entry_by_id = {entry.id: entry for entry in snapshot.experience_entries}
+        library_entry_by_application_entry: dict[str, str] = {}
+        for entry in snapshot.experience_entries:
+            for item in entry.experience_items:
+                link = existing_links.get(item.id)
+                if link and link.library_experience_entry_id:
+                    library_entry_by_application_entry[entry.id] = (
+                        link.library_experience_entry_id
+                    )
+                    break
+
+        for item in selected_items:
+            if item.id in existing_links:
+                continue
+
+            library_entry_id: str | None = None
+            if item.entry_id is not None:
+                library_entry_id = library_entry_by_application_entry.get(item.entry_id)
+                if library_entry_id is None:
+                    entry = entry_by_id[item.entry_id]
+                    library_entry_id = _new_id()
+                    self.db.add(
+                        ExperienceLibraryEntry(
+                            id=library_entry_id,
+                            user_id=owner_id,
+                            organization=entry.organization,
+                            role=entry.role,
+                            date_range=entry.date_range,
+                        )
+                    )
+                    library_entry_by_application_entry[item.entry_id] = (
+                        library_entry_id
+                    )
+
+            library_item_id = _new_id()
+            self.db.add(
+                ExperienceLibraryItem(
+                    id=library_item_id,
+                    user_id=owner_id,
+                    entry_id=library_entry_id,
+                    title=item.title,
+                )
+            )
+            for fact in item.base_facts:
+                self.db.add(
+                    ExperienceLibraryBaseFact(
+                        id=_new_id(),
+                        item_id=library_item_id,
+                        text=fact.text,
+                        source_location=fact.source_location,
+                    )
+                )
+            link = ExperienceLibraryLinkSnapshot(
+                application_experience_item_id=item.id,
+                library_experience_item_id=library_item_id,
+                library_experience_entry_id=library_entry_id,
+                source_snapshot_id=None,
+                relationship="saved_from_application",
+            )
+            snapshot.experience_library_links.append(link)
+            existing_links[item.id] = link
+
         return await self._save_snapshot(record, snapshot)
 
     @staticmethod

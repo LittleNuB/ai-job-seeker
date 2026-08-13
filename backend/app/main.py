@@ -60,7 +60,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .api import applications, auth, chat, export, files, jd, match, positions, records
+from .api import (
+    applications,
+    auth,
+    chat,
+    experience_library,
+    export,
+    files,
+    jd,
+    match,
+    positions,
+    records,
+)
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(positions.router, prefix="/api/positions", tags=["positions"])
@@ -71,6 +82,11 @@ app.include_router(files.router, prefix="/api/files", tags=["files"])
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(records.router, prefix="/api/records", tags=["records"])
 app.include_router(applications.router, prefix="/api/applications", tags=["applications"])
+app.include_router(
+    experience_library.router,
+    prefix="/api/experience-library",
+    tags=["experience-library"],
+)
 
 
 @app.get("/api/health")

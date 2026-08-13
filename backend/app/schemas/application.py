@@ -41,7 +41,8 @@ class StartApplicationCommand(BaseModel):
     type: Literal["start_application"]
     target_role: str = Field(min_length=1, max_length=120)
     jd_text: str
-    resume_text: str = Field(min_length=20)
+    resume_text: str = ""
+    library_experience_item_ids: list[str] = Field(default_factory=list)
 
     @field_validator("target_role")
     @classmethod
@@ -55,14 +56,27 @@ class StartApplicationCommand(BaseModel):
     @classmethod
     def validate_resume_text(cls, value: str) -> str:
         normalized = value.strip()
-        if len(normalized) < 20:
+        if normalized and len(normalized) < 20:
             raise ValueError("请粘贴或上传包含经历内容的简历")
         return normalized
+
+    @field_validator("library_experience_item_ids")
+    @classmethod
+    def require_unique_library_items(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("Experience Library 选择不能包含重复项目")
+        return value
 
     @field_validator("jd_text")
     @classmethod
     def validate_jd(cls, value: str) -> str:
         return _require_concrete_jd(value)
+
+    @model_validator(mode="after")
+    def require_resume_or_library_source(self) -> "StartApplicationCommand":
+        if not self.resume_text and not self.library_experience_item_ids:
+            raise ValueError("请粘贴简历，或从 Experience Library 选择至少一段经历")
+        return self
 
 
 class MoveExperienceItemCommand(BaseModel):
@@ -147,6 +161,55 @@ class SaveTargetedResumeClaimsCommand(BaseModel):
         return value
 
 
+class SaveExperienceToLibraryCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["save_experience_to_library"]
+    experience_item_ids: list[str] = Field(min_length=1)
+
+    @field_validator("experience_item_ids")
+    @classmethod
+    def require_unique_experience_item_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("保存到 Experience Library 不能包含重复项目")
+        return value
+
+
+class ExperienceLibraryEntryContextInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    organization: str = Field(min_length=1, max_length=240)
+    role: str = Field(min_length=1, max_length=240)
+    date_range: str | None = Field(default=None, max_length=160)
+
+
+class ExperienceLibraryBaseFactInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    id: str = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class UpdateExperienceLibraryItemCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    type: Literal["update_experience_library_item"]
+    experience_item_id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=240)
+    entry_context: ExperienceLibraryEntryContextInput | None = None
+    base_facts: list[ExperienceLibraryBaseFactInput] = Field(min_length=1)
+
+    @field_validator("base_facts")
+    @classmethod
+    def require_unique_library_fact_ids(
+        cls, value: list[ExperienceLibraryBaseFactInput]
+    ) -> list[ExperienceLibraryBaseFactInput]:
+        fact_ids = [fact.id for fact in value]
+        if len(fact_ids) != len(set(fact_ids)):
+            raise ValueError("Experience Library 更新不能包含重复 Base Fact")
+        return value
+
+
 ApplicationMutationCommand = Annotated[
     MoveExperienceItemCommand
     | SplitExperienceItemCommand
@@ -154,7 +217,8 @@ ApplicationMutationCommand = Annotated[
     | AnalyzeTargetCommand
     | GenerateClaimsCommand
     | EditResumeClaimCommand
-    | SaveTargetedResumeClaimsCommand,
+    | SaveTargetedResumeClaimsCommand
+    | SaveExperienceToLibraryCommand,
     Field(discriminator="type"),
 ]
 
@@ -163,13 +227,15 @@ class BaseFactSnapshot(BaseModel):
     id: str
     text: str
     source_location: str
+    library_base_fact_id: str | None = None
 
 
 class ExperienceItemSnapshot(BaseModel):
     id: str
     title: str
     entry_id: str | None
-    source_scope: Literal["application_local"] = "application_local"
+    source_scope: Literal["application_local", "experience_library"] = "application_local"
+    library_experience_item_id: str | None = None
     base_facts: list[BaseFactSnapshot]
 
 
@@ -179,6 +245,38 @@ class ExperienceEntrySnapshot(BaseModel):
     role: str
     date_range: str | None = None
     experience_items: list[ExperienceItemSnapshot]
+
+
+class ExperienceLibraryItemSnapshot(BaseModel):
+    id: str
+    title: str
+    entry_id: str | None
+    base_facts: list[BaseFactSnapshot]
+    updated_at: str
+
+
+class ExperienceLibraryEntrySnapshot(BaseModel):
+    id: str
+    organization: str
+    role: str
+    date_range: str | None = None
+    experience_items: list[ExperienceLibraryItemSnapshot]
+    updated_at: str
+
+
+class ExperienceLibrarySnapshot(BaseModel):
+    experience_entries: list[ExperienceLibraryEntrySnapshot] = Field(default_factory=list)
+    standalone_experience_items: list[ExperienceLibraryItemSnapshot] = Field(
+        default_factory=list
+    )
+
+
+class ExperienceLibraryLinkSnapshot(BaseModel):
+    application_experience_item_id: str
+    library_experience_item_id: str
+    library_experience_entry_id: str | None = None
+    source_snapshot_id: str | None = None
+    relationship: Literal["saved_from_application", "selected_for_application"]
 
 
 class TargetApplicationInputSnapshot(BaseModel):
@@ -342,9 +440,10 @@ class ExperienceEntryContextSnapshot(BaseModel):
 
 class ClaimSourceSnapshot(BaseModel):
     id: str
-    prompt_run_id: str
+    prompt_run_id: str | None
     experience_item_id: str
-    source_scope: Literal["application_local"] = "application_local"
+    source_scope: Literal["application_local", "experience_library"] = "application_local"
+    library_experience_item_id: str | None = None
     item_title: str
     entry_context: ExperienceEntryContextSnapshot | None = None
     base_facts: list[BaseFactSnapshot]
@@ -426,6 +525,9 @@ class ApplicationSnapshot(BaseModel):
     resume_source: ResumeSourceSnapshot
     experience_entries: list[ExperienceEntrySnapshot]
     standalone_experience_items: list[ExperienceItemSnapshot]
+    experience_library_links: list[ExperienceLibraryLinkSnapshot] = Field(
+        default_factory=list
+    )
     role_signals: list[RoleSignalSnapshot] = Field(default_factory=list)
     target_analysis: TargetAnalysisSnapshot = Field(default_factory=TargetAnalysisSnapshot)
     claim_studio: ClaimStudioSnapshot = Field(default_factory=ClaimStudioSnapshot)

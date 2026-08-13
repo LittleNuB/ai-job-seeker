@@ -239,13 +239,15 @@ export interface BaseFactSnapshot {
   id: string;
   text: string;
   source_location: string;
+  library_base_fact_id: string | null;
 }
 
 export interface ExperienceItemSnapshot {
   id: string;
   title: string;
   entry_id: string | null;
-  source_scope: "application_local";
+  source_scope: "application_local" | "experience_library";
+  library_experience_item_id: string | null;
   base_facts: BaseFactSnapshot[];
 }
 
@@ -255,6 +257,36 @@ export interface ExperienceEntrySnapshot {
   role: string;
   date_range?: string | null;
   experience_items: ExperienceItemSnapshot[];
+}
+
+export interface ExperienceLibraryItemSnapshot {
+  id: string;
+  title: string;
+  entry_id: string | null;
+  base_facts: BaseFactSnapshot[];
+  updated_at: string;
+}
+
+export interface ExperienceLibraryEntrySnapshot {
+  id: string;
+  organization: string;
+  role: string;
+  date_range: string | null;
+  experience_items: ExperienceLibraryItemSnapshot[];
+  updated_at: string;
+}
+
+export interface ExperienceLibrarySnapshot {
+  experience_entries: ExperienceLibraryEntrySnapshot[];
+  standalone_experience_items: ExperienceLibraryItemSnapshot[];
+}
+
+export interface ExperienceLibraryLinkSnapshot {
+  application_experience_item_id: string;
+  library_experience_item_id: string;
+  library_experience_entry_id: string | null;
+  source_snapshot_id: string | null;
+  relationship: "saved_from_application" | "selected_for_application";
 }
 
 export interface RoleSignalSnapshot {
@@ -289,9 +321,10 @@ export interface ExperienceEntryContextSnapshot {
 
 export interface ClaimSourceSnapshot {
   id: string;
-  prompt_run_id: string;
+  prompt_run_id: string | null;
   experience_item_id: string;
-  source_scope: "application_local";
+  source_scope: "application_local" | "experience_library";
+  library_experience_item_id: string | null;
   item_title: string;
   entry_context: ExperienceEntryContextSnapshot | null;
   base_facts: BaseFactSnapshot[];
@@ -371,6 +404,7 @@ export interface ApplicationSnapshot {
   resume_source: { text: string; scope: "application_local" };
   experience_entries: ExperienceEntrySnapshot[];
   standalone_experience_items: ExperienceItemSnapshot[];
+  experience_library_links: ExperienceLibraryLinkSnapshot[];
   role_signals: RoleSignalSnapshot[];
   target_analysis: TargetAnalysisSnapshot;
   claim_studio: ClaimStudioSnapshot;
@@ -395,7 +429,12 @@ export interface ApplicationListItem {
 }
 
 export const applications = {
-  start: (data: { target_role: string; jd_text: string; resume_text: string }) =>
+  start: (data: {
+    target_role: string;
+    jd_text: string;
+    resume_text?: string;
+    library_experience_item_ids?: string[];
+  }) =>
     request<ApplicationSnapshot>("/api/applications/commands", {
       method: "POST",
       body: JSON.stringify({ type: "start_application", ...data }),
@@ -444,6 +483,14 @@ export const applications = {
         destination_item_id: destinationItemId,
       }),
     }),
+  saveExperienceToLibrary: (applicationId: string, experienceItemIds: string[]) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "save_experience_to_library",
+        experience_item_ids: experienceItemIds,
+      }),
+    }),
   analyzeTarget: (applicationId: string) =>
     request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
       method: "POST",
@@ -482,6 +529,23 @@ export const applications = {
       `targeted-resume-${applicationId}.md`,
       "目标简历暂时无法下载，请重试",
     ),
+};
+
+export const experienceLibrary = {
+  get: () => request<ExperienceLibrarySnapshot>("/api/experience-library"),
+  updateItem: (data: {
+    experience_item_id: string;
+    title: string;
+    entry_context: {
+      organization: string;
+      role: string;
+      date_range: string | null;
+    } | null;
+    base_facts: { id: string; text: string }[];
+  }) => request<ExperienceLibrarySnapshot>("/api/experience-library/commands", {
+    method: "POST",
+    body: JSON.stringify({ type: "update_experience_library_item", ...data }),
+  }),
 };
 
 // Streaming Chat

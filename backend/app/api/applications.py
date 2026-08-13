@@ -30,7 +30,10 @@ async def start_application(
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
-    return await ApplicationStudio(db).execute(command, owner_id=user_id)
+    try:
+        return await ApplicationStudio(db).execute(command, owner_id=user_id)
+    except ApplicationCommandError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("", response_model=ApplicationListResponse)
