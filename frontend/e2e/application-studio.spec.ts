@@ -310,6 +310,166 @@ test("candidate sees traceable claims and a separate non-copyable Stretch Direct
   await expect(page.getByText("录用概率", { exact: false })).toHaveCount(0);
 });
 
+test("candidate keeps an edited claim after a source change and re-analyzes explicitly", async ({ page, request }) => {
+  const user = await registerUser(request, "source-change-reanalysis");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const created = await createResponse.json();
+  const item = created.experience_entries[0].experience_items[0];
+  const roleSignal = {
+    id: "signal-source-change",
+    signal: "大模型工作流与质量评测设计",
+    source_type: "explicit",
+    jd_excerpt: "建立质量评测和异常处理机制",
+    rationale: null,
+  };
+  const originalSource = {
+    id: "source-before-change",
+    prompt_run_id: "claim-run-before-change",
+    experience_item_id: item.id,
+    source_scope: "application_local",
+    library_experience_item_id: null,
+    item_title: item.title,
+    entry_context: {
+      organization: "知音科技",
+      role: "AI 产品实习生",
+      date_range: "2025.01-2025.06",
+    },
+    base_facts: item.base_facts,
+    captured_at: new Date().toISOString(),
+  };
+  const originalText = "围绕 120 条高频失败案例定义三类评测维度。";
+  const editedText = "从 120 条失败案例中定义三类评测维度，并用于两轮提示词迭代。";
+  const updatedText = "基于 120 条失败案例建立三类评测维度，驱动两轮提示词迭代。";
+  const originalClaim = {
+    id: "claim-before-change",
+    source_snapshot_id: originalSource.id,
+    experience_item_id: item.id,
+    source_focus: "评测样本与维度设计",
+    opportunity_value: "体现质量评测驱动迭代的闭环。",
+    supported_base_fact_ids: item.base_facts.map((fact: { id: string }) => fact.id),
+    primary_role_signal_id: roleSignal.id,
+    primary_role_signal: roleSignal,
+    competitive_claim: originalText,
+    selected_resume_claim: originalText,
+    selected_resume_claim_is_edited: false,
+    selected_resume_claim_updated_at: null,
+    stretch_direction: {
+      expression_gap: "尚未说明评测结论如何改变迭代优先级。",
+      why_it_matters: "能更直接体现质量判断如何转化为产品决策。",
+      expansion_direction: "回想一次由评测结论改变方案的具体取舍。",
+    },
+  };
+  let workspace = created;
+  const observedCommands: string[] = [];
+
+  await page.route(`**/api/applications/${created.application_id}/commands`, async (route) => {
+    const command = route.request().postDataJSON();
+    observedCommands.push(command.type);
+    if (command.type === "analyze_target") {
+      workspace = {
+        ...workspace,
+        workflow_phase: "role_signal_review",
+        role_signals: [roleSignal],
+        target_analysis: { status: "completed", last_error: null },
+      };
+    } else if (command.type === "generate_claims") {
+      workspace = {
+        ...workspace,
+        workflow_phase: "claim_review",
+        claim_studio: { status: "completed", last_error: null },
+        source_snapshots: [originalSource],
+        competitive_claims: [originalClaim],
+      };
+    } else if (command.type === "edit_resume_claim") {
+      workspace = {
+        ...workspace,
+        competitive_claims: [{
+          ...workspace.competitive_claims[0],
+          selected_resume_claim: command.resume_claim,
+          selected_resume_claim_is_edited: true,
+          selected_resume_claim_updated_at: new Date().toISOString(),
+        }],
+      };
+    } else if (command.type === "move_experience_item") {
+      workspace = {
+        ...workspace,
+        experience_entries: [{ ...workspace.experience_entries[0], experience_items: [] }],
+        standalone_experience_items: [
+          ...workspace.standalone_experience_items,
+          { ...item, entry_id: null },
+        ],
+        source_change_notices: [{
+          claim_id: originalClaim.id,
+          source_snapshot_id: originalSource.id,
+          experience_item_id: item.id,
+          changed_dimensions: ["entry_context"],
+          message: "当前经历材料已变化；这条主张仍保留生成时的来源，只有你明确重新分析时才会使用新材料。",
+        }],
+      };
+    } else if (command.type === "reanalyze_claim") {
+      const currentSource = {
+        ...originalSource,
+        id: "source-after-change",
+        prompt_run_id: "claim-run-after-change",
+        entry_context: null,
+      };
+      workspace = {
+        ...workspace,
+        source_snapshots: [...workspace.source_snapshots, currentSource],
+        competitive_claims: [
+          ...workspace.competitive_claims,
+          {
+            ...originalClaim,
+            id: "claim-after-change",
+            source_snapshot_id: currentSource.id,
+            competitive_claim: updatedText,
+            selected_resume_claim: updatedText,
+            selected_resume_claim_is_edited: false,
+            selected_resume_claim_updated_at: null,
+          },
+        ],
+      };
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(workspace),
+    });
+  });
+
+  await installSession(page, user);
+  await page.goto(`/applications/${created.application_id}`);
+  await page.getByRole("button", { name: "提取岗位信号" }).click();
+  await page.getByRole("button", { name: "生成竞争主张" }).click();
+  await page.getByLabel("竞争主张 1").fill(editedText);
+  await page.getByRole("heading", { name: "这份简历，只收录你明确保存的主张" }).click();
+  await page.getByLabel(`${item.title} 归入`).selectOption("standalone");
+
+  await expect(page.getByLabel("竞争主张 1")).toHaveValue(editedText);
+  await expect(page.getByText("当前经历材料已变化", { exact: false })).toBeVisible();
+  await expect(page.getByText("主张仍可继续编辑、保存和使用", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "使用最新材料重新分析" }).click();
+
+  await expect(page.getByLabel("竞争主张 1")).toHaveValue(editedText);
+  await expect(page.getByLabel("竞争主张 2")).toHaveValue(updatedText);
+  expect(observedCommands).toEqual([
+    "analyze_target",
+    "generate_claims",
+    "edit_resume_claim",
+    "move_experience_item",
+    "reanalyze_claim",
+  ]);
+});
+
 test("candidate edits, saves, reopens, copies, and exports a Targeted Resume Version", async ({ page, request, context }) => {
   const user = await registerUser(request, "targeted-resume");
   const createResponse = await request.post(apiPath("/api/applications/commands"), {

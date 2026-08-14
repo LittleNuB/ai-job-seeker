@@ -323,6 +323,20 @@ export default function ApplicationWorkspacePage() {
     }
   }
 
+  async function reanalyzeClaim(claimId: string): Promise<boolean> {
+    setPendingClaimId(claimId);
+    setError("");
+    try {
+      setSnapshot(await applications.reanalyzeClaim(applicationId, claimId));
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, "最新材料没有分析成功，旧主张已保留，请重试");
+      return false;
+    } finally {
+      setPendingClaimId(null);
+    }
+  }
+
   async function saveClaim(claimId: string, resumeClaim: string): Promise<boolean> {
     const currentClaim = snapshot?.competitive_claims.find((claim) => claim.id === claimId);
     if (!currentClaim) return false;
@@ -436,6 +450,7 @@ export default function ApplicationWorkspacePage() {
             onGenerate={generateClaims}
             onEditClaim={editClaim}
             onSaveClaim={saveClaim}
+            onReanalyzeClaim={reanalyzeClaim}
           />
 
           <TargetedResumePanel

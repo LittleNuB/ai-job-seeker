@@ -501,6 +501,14 @@ export const applications = {
       method: "POST",
       body: JSON.stringify({ type: "generate_claims" }),
     }),
+  reanalyzeClaim: (applicationId: string, claimId: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "reanalyze_claim",
+        claim_id: claimId,
+      }),
+    }),
   editResumeClaim: (applicationId: string, claimId: string, resumeClaim: string) =>
     request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
       method: "POST",

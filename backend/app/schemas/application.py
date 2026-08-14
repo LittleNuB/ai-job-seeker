@@ -131,6 +131,13 @@ class GenerateClaimsCommand(BaseModel):
     type: Literal["generate_claims"]
 
 
+class ReanalyzeClaimCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["reanalyze_claim"]
+    claim_id: str = Field(min_length=1)
+
+
 class EditResumeClaimCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -216,6 +223,7 @@ ApplicationMutationCommand = Annotated[
     | MergeExperienceItemsCommand
     | AnalyzeTargetCommand
     | GenerateClaimsCommand
+    | ReanalyzeClaimCommand
     | EditResumeClaimCommand
     | SaveTargetedResumeClaimsCommand
     | SaveExperienceToLibraryCommand,

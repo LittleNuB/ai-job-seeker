@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 from httpx import AsyncClient
 
@@ -64,9 +65,18 @@ class FakeApplicationModel:
     def __init__(self, output: object) -> None:
         self.output = output
         self.calls = 0
+        self.requests: list[dict[str, str]] = []
+
+    def _record_request(self, *, system_prompt: str, user_prompt: str) -> None:
+        self.calls += 1
+        self.requests.append(
+            {"system_prompt": system_prompt, "user_prompt": user_prompt}
+        )
 
     async def generate_json(self, *, system_prompt: str, user_prompt: str) -> object:
-        self.calls += 1
+        self._record_request(
+            system_prompt=system_prompt, user_prompt=user_prompt
+        )
         output = self.output.pop(0) if isinstance(self.output, list) else self.output
         if isinstance(output, Exception):
             raise output
@@ -80,7 +90,9 @@ class BlockingApplicationModel(FakeApplicationModel):
         self.release = asyncio.Event()
 
     async def generate_json(self, *, system_prompt: str, user_prompt: str) -> object:
-        self.calls += 1
+        self._record_request(
+            system_prompt=system_prompt, user_prompt=user_prompt
+        )
         self.started.set()
         await self.release.wait()
         if isinstance(self.output, Exception):
@@ -875,7 +887,7 @@ async def test_claim_studio_rejects_duplicate_opportunities_and_can_be_retried(
     ]
 
 
-async def test_claim_studio_persists_sources_before_a_provider_failure(
+async def test_claim_reanalysis_persists_updated_source_before_a_provider_failure(
     client: AsyncClient, auth_headers
 ):
     headers = await auth_headers(client)
@@ -929,6 +941,20 @@ async def test_claim_studio_persists_sources_before_a_provider_failure(
     )
     assert initial_claim_response.status_code == 200
     initial_claims = initial_claim_response.json()["competitive_claims"]
+    moved_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "move_experience_item",
+            "experience_item_id": item["id"],
+            "destination_entry_id": None,
+        },
+    )
+    assert moved_response.status_code == 200
+    moved = moved_response.json()
+    assert [notice["claim_id"] for notice in moved["source_change_notices"]] == [
+        initial_claims[0]["id"]
+    ]
 
     blocking_model = BlockingApplicationModel(
         ModelProviderUnavailableError("fixture unavailable")
@@ -939,7 +965,10 @@ async def test_claim_studio_persists_sources_before_a_provider_failure(
             client.post(
                 f"/api/applications/{created['application_id']}/commands",
                 headers=headers,
-                json={"type": "generate_claims"},
+                json={
+                    "type": "reanalyze_claim",
+                    "claim_id": initial_claims[0]["id"],
+                },
             )
         )
         await asyncio.wait_for(blocking_model.started.wait(), timeout=2)
@@ -953,16 +982,14 @@ async def test_claim_studio_persists_sources_before_a_provider_failure(
         assert running["prompt_runs"][-1]["prompt_family"] == "claim_studio"
         assert running["prompt_runs"][-1]["status"] == "running"
         run_id = running["prompt_runs"][-1]["id"]
-        assert len(running["source_snapshots"]) == 4
+        assert len(running["source_snapshots"]) == 3
         assert {
             source["experience_item_id"]
             for source in running["source_snapshots"]
             if source["prompt_run_id"] == run_id
-        } == {
-            item["id"],
-            analyzed["standalone_experience_items"][0]["id"],
-        }
+        } == {item["id"]}
         assert running["competitive_claims"] == initial_claims
+        assert running["source_change_notices"] == moved["source_change_notices"]
 
         blocking_model.release.set()
         failed_response = await asyncio.wait_for(generation_task, timeout=2)
@@ -975,6 +1002,7 @@ async def test_claim_studio_persists_sources_before_a_provider_failure(
     assert failed["claim_studio"]["status"] == "failed"
     assert failed["claim_studio"]["last_error"]["code"] == "provider_unavailable"
     assert failed["competitive_claims"] == initial_claims
+    assert failed["source_change_notices"] == moved["source_change_notices"]
     assert failed["source_snapshots"] == running["source_snapshots"]
     assert failed["prompt_runs"][-1]["status"] == "failed"
 
@@ -1221,6 +1249,29 @@ async def test_source_edit_preserves_claim_and_emits_a_non_blocking_notice_witho
                 "destination_entry_id": None,
             },
         )
+        model.output = ModelProviderUnavailableError("provider unavailable")
+        regeneration_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        claim_id = generated["competitive_claims"][0]["id"]
+        saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim_id],
+            },
+        )
+        text_export_response = await client.get(
+            f"/api/applications/{created['application_id']}/targeted-resume.txt",
+            headers=headers,
+        )
+        markdown_export_response = await client.get(
+            f"/api/applications/{created['application_id']}/targeted-resume.md",
+            headers=headers,
+        )
     finally:
         app.dependency_overrides.pop(get_application_model, None)
 
@@ -1229,6 +1280,20 @@ async def test_source_edit_preserves_claim_and_emits_a_non_blocking_notice_witho
     assert moved_response.status_code == 200
     moved = moved_response.json()
     assert moved["competitive_claims"] == generated["competitive_claims"]
+    assert model.calls == calls_before_source_edit
+    assert regeneration_response.status_code == 422
+    assert "重新分析" in regeneration_response.json()["detail"]
+    assert saved_response.status_code == 200, saved_response.text
+    assert saved_response.json()["source_change_notices"] == moved[
+        "source_change_notices"
+    ]
+    assert text_export_response.status_code == 200
+    assert markdown_export_response.status_code == 200
+    original_claim_text = generated["competitive_claims"][0][
+        "selected_resume_claim"
+    ]
+    assert original_claim_text in text_export_response.text
+    assert original_claim_text in markdown_export_response.text
     assert model.calls == calls_before_source_edit
     assert moved["source_change_notices"] == [
         {
@@ -1240,6 +1305,147 @@ async def test_source_edit_preserves_claim_and_emits_a_non_blocking_notice_witho
             "changed_dimensions": ["entry_context"],
             "message": "当前经历材料已变化；这条主张仍保留生成时的来源，只有你明确重新分析时才会使用新材料。",
         }
+    ]
+
+
+async def test_explicit_claim_reanalysis_uses_current_source_and_keeps_the_original_claim_provenance(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        original_claim = generated["competitive_claims"][0]
+        edited_text = "从 120 条失败案例中定义三类评测维度，并用于两轮提示词迭代。"
+        edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": original_claim["id"],
+                "resume_claim": edited_text,
+            },
+        )
+        edited_claim = edited_response.json()["competitive_claims"][0]
+        moved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "move_experience_item",
+                "experience_item_id": item["id"],
+                "destination_entry_id": None,
+            },
+        )
+        calls_before_reanalysis = model.calls
+        requests_before_reanalysis = len(model.requests)
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "评测驱动迭代",
+                        "opportunity_value": "体现从评测设计到产品迭代的闭环。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "基于 120 条失败案例建立三类评测维度，驱动两轮提示词迭代。",
+                        "stretch_direction": {
+                            "expression_gap": "尚未说明每轮迭代的判断标准。",
+                            "why_it_matters": "岗位要求以质量评测推动稳定交付。",
+                            "expansion_direction": "补充一次由评测结果触发的具体产品取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        reanalyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "reanalyze_claim", "claim_id": original_claim["id"]},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert edited_response.status_code == 200
+    assert moved_response.status_code == 200
+    assert reanalyzed_response.status_code == 200, reanalyzed_response.text
+    reanalyzed = reanalyzed_response.json()
+    assert reanalyzed["competitive_claims"][0] == edited_claim
+    assert reanalyzed["competitive_claims"][0]["selected_resume_claim"] == edited_text
+    assert len(reanalyzed["competitive_claims"]) == 2
+    new_claim = reanalyzed["competitive_claims"][1]
+    assert new_claim["source_snapshot_id"] != original_claim["source_snapshot_id"]
+    new_source = next(
+        source
+        for source in reanalyzed["source_snapshots"]
+        if source["id"] == new_claim["source_snapshot_id"]
+    )
+    assert new_source["experience_item_id"] == item["id"]
+    assert new_source["entry_context"] is None
+    assert new_source["base_facts"] == item["base_facts"]
+    assert new_source["prompt_run_id"] is not None
+    assert model.calls == calls_before_reanalysis + 2
+    prompt_payload = json.loads(
+        model.requests[requests_before_reanalysis]["user_prompt"]
+    )
+    assert prompt_payload["experience_sources"] == [
+        {
+            "experience_item_id": item["id"],
+            "item_title": item["title"],
+            "entry_context": None,
+            "base_facts": item["base_facts"],
+        }
+    ]
+    assert [notice["claim_id"] for notice in reanalyzed["source_change_notices"]] == [
+        original_claim["id"]
     ]
 
 
@@ -1909,3 +2115,185 @@ async def test_library_edits_change_current_content_without_rewriting_an_applica
         "experience_entries": [],
         "standalone_experience_items": [],
     }
+
+
+async def test_library_source_edit_emits_a_notice_and_explicit_reanalysis_uses_current_content(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    first = await _create_application(client, headers)
+    first_item = first["experience_entries"][0]["experience_items"][0]
+    saved_response = await client.post(
+        f"/api/applications/{first['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "save_experience_to_library",
+            "experience_item_ids": [first_item["id"]],
+        },
+    )
+    assert saved_response.status_code == 200
+    library = (await client.get("/api/experience-library", headers=headers)).json()
+    library_entry = library["experience_entries"][0]
+    library_item = library_entry["experience_items"][0]
+    second_response = await client.post(
+        "/api/applications/commands",
+        headers=headers,
+        json={
+            "type": "start_application",
+            "target_role": "大模型产品经理",
+            "jd_text": CONCRETE_JD,
+            "library_experience_item_ids": [library_item["id"]],
+        },
+    )
+    assert second_response.status_code == 200
+    second = second_response.json()
+
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    changed_title = "大模型客服质量评测与迭代"
+    changed_fact = "从 120 条失败案例中归纳准确性、完整性与可执行性问题。"
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{second['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        application_item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": application_item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [
+                            application_item["base_facts"][0]["id"]
+                        ],
+                        "competitive_claim": "围绕 120 条失败案例建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{second['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        original_claim = generated["competitive_claims"][0]
+        original_sources = generated["source_snapshots"]
+        calls_before_library_edit = model.calls
+
+        edited_library_response = await client.post(
+            "/api/experience-library/commands",
+            headers=headers,
+            json={
+                "type": "update_experience_library_item",
+                "experience_item_id": library_item["id"],
+                "title": changed_title,
+                "entry_context": {
+                    "organization": library_entry["organization"],
+                    "role": library_entry["role"],
+                    "date_range": library_entry["date_range"],
+                },
+                "base_facts": [
+                    {
+                        "id": fact["id"],
+                        "text": changed_fact if index == 0 else fact["text"],
+                    }
+                    for index, fact in enumerate(library_item["base_facts"])
+                ],
+            },
+        )
+        reopened_response = await client.get(
+            f"/api/applications/{second['application_id']}", headers=headers
+        )
+        reopened = reopened_response.json()
+        requests_before_reanalysis = len(model.requests)
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": application_item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "更新后的评测问题归纳",
+                        "opportunity_value": "体现从失败案例中提炼评测问题的能力。",
+                        "supported_base_fact_ids": [
+                            application_item["base_facts"][0]["id"]
+                        ],
+                        "competitive_claim": "从 120 条失败案例中归纳三类关键评测问题。",
+                        "stretch_direction": {
+                            "expression_gap": "尚未说明问题归纳如何影响迭代。",
+                            "why_it_matters": "岗位要求用质量评测推动产品迭代。",
+                            "expansion_direction": "补充一次评测问题改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        reanalyzed_response = await client.post(
+            f"/api/applications/{second['application_id']}/commands",
+            headers=headers,
+            json={"type": "reanalyze_claim", "claim_id": original_claim["id"]},
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert edited_library_response.status_code == 200
+    assert reopened_response.status_code == 200
+    assert reopened["competitive_claims"] == generated["competitive_claims"]
+    assert reopened["source_snapshots"] == original_sources
+    assert reopened["experience_entries"] == generated["experience_entries"]
+    assert reopened["source_change_notices"] == [
+        {
+            "claim_id": original_claim["id"],
+            "source_snapshot_id": original_claim["source_snapshot_id"],
+            "experience_item_id": application_item["id"],
+            "changed_dimensions": ["item_title", "base_facts"],
+            "message": "当前经历材料已变化；这条主张仍保留生成时的来源，只有你明确重新分析时才会使用新材料。",
+        }
+    ]
+    assert model.calls == calls_before_library_edit + 2
+    assert reanalyzed_response.status_code == 200, reanalyzed_response.text
+    reanalyzed = reanalyzed_response.json()
+    assert reanalyzed["competitive_claims"][0] == original_claim
+    assert len(reanalyzed["competitive_claims"]) == 2
+    new_claim = reanalyzed["competitive_claims"][1]
+    new_source = next(
+        source
+        for source in reanalyzed["source_snapshots"]
+        if source["id"] == new_claim["source_snapshot_id"]
+    )
+    assert new_source["item_title"] == changed_title
+    assert new_source["base_facts"][0]["text"] == changed_fact
+    assert new_source["library_experience_item_id"] == library_item["id"]
+    reanalysis_payload = json.loads(
+        model.requests[requests_before_reanalysis]["user_prompt"]
+    )
+    assert reanalysis_payload["experience_sources"][0]["item_title"] == changed_title
+    assert reanalysis_payload["experience_sources"][0]["base_facts"][0][
+        "text"
+    ] == changed_fact
