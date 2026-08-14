@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -50,6 +51,7 @@ from ..schemas.application import (
     MergeExperienceItemsCommand,
     MoveExperienceItemCommand,
     PromptRunSnapshot,
+    ReanalyzeClaimCommand,
     RecoverableAnalysisErrorSnapshot,
     ResumeSourceSnapshot,
     RoleSignalSnapshot,
@@ -87,6 +89,12 @@ class ApplicationConflictError(Exception):
 
 class ExperienceLibraryNotFoundError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class _CurrentClaimSource:
+    item: ExperienceItemSnapshot
+    entry_context: ExperienceEntryContextSnapshot | None
 
 
 _SECTION_NAMES = {
@@ -312,6 +320,7 @@ class ApplicationStudio:
             | MergeExperienceItemsCommand
             | AnalyzeTargetCommand
             | GenerateClaimsCommand
+            | ReanalyzeClaimCommand
             | EditResumeClaimCommand
             | SaveTargetedResumeClaimsCommand
             | SaveExperienceToLibraryCommand
@@ -323,48 +332,55 @@ class ApplicationStudio:
         if isinstance(command, StartApplicationCommand):
             if application_id is not None:
                 raise ApplicationCommandError("创建投递不能指定已有投递")
-            return await self._start(command, owner_id)
-        if isinstance(command, MoveExperienceItemCommand):
+            snapshot = await self._start(command, owner_id)
+        elif isinstance(command, MoveExperienceItemCommand):
             if application_id is None:
                 raise ApplicationCommandError("修正经历归属需要目标投递")
-            return await self._move_item(command, owner_id, application_id)
-        if isinstance(command, SplitExperienceItemCommand):
+            snapshot = await self._move_item(command, owner_id, application_id)
+        elif isinstance(command, SplitExperienceItemCommand):
             if application_id is None:
                 raise ApplicationCommandError("拆分经历项目需要目标投递")
-            return await self._split_item(command, owner_id, application_id)
-        if isinstance(command, MergeExperienceItemsCommand):
+            snapshot = await self._split_item(command, owner_id, application_id)
+        elif isinstance(command, MergeExperienceItemsCommand):
             if application_id is None:
                 raise ApplicationCommandError("合并经历项目需要目标投递")
-            return await self._merge_items(command, owner_id, application_id)
-        if isinstance(command, AnalyzeTargetCommand):
+            snapshot = await self._merge_items(command, owner_id, application_id)
+        elif isinstance(command, AnalyzeTargetCommand):
             if application_id is None:
                 raise ApplicationCommandError("Target Analysis 需要目标投递")
-            return await self._analyze_target(owner_id, application_id)
-        if isinstance(command, GenerateClaimsCommand):
+            snapshot = await self._analyze_target(owner_id, application_id)
+        elif isinstance(command, GenerateClaimsCommand):
             if application_id is None:
                 raise ApplicationCommandError("Claim Studio 需要目标投递")
-            return await self._generate_claims(owner_id, application_id)
-        if isinstance(command, EditResumeClaimCommand):
+            snapshot = await self._generate_claims(owner_id, application_id)
+        elif isinstance(command, ReanalyzeClaimCommand):
+            if application_id is None:
+                raise ApplicationCommandError("重新分析 Competitive Claim 需要目标投递")
+            snapshot = await self._reanalyze_claim(command, owner_id, application_id)
+        elif isinstance(command, EditResumeClaimCommand):
             if application_id is None:
                 raise ApplicationCommandError("编辑 Resume Claim 需要目标投递")
-            return await self._edit_resume_claim(command, owner_id, application_id)
-        if isinstance(command, SaveTargetedResumeClaimsCommand):
+            snapshot = await self._edit_resume_claim(command, owner_id, application_id)
+        elif isinstance(command, SaveTargetedResumeClaimsCommand):
             if application_id is None:
                 raise ApplicationCommandError("保存 Targeted Resume Version 需要目标投递")
-            return await self._save_targeted_resume_claims(
+            snapshot = await self._save_targeted_resume_claims(
                 command, owner_id, application_id
             )
-        if isinstance(command, SaveExperienceToLibraryCommand):
+        elif isinstance(command, SaveExperienceToLibraryCommand):
             if application_id is None:
                 raise ApplicationCommandError("保存到 Experience Library 需要目标投递")
-            return await self._save_experience_to_library(
+            snapshot = await self._save_experience_to_library(
                 command, owner_id, application_id
             )
-        raise ApplicationCommandError("不支持的工作台命令")
+        else:
+            raise ApplicationCommandError("不支持的工作台命令")
+        return await self._with_current_source_notices(snapshot, owner_id)
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
         record = await self._get_record(application_id, owner_id)
-        return ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        return await self._with_current_source_notices(snapshot, owner_id)
 
     async def list_applications(self, owner_id: str) -> list[ApplicationListItem]:
         result = await self.db.execute(
@@ -941,14 +957,77 @@ class ApplicationStudio:
     async def _generate_claims(
         self, owner_id: str, application_id: str
     ) -> ApplicationSnapshot:
-        prepared_snapshot, prepared_sources, run_id, run_created_at = (
+        prepared_snapshot, prepared_sources, run_id, _ = (
             await self._prepare_claim_generation(owner_id, application_id)
         )
+        claims, failure_code, failure_message, review_run = (
+            await self._generate_and_review_claims(
+                snapshot=prepared_snapshot,
+                source_snapshots=prepared_sources,
+                role_signals=prepared_snapshot.role_signals,
+            )
+        )
+        return await self._save_claim_outcome(
+            application_id=application_id,
+            owner_id=owner_id,
+            claims=claims,
+            failure_code=failure_code,
+            failure_message=failure_message,
+            run_id=run_id,
+            review_run=review_run,
+            append_claims=False,
+        )
+
+    async def _reanalyze_claim(
+        self,
+        command: ReanalyzeClaimCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        prepared_snapshot, prepared_sources, run_id = (
+            await self._prepare_claim_reanalysis(command, owner_id, application_id)
+        )
+        original_claim = next(
+            claim
+            for claim in prepared_snapshot.competitive_claims
+            if claim.id == command.claim_id
+        )
+        role_signals = [original_claim.primary_role_signal]
+        claims, failure_code, failure_message, review_run = (
+            await self._generate_and_review_claims(
+                snapshot=prepared_snapshot,
+                source_snapshots=prepared_sources,
+                role_signals=role_signals,
+            )
+        )
+        return await self._save_claim_outcome(
+            application_id=application_id,
+            owner_id=owner_id,
+            claims=claims,
+            failure_code=failure_code,
+            failure_message=failure_message,
+            run_id=run_id,
+            review_run=review_run,
+            append_claims=True,
+        )
+
+    async def _generate_and_review_claims(
+        self,
+        *,
+        snapshot: ApplicationSnapshot,
+        source_snapshots: list[ClaimSourceSnapshot],
+        role_signals: list[RoleSignalSnapshot],
+    ) -> tuple[
+        list[CompetitiveClaimSnapshot] | None,
+        str | None,
+        str | None,
+        PromptRunSnapshot | None,
+    ]:
         system_prompt, user_prompt = build_claim_studio_prompts(
-            target_role=prepared_snapshot.target_application.target_role,
-            jd_text=prepared_snapshot.target_application.jd_text,
-            role_signals=prepared_snapshot.role_signals,
-            source_snapshots=prepared_sources,
+            target_role=snapshot.target_application.target_role,
+            jd_text=snapshot.target_application.jd_text,
+            role_signals=role_signals,
+            source_snapshots=source_snapshots,
         )
         claims: list[CompetitiveClaimSnapshot] | None = None
         failure_code: str | None = None
@@ -962,8 +1041,8 @@ class ApplicationStudio:
             output = ClaimStudioModelOutput.model_validate(raw_output)
             claims = self._validated_claim_snapshots(
                 output=output,
-                source_snapshots=prepared_sources,
-                role_signals=prepared_snapshot.role_signals,
+                source_snapshots=source_snapshots,
+                role_signals=role_signals,
             )
         except ValidationError:
             failure_code = "invalid_output"
@@ -985,7 +1064,7 @@ class ApplicationStudio:
             )
             review_system_prompt, review_user_prompt = (
                 build_claim_studio_review_prompts(
-                    source_snapshots=prepared_sources,
+                    source_snapshots=source_snapshots,
                     claims=claims,
                 )
             )
@@ -1022,15 +1101,78 @@ class ApplicationStudio:
         if claims is None and not (failure_code and failure_message):
             raise ApplicationCommandError("Claim Studio 未返回可保存的结果")
 
-        return await self._save_claim_outcome(
-            application_id=application_id,
-            owner_id=owner_id,
-            claims=claims,
-            failure_code=failure_code,
-            failure_message=failure_message,
-            run_id=run_id,
-            review_run=review_run,
+        return claims, failure_code, failure_message, review_run
+
+    async def _prepare_claim_reanalysis(
+        self,
+        command: ReanalyzeClaimCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> tuple[ApplicationSnapshot, list[ClaimSourceSnapshot], str]:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        current_sources = await self._current_claim_sources(snapshot, owner_id)
+        snapshot.source_change_notices = self._source_change_notices(
+            snapshot, current_sources=current_sources
         )
+        claim = next(
+            (
+                candidate
+                for candidate in snapshot.competitive_claims
+                if candidate.id == command.claim_id
+            ),
+            None,
+        )
+        if claim is None:
+            raise ApplicationCommandError("Competitive Claim 不存在")
+        notice = next(
+            (
+                candidate
+                for candidate in snapshot.source_change_notices
+                if candidate.claim_id == claim.id
+            ),
+            None,
+        )
+        if notice is None:
+            raise ApplicationCommandError("当前主张的来源没有变化，无需重新分析")
+        if "source_removed" in notice.changed_dimensions:
+            raise ApplicationCommandError("当前来源已被移除，无法重新分析")
+
+        current_source = current_sources.get(claim.experience_item_id)
+        if current_source is None:
+            raise ApplicationCommandError("当前来源已被移除，无法重新分析")
+        item = current_source.item
+        entry_context = current_source.entry_context
+
+        run_id = _new_id()
+        run_created_at = _now_iso()
+        source = ClaimSourceSnapshot(
+            id=_new_id(),
+            prompt_run_id=run_id,
+            experience_item_id=item.id,
+            source_scope=item.source_scope,
+            library_experience_item_id=item.library_experience_item_id,
+            item_title=item.title,
+            entry_context=entry_context,
+            base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
+            captured_at=run_created_at,
+        )
+        snapshot.source_snapshots.append(source)
+        snapshot.claim_studio = ClaimStudioSnapshot(status="running", last_error=None)
+        snapshot.prompt_runs.append(
+            PromptRunSnapshot(
+                id=run_id,
+                prompt_family="claim_studio",
+                prompt_version=CLAIM_STUDIO_PROMPT_VERSION,
+                model_provider=self.model.provider_name,
+                model_name=self.model.model_name,
+                status="running",
+                error_code=None,
+                created_at=run_created_at,
+            )
+        )
+        saved = await self._save_snapshot(record, snapshot)
+        return saved, [source], run_id
 
     async def _prepare_claim_generation(
         self, owner_id: str, application_id: str
@@ -1039,18 +1181,19 @@ class ApplicationStudio:
         snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
         if not snapshot.role_signals:
             raise ApplicationCommandError("请先完成 Target Analysis，再生成竞争主张")
+        if snapshot.competitive_claims:
+            raise ApplicationCommandError(
+                "已有 Competitive Claim；来源变化后请从 Source Change Notice 明确重新分析"
+            )
 
-        all_items = [
-            *(item for entry in snapshot.experience_entries for item in entry.experience_items),
-            *snapshot.standalone_experience_items,
-        ]
-        if not all_items:
+        current_sources = await self._current_claim_sources(snapshot, owner_id)
+        if not current_sources:
             raise ApplicationCommandError("当前没有可用于 Claim Studio 的 Experience Item")
 
         run_id = _new_id()
         run_created_at = _now_iso()
         source_snapshots = self._capture_claim_sources(
-            snapshot=snapshot,
+            current_sources=current_sources,
             run_id=run_id,
             captured_at=run_created_at,
         )
@@ -1073,44 +1216,30 @@ class ApplicationStudio:
 
     @staticmethod
     def _capture_claim_sources(
-        *, snapshot: ApplicationSnapshot, run_id: str, captured_at: str
+        *,
+        current_sources: dict[str, _CurrentClaimSource],
+        run_id: str,
+        captured_at: str,
     ) -> list[ClaimSourceSnapshot]:
-        captured: list[ClaimSourceSnapshot] = []
-        for entry in snapshot.experience_entries:
-            entry_context = ExperienceEntryContextSnapshot(
-                organization=entry.organization,
-                role=entry.role,
-                date_range=entry.date_range,
-            )
-            captured.extend(
-                ClaimSourceSnapshot(
-                    id=_new_id(),
-                    prompt_run_id=run_id,
-                    experience_item_id=item.id,
-                    source_scope=item.source_scope,
-                    library_experience_item_id=item.library_experience_item_id,
-                    item_title=item.title,
-                    entry_context=entry_context,
-                    base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
-                    captured_at=captured_at,
-                )
-                for item in entry.experience_items
-            )
-        captured.extend(
+        return [
             ClaimSourceSnapshot(
                 id=_new_id(),
                 prompt_run_id=run_id,
-                experience_item_id=item.id,
-                source_scope=item.source_scope,
-                library_experience_item_id=item.library_experience_item_id,
-                item_title=item.title,
-                entry_context=None,
-                base_facts=[fact.model_copy(deep=True) for fact in item.base_facts],
+                experience_item_id=current_source.item.id,
+                source_scope=current_source.item.source_scope,
+                library_experience_item_id=(
+                    current_source.item.library_experience_item_id
+                ),
+                item_title=current_source.item.title,
+                entry_context=current_source.entry_context,
+                base_facts=[
+                    fact.model_copy(deep=True)
+                    for fact in current_source.item.base_facts
+                ],
                 captured_at=captured_at,
             )
-            for item in snapshot.standalone_experience_items
-        )
-        return captured
+            for current_source in current_sources.values()
+        ]
 
     @staticmethod
     def _validated_claim_snapshots(
@@ -1169,6 +1298,7 @@ class ApplicationStudio:
         failure_message: str | None,
         run_id: str,
         review_run: PromptRunSnapshot | None,
+        append_claims: bool,
     ) -> ApplicationSnapshot:
         # Source Snapshots and the running Prompt Run are saved before the
         # provider call. Merge only the result fields onto the latest snapshot
@@ -1203,9 +1333,11 @@ class ApplicationStudio:
                     raise ApplicationCommandError(
                         "Claim Studio 未返回可保存的结果"
                     )
-                snapshot.competitive_claims = [
-                    claim.model_copy(deep=True) for claim in claims
-                ]
+                saved_claims = [claim.model_copy(deep=True) for claim in claims]
+                if append_claims:
+                    snapshot.competitive_claims.extend(saved_claims)
+                else:
+                    snapshot.competitive_claims = saved_claims
                 snapshot.claim_studio = ClaimStudioSnapshot(
                     status="completed", last_error=None
                 )
@@ -1425,14 +1557,118 @@ class ApplicationStudio:
             return "竞争主张独立审查返回的格式不完整，请重试。"
         return "竞争主张独立审查服务暂时不可用，已捕获的来源和现有主张均已保留，请稍后重试。"
 
-    @staticmethod
-    def _source_change_notices(
-        snapshot: ApplicationSnapshot,
-    ) -> list[SourceChangeNoticeSnapshot]:
-        sources_by_id = {source.id: source for source in snapshot.source_snapshots}
-        current_sources: dict[
-            str, tuple[ExperienceItemSnapshot, ExperienceEntryContextSnapshot | None]
+    async def _with_current_source_notices(
+        self, snapshot: ApplicationSnapshot, owner_id: str
+    ) -> ApplicationSnapshot:
+        current_sources = await self._current_claim_sources(snapshot, owner_id)
+        snapshot.source_change_notices = self._source_change_notices(
+            snapshot, current_sources=current_sources
+        )
+        return snapshot
+
+    async def _current_claim_sources(
+        self, snapshot: ApplicationSnapshot, owner_id: str
+    ) -> dict[str, _CurrentClaimSource]:
+        current_sources = self._application_claim_sources(snapshot)
+        selected_links = [
+            link
+            for link in snapshot.experience_library_links
+            if link.relationship == "selected_for_application"
+        ]
+        if not selected_links:
+            return current_sources
+
+        library = await self.get_experience_library(owner_id)
+        library_sources: dict[
+            str,
+            tuple[
+                ExperienceLibraryItemSnapshot,
+                ExperienceEntryContextSnapshot | None,
+            ],
         ] = {}
+        for entry in library.experience_entries:
+            context = ExperienceEntryContextSnapshot(
+                organization=entry.organization,
+                role=entry.role,
+                date_range=entry.date_range,
+            )
+            library_sources.update(
+                {item.id: (item, context) for item in entry.experience_items}
+            )
+        library_sources.update(
+            {item.id: (item, None) for item in library.standalone_experience_items}
+        )
+        selection_sources = {
+            source.id: source for source in snapshot.source_snapshots
+        }
+
+        for link in selected_links:
+            application_current = current_sources.get(
+                link.application_experience_item_id
+            )
+            selection_source = selection_sources.get(link.source_snapshot_id or "")
+            library_current = library_sources.get(link.library_experience_item_id)
+            if application_current is None or selection_source is None:
+                continue
+            if library_current is None:
+                continue
+
+            application_item = application_current.item
+            application_context = application_current.entry_context
+            library_item, library_context = library_current
+            application_facts_by_library_id = {
+                fact.library_base_fact_id: fact
+                for fact in application_item.base_facts
+                if fact.library_base_fact_id is not None
+            }
+            mapped_library_facts = [
+                BaseFactSnapshot(
+                    id=(
+                        application_facts_by_library_id[fact.id].id
+                        if fact.id in application_facts_by_library_id
+                        else fact.id
+                    ),
+                    text=fact.text,
+                    source_location=(
+                        application_facts_by_library_id[fact.id].source_location
+                        if fact.id in application_facts_by_library_id
+                        else fact.source_location
+                    ),
+                    library_base_fact_id=fact.id,
+                )
+                for fact in library_item.base_facts
+            ]
+            current_item = application_item.model_copy(
+                update={
+                    "title": (
+                        application_item.title
+                        if application_item.title != selection_source.item_title
+                        else library_item.title
+                    ),
+                    "base_facts": (
+                        application_item.base_facts
+                        if application_item.base_facts != selection_source.base_facts
+                        else mapped_library_facts
+                    ),
+                },
+                deep=True,
+            )
+            current_context = (
+                application_context
+                if application_context != selection_source.entry_context
+                else library_context
+            )
+            current_sources[link.application_experience_item_id] = _CurrentClaimSource(
+                item=current_item,
+                entry_context=current_context,
+            )
+        return current_sources
+
+    @staticmethod
+    def _application_claim_sources(
+        snapshot: ApplicationSnapshot,
+    ) -> dict[str, _CurrentClaimSource]:
+        current_sources: dict[str, _CurrentClaimSource] = {}
         for entry in snapshot.experience_entries:
             context = ExperienceEntryContextSnapshot(
                 organization=entry.organization,
@@ -1440,14 +1676,29 @@ class ApplicationStudio:
                 date_range=entry.date_range,
             )
             current_sources.update(
-                {item.id: (item, context) for item in entry.experience_items}
+                {
+                    item.id: _CurrentClaimSource(
+                        item=item, entry_context=context
+                    )
+                    for item in entry.experience_items
+                }
             )
         current_sources.update(
             {
-                item.id: (item, None)
+                item.id: _CurrentClaimSource(item=item, entry_context=None)
                 for item in snapshot.standalone_experience_items
             }
         )
+        return current_sources
+
+    @staticmethod
+    def _source_change_notices(
+        snapshot: ApplicationSnapshot,
+        current_sources: dict[str, _CurrentClaimSource] | None = None,
+    ) -> list[SourceChangeNoticeSnapshot]:
+        sources_by_id = {source.id: source for source in snapshot.source_snapshots}
+        if current_sources is None:
+            current_sources = ApplicationStudio._application_claim_sources(snapshot)
 
         notices: list[SourceChangeNoticeSnapshot] = []
         for claim in snapshot.competitive_claims:
@@ -1461,7 +1712,8 @@ class ApplicationStudio:
             if current is None:
                 changed_dimensions.append("source_removed")
             else:
-                current_item, current_context = current
+                current_item = current.item
+                current_context = current.entry_context
                 if current_item.title != captured.item_title:
                     changed_dimensions.append("item_title")
                 if current_context != captured.entry_context:

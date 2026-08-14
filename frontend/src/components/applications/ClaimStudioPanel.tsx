@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import {
-  AlertTriangle,
   ArrowUpRight,
   CheckCircle2,
   FileCheck2,
+  History,
   Lightbulb,
   Link2,
   Loader2,
   PencilLine,
+  RefreshCw,
   Save,
   Sparkles,
 } from "lucide-react";
@@ -35,6 +36,7 @@ interface ClaimStudioPanelProps {
   onGenerate: () => void;
   onEditClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
   onSaveClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
+  onReanalyzeClaim: (claimId: string) => Promise<boolean>;
 }
 
 
@@ -62,6 +64,7 @@ function ClaimCard({
   busy,
   onEditClaim,
   onSaveClaim,
+  onReanalyzeClaim,
 }: {
   claim: CompetitiveClaimSnapshot;
   index: number;
@@ -71,6 +74,7 @@ function ClaimCard({
   busy: boolean;
   onEditClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
   onSaveClaim: (claimId: string, resumeClaim: string) => Promise<boolean>;
+  onReanalyzeClaim: (claimId: string) => Promise<boolean>;
 }) {
   const persistedText = claim.selected_resume_claim || claim.competitive_claim;
   const [draft, setDraft] = useState(persistedText);
@@ -82,6 +86,7 @@ function ClaimCard({
   const normalizedDraft = draft.trim();
   const hasUnsavedEdit = normalizedDraft !== persistedText;
   const savedIsCurrent = savedClaim?.resume_claim === normalizedDraft;
+  const sourceWasRemoved = sourceChangeNotice?.changed_dimensions.includes("source_removed") ?? false;
 
   async function persistDraft() {
     if (!normalizedDraft || !hasUnsavedEdit || busy) return;
@@ -91,9 +96,35 @@ function ClaimCard({
   return (
     <article className="overflow-hidden bg-[#f8f4eb] text-studio-ink">
       {sourceChangeNotice && (
-        <div className="flex items-start gap-2 border-b border-[#c5792d]/25 bg-[#fff0cf] px-5 py-3 text-xs leading-5 text-[#764818] sm:px-6">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{sourceChangeNotice.message}</span>
+        <div className="border-b border-[#b78b4a]/25 bg-[#f5ead0] px-5 py-4 text-[#604b2c] sm:px-6">
+          <div className="flex items-start gap-3">
+            <History className="mt-0.5 h-4 w-4 shrink-0 text-[#9a652c]" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold leading-5">来源版本已更新</div>
+              <p className="mt-1 text-xs leading-5">{sourceChangeNotice.message}</p>
+              <p className="mt-1 text-xs leading-5 text-[#796442]">
+                {sourceWasRemoved
+                  ? "原主张仍可继续编辑、保存和使用；由于对应材料已移除，暂时不能基于它重新分析。"
+                  : "主张仍可继续编辑、保存和使用。重新分析会基于当前材料新增一条主张，旧版本和原始来源不会改变。"}
+              </p>
+              {!sourceWasRemoved && (
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-[11px] leading-4 text-[#806c4b]">
+                    点击后，当前 JD、Role Signal、Experience Item 和 Base Facts 会发送给你配置的模型服务商。
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onReanalyzeClaim(claim.id)}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 border border-[#8b642f] bg-[#fffaf0] px-3 py-2 text-xs font-semibold text-[#60431f] transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50"
+                  >
+                    {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                    {busy ? "正在重新分析" : "使用最新材料重新分析"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
       <header className="flex flex-col gap-3 border-b border-studio-ink/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -187,6 +218,7 @@ export default function ClaimStudioPanel({
   onGenerate,
   onEditClaim,
   onSaveClaim,
+  onReanalyzeClaim,
 }: ClaimStudioPanelProps) {
   const sourcesById = new Map(sources.map((source) => [source.id, source]));
   const noticesByClaimId = new Map(sourceChangeNotices.map((notice) => [notice.claim_id, notice]));
@@ -206,21 +238,21 @@ export default function ClaimStudioPanel({
               AI 会优先挑选不超过三段高价值材料。你可以直接改写主张；只有点击保存，当前版本才会进入目标简历。
             </p>
           </div>
-          <button
-            type="button"
-            disabled={busy || Boolean(pendingClaimId) || !canGenerate}
-            onClick={onGenerate}
-            className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#dcefaa] px-5 py-3 text-sm font-semibold text-[#182019] transition-all hover:-translate-y-0.5 hover:bg-[#e7f7bf] disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-white/10 disabled:text-white/40"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-            {busy
-              ? "正在提炼主张"
-              : studio.status === "completed"
-                ? "重新生成竞争主张"
+          {claims.length === 0 && (
+            <button
+              type="button"
+              disabled={busy || Boolean(pendingClaimId) || !canGenerate}
+              onClick={onGenerate}
+              className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#dcefaa] px-5 py-3 text-sm font-semibold text-[#182019] transition-all hover:-translate-y-0.5 hover:bg-[#e7f7bf] disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-white/10 disabled:text-white/40"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+              {busy
+                ? "正在提炼主张"
                 : studio.status === "failed"
                   ? "重试生成竞争主张"
                   : "生成竞争主张"}
-          </button>
+            </button>
+          )}
         </div>
         <p className="relative mt-4 text-xs leading-5 text-[#9eaaa2]">
           点击生成后，当前 JD、Role Signals、Experience Items 和 Base Facts 会发送给你配置的模型服务商。编辑与保存均为本地确定性操作，不会再次调用模型。
@@ -261,6 +293,7 @@ export default function ClaimStudioPanel({
                 busy={pendingClaimId === claim.id}
                 onEditClaim={onEditClaim}
                 onSaveClaim={onSaveClaim}
+                onReanalyzeClaim={onReanalyzeClaim}
               />
             ))}
           </div>
