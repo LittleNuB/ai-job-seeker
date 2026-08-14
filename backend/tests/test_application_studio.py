@@ -1352,6 +1352,13 @@ async def test_editing_a_claim_persists_the_selected_resume_claim_without_saving
     assert reopened_response.status_code == 200
     assert reopened_response.json() == edited
 
+    library_response = await client.get("/api/experience-library", headers=headers)
+    assert library_response.status_code == 200
+    assert library_response.json() == {
+        "experience_entries": [],
+        "standalone_experience_items": [],
+    }
+
 
 async def test_issue_nine_claim_snapshots_open_with_the_generated_claim_selected(
     client: AsyncClient, auth_headers
@@ -1627,3 +1634,278 @@ async def test_targeted_resume_text_and_markdown_export_only_saved_claims_for_th
     assert stretch_text not in markdown_response.text
     assert forbidden_response.status_code == 404
     assert model.calls == calls_before_export
+
+
+async def test_candidate_explicitly_saves_selected_application_experience_to_the_library(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    employment_item = created["experience_entries"][0]["experience_items"][0]
+    standalone_item = created["standalone_experience_items"][0]
+
+    empty_library_response = await client.get(
+        "/api/experience-library", headers=headers
+    )
+    saved_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "save_experience_to_library",
+            "experience_item_ids": [employment_item["id"], standalone_item["id"]],
+        },
+    )
+    library_response = await client.get("/api/experience-library", headers=headers)
+
+    assert empty_library_response.status_code == 200
+    assert empty_library_response.json() == {
+        "experience_entries": [],
+        "standalone_experience_items": [],
+    }
+    assert saved_response.status_code == 200, saved_response.text
+    saved = saved_response.json()
+    assert len(saved["experience_library_links"]) == 2
+    assert {
+        link["application_experience_item_id"]
+        for link in saved["experience_library_links"]
+    } == {employment_item["id"], standalone_item["id"]}
+    assert {
+        link["relationship"] for link in saved["experience_library_links"]
+    } == {"saved_from_application"}
+
+    assert library_response.status_code == 200, library_response.text
+    library = library_response.json()
+    assert len(library["experience_entries"]) == 1
+    saved_entry = library["experience_entries"][0]
+    assert saved_entry["organization"] == "知音科技"
+    assert saved_entry["role"] == "AI 产品实习生"
+    assert saved_entry["date_range"] == "2025.01-2025.06"
+    assert [item["title"] for item in saved_entry["experience_items"]] == [
+        employment_item["title"]
+    ]
+    assert [
+        fact["text"] for fact in saved_entry["experience_items"][0]["base_facts"]
+    ] == [fact["text"] for fact in employment_item["base_facts"]]
+
+    assert len(library["standalone_experience_items"]) == 1
+    saved_standalone = library["standalone_experience_items"][0]
+    assert saved_standalone["entry_id"] is None
+    assert saved_standalone["title"] == standalone_item["title"]
+    assert [fact["text"] for fact in saved_standalone["base_facts"]] == [
+        fact["text"] for fact in standalone_item["base_facts"]
+    ]
+
+    reopened_response = await client.get(
+        f"/api/applications/{created['application_id']}", headers=headers
+    )
+    assert reopened_response.status_code == 200
+    assert reopened_response.json() == saved
+
+
+async def test_candidate_reuses_owned_library_items_in_a_second_application_snapshot(
+    client: AsyncClient, auth_headers
+):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+    first = await _create_application(client, owner_headers)
+    first_items = [
+        first["experience_entries"][0]["experience_items"][0],
+        first["standalone_experience_items"][0],
+    ]
+    save_response = await client.post(
+        f"/api/applications/{first['application_id']}/commands",
+        headers=owner_headers,
+        json={
+            "type": "save_experience_to_library",
+            "experience_item_ids": [item["id"] for item in first_items],
+        },
+    )
+    assert save_response.status_code == 200, save_response.text
+    library = (
+        await client.get("/api/experience-library", headers=owner_headers)
+    ).json()
+    employment_library_item = library["experience_entries"][0]["experience_items"][0]
+    standalone_library_item = library["standalone_experience_items"][0]
+    selected_library_ids = [
+        employment_library_item["id"],
+        standalone_library_item["id"],
+    ]
+
+    second_response = await client.post(
+        "/api/applications/commands",
+        headers=owner_headers,
+        json={
+            "type": "start_application",
+            "target_role": "大模型产品经理",
+            "jd_text": CONCRETE_JD,
+            "library_experience_item_ids": selected_library_ids,
+        },
+    )
+    forbidden_response = await client.post(
+        "/api/applications/commands",
+        headers=other_headers,
+        json={
+            "type": "start_application",
+            "target_role": "大模型产品经理",
+            "jd_text": CONCRETE_JD,
+            "library_experience_item_ids": selected_library_ids,
+        },
+    )
+
+    assert second_response.status_code == 200, second_response.text
+    second = second_response.json()
+    assert second["resume_source"]["text"] == ""
+    assert len(second["experience_entries"]) == 1
+    second_entry = second["experience_entries"][0]
+    assert second_entry["organization"] == "知音科技"
+    assert second_entry["role"] == "AI 产品实习生"
+    assert len(second_entry["experience_items"]) == 1
+    second_employment_item = second_entry["experience_items"][0]
+    assert second_employment_item["title"] == employment_library_item["title"]
+    assert second_employment_item["source_scope"] == "experience_library"
+    assert [fact["text"] for fact in second_employment_item["base_facts"]] == [
+        fact["text"] for fact in employment_library_item["base_facts"]
+    ]
+    assert len(second["standalone_experience_items"]) == 1
+    assert second["standalone_experience_items"][0]["source_scope"] == (
+        "experience_library"
+    )
+
+    assert len(second["experience_library_links"]) == 2
+    assert {
+        link["library_experience_item_id"]
+        for link in second["experience_library_links"]
+    } == set(selected_library_ids)
+    assert {
+        link["relationship"] for link in second["experience_library_links"]
+    } == {"selected_for_application"}
+    source_by_id = {source["id"]: source for source in second["source_snapshots"]}
+    for link in second["experience_library_links"]:
+        source = source_by_id[link["source_snapshot_id"]]
+        assert source["prompt_run_id"] is None
+        assert source["source_scope"] == "experience_library"
+        assert source["library_experience_item_id"] == link[
+            "library_experience_item_id"
+        ]
+
+    assert forbidden_response.status_code == 422
+    other_list = await client.get("/api/applications", headers=other_headers)
+    assert other_list.status_code == 200
+    assert other_list.json()["items"] == []
+
+    reopened = await client.get(
+        f"/api/applications/{second['application_id']}", headers=owner_headers
+    )
+    assert reopened.status_code == 200
+    assert reopened.json() == second
+
+
+async def test_library_edits_change_current_content_without_rewriting_an_application_snapshot(
+    client: AsyncClient, auth_headers
+):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+    first = await _create_application(client, owner_headers)
+    first_item = first["experience_entries"][0]["experience_items"][0]
+    saved_response = await client.post(
+        f"/api/applications/{first['application_id']}/commands",
+        headers=owner_headers,
+        json={
+            "type": "save_experience_to_library",
+            "experience_item_ids": [first_item["id"]],
+        },
+    )
+    assert saved_response.status_code == 200
+    original_library = (
+        await client.get("/api/experience-library", headers=owner_headers)
+    ).json()
+    library_entry = original_library["experience_entries"][0]
+    library_item = library_entry["experience_items"][0]
+
+    second_response = await client.post(
+        "/api/applications/commands",
+        headers=owner_headers,
+        json={
+            "type": "start_application",
+            "target_role": "大模型产品经理",
+            "jd_text": CONCRETE_JD,
+            "library_experience_item_ids": [library_item["id"]],
+        },
+    )
+    assert second_response.status_code == 200
+    second_before_edit = second_response.json()
+    captured_before_edit = second_before_edit["source_snapshots"][0]
+    changed_title = "大模型客服质量评测与迭代"
+    changed_fact = "从 120 条失败案例中归纳准确性、完整性与可执行性问题。"
+
+    forbidden_edit_response = await client.post(
+        "/api/experience-library/commands",
+        headers=other_headers,
+        json={
+            "type": "update_experience_library_item",
+            "experience_item_id": library_item["id"],
+            "title": changed_title,
+            "entry_context": {
+                "organization": library_entry["organization"],
+                "role": library_entry["role"],
+                "date_range": library_entry["date_range"],
+            },
+            "base_facts": [
+                {
+                    "id": fact["id"],
+                    "text": changed_fact if index == 0 else fact["text"],
+                }
+                for index, fact in enumerate(library_item["base_facts"])
+            ],
+        },
+    )
+    edited_library_response = await client.post(
+        "/api/experience-library/commands",
+        headers=owner_headers,
+        json={
+            "type": "update_experience_library_item",
+            "experience_item_id": library_item["id"],
+            "title": changed_title,
+            "entry_context": {
+                "organization": library_entry["organization"],
+                "role": library_entry["role"],
+                "date_range": library_entry["date_range"],
+            },
+            "base_facts": [
+                {
+                    "id": fact["id"],
+                    "text": changed_fact if index == 0 else fact["text"],
+                }
+                for index, fact in enumerate(library_item["base_facts"])
+            ],
+        },
+    )
+
+    assert forbidden_edit_response.status_code == 404
+    assert edited_library_response.status_code == 200, edited_library_response.text
+    edited_library = edited_library_response.json()
+    edited_item = edited_library["experience_entries"][0]["experience_items"][0]
+    assert edited_item["title"] == changed_title
+    assert edited_item["base_facts"][0]["text"] == changed_fact
+    assert edited_item["id"] == library_item["id"]
+
+    second_after_edit_response = await client.get(
+        f"/api/applications/{second_before_edit['application_id']}",
+        headers=owner_headers,
+    )
+    assert second_after_edit_response.status_code == 200
+    second_after_edit = second_after_edit_response.json()
+    assert second_after_edit == second_before_edit
+    assert second_after_edit["source_snapshots"][0] == captured_before_edit
+    assert second_after_edit["experience_entries"][0]["experience_items"][0][
+        "title"
+    ] == library_item["title"]
+
+    other_library_response = await client.get(
+        "/api/experience-library", headers=other_headers
+    )
+    assert other_library_response.status_code == 200
+    assert other_library_response.json() == {
+        "experience_entries": [],
+        "standalone_experience_items": [],
+    }

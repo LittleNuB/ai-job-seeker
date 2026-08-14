@@ -498,3 +498,40 @@ test("candidate edits, saves, reopens, copies, and exports a Targeted Resume Ver
   expect(markdown).toContain(editedText);
   expect(markdown).not.toContain(stretchText);
 });
+
+test("candidate explicitly saves experience and reuses it in a second Target Application", async ({ page, request }) => {
+  const user = await registerUser(request, "experience-library");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const first = await createResponse.json();
+
+  await installSession(page, user);
+  await page.goto(`/applications/${first.application_id}`);
+  await page.getByRole("button", { name: "保存 智能客服评测体系 到经历库" }).click();
+  await expect(page.getByText("已保存到经历库", { exact: true }).first()).toBeVisible();
+
+  await page.goto("/applications");
+  await expect(page.getByRole("heading", { name: "复用经历库" })).toBeVisible();
+  await page.getByLabel("选择 智能客服评测体系").check();
+  await page.getByLabel("目标岗位").fill("大模型产品经理");
+  await page.getByLabel("具体 JD").fill(concreteJd);
+  await expect(page.getByLabel("简历内容")).not.toHaveAttribute("required", "");
+  await page.getByRole("button", { name: "建立投递工作台" }).click();
+
+  await expect(page).toHaveURL(/\/applications\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("heading", { name: "大模型产品经理" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "智能客服评测体系" })).toBeVisible();
+  await expect(page.getByText("来自经历库", { exact: true })).toBeVisible();
+
+  await page.goto("/experience-library");
+  await expect(page.getByRole("heading", { name: "经历库" })).toBeVisible();
+  await expect(page.getByLabel("智能客服评测体系 项目名称")).toHaveValue("智能客服评测体系");
+});

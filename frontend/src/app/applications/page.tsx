@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { ArrowRight, BriefcaseBusiness, FileCheck2, Loader2, Plus, Sparkles } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ArrowRight, BookOpenCheck, BriefcaseBusiness, FileCheck2, Loader2, Plus, Sparkles } from "lucide-react";
 import FileUploader from "@/components/FileUploader";
-import { applications, type ApplicationListItem } from "@/lib/api";
+import {
+  applications,
+  experienceLibrary,
+  type ApplicationListItem,
+  type ExperienceLibraryItemSnapshot,
+  type ExperienceLibrarySnapshot,
+} from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
 
 const phaseLabel: Record<string, string> = { source_review: "整理经历" };
@@ -19,11 +25,32 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function LibraryItemChoice({ item, selected, onToggle }: {
+  item: ExperienceLibraryItemSnapshot;
+  selected: boolean;
+  onToggle: (itemId: string) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-2 border border-studio-ink/15 bg-white px-3 py-2.5 text-sm hover:border-studio-accent/50">
+      <input
+        type="checkbox"
+        aria-label={`选择 ${item.title}`}
+        checked={selected}
+        onChange={() => onToggle(item.id)}
+        className="mt-1 accent-studio-accent"
+      />
+      <span className="font-medium leading-5">{item.title}</span>
+    </label>
+  );
+}
+
 export default function ApplicationsPage() {
   const router = useRouter();
   const [targetRole, setTargetRole] = useState("");
   const [jdText, setJdText] = useState("");
   const [resumeText, setResumeText] = useState("");
+  const [library, setLibrary] = useState<ExperienceLibrarySnapshot>({ experience_entries: [], standalone_experience_items: [] });
+  const [selectedLibraryItemIds, setSelectedLibraryItemIds] = useState<string[]>([]);
   const [recent, setRecent] = useState<ApplicationListItem[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -34,15 +61,29 @@ export default function ApplicationsPage() {
       router.replace(getLoginPath("/applications"));
       return;
     }
-    applications
-      .list()
-      .then(({ items }) => setRecent(items))
+    Promise.all([applications.list(), experienceLibrary.get()])
+      .then(([{ items }, librarySnapshot]) => {
+        setRecent(items);
+        setLibrary(librarySnapshot);
+      })
       .catch((err: unknown) => {
         if (err instanceof AuthRequiredError) router.replace(getLoginPath("/applications"));
         else setError(err instanceof Error ? err.message : "暂时无法读取投递记录");
       })
       .finally(() => setLoadingRecent(false));
   }, [router]);
+
+  const libraryItemCount = useMemo(
+    () => library.standalone_experience_items.length
+      + library.experience_entries.reduce((total, entry) => total + entry.experience_items.length, 0),
+    [library],
+  );
+
+  function toggleLibraryItem(itemId: string) {
+    setSelectedLibraryItemIds((current) => current.includes(itemId)
+      ? current.filter((id) => id !== itemId)
+      : [...current, itemId]);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -53,7 +94,12 @@ export default function ApplicationsPage() {
     setSubmitting(true);
     setError("");
     try {
-      const snapshot = await applications.start({ target_role: targetRole, jd_text: jdText, resume_text: resumeText });
+      const snapshot = await applications.start({
+        target_role: targetRole,
+        jd_text: jdText,
+        resume_text: resumeText,
+        library_experience_item_ids: selectedLibraryItemIds,
+      });
       router.push(`/applications/${snapshot.application_id}`);
     } catch (err: unknown) {
       if (err instanceof AuthRequiredError) router.push(getLoginPath("/applications"));
@@ -122,16 +168,72 @@ export default function ApplicationsPage() {
               />
             </label>
 
+            <section aria-labelledby="experience-library-heading" className="border-y border-studio-ink/15 bg-[#f7f4ed] px-4 py-5 sm:px-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#526357]">
+                    <BookOpenCheck className="h-4 w-4 text-[#b44128]" /> Saved source
+                  </div>
+                  <h3 id="experience-library-heading" className="mt-1 text-lg font-semibold">复用经历库</h3>
+                  <p className="mt-1 text-xs leading-5 text-[#617066]">直接选择已经整理过的经历，创建时会固定一份来源快照。</p>
+                </div>
+                <Link href="/experience-library" className="text-xs font-semibold text-[#b44128] underline decoration-[#b44128]/30 underline-offset-4">
+                  管理经历库
+                </Link>
+              </div>
+
+              {libraryItemCount === 0 ? (
+                <p className="mt-4 border-l-2 border-studio-ink/20 pl-3 text-xs leading-5 text-[#617066]">
+                  暂无已保存经历。你可以先导入简历建立投递，再从工作台显式保存值得复用的项目。
+                </p>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {library.experience_entries.map((entry) => (
+                    <div key={entry.id}>
+                      <div className="mb-2 text-xs font-semibold text-[#455449]">
+                        {entry.organization} · {entry.role}{entry.date_range ? ` · ${entry.date_range}` : ""}
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {entry.experience_items.map((item) => (
+                          <LibraryItemChoice
+                            key={item.id}
+                            item={item}
+                            selected={selectedLibraryItemIds.includes(item.id)}
+                            onToggle={toggleLibraryItem}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {library.standalone_experience_items.length > 0 && (
+                    <div>
+                      <div className="mb-2 text-xs font-semibold text-[#455449]">独立项目</div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {library.standalone_experience_items.map((item) => (
+                          <LibraryItemChoice
+                            key={item.id}
+                            item={item}
+                            selected={selectedLibraryItemIds.includes(item.id)}
+                            onToggle={toggleLibraryItem}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
             <div>
               <div className="mb-2 flex items-baseline justify-between gap-4 text-sm font-semibold">
-                简历内容 <span className="text-xs font-normal text-[#617066]">粘贴或上传均可</span>
+                简历内容 <span className="text-xs font-normal text-[#617066]">也可以粘贴或上传新材料</span>
               </div>
               <FileUploader onTextExtracted={setResumeText} label="从现有简历提取内容" />
               <textarea
                 aria-label="简历内容"
                 value={resumeText}
                 onChange={(event) => setResumeText(event.target.value)}
-                required
+                required={selectedLibraryItemIds.length === 0}
                 rows={10}
                 placeholder="粘贴工作经历、实习经历和项目经历……"
                 className="w-full resize-y border border-studio-ink/20 bg-white p-4 text-sm leading-7 outline-none transition-colors placeholder:text-studio-ink/35 focus:border-[#cc4f32] focus:ring-1 focus:ring-[#cc4f32]"
@@ -142,7 +244,7 @@ export default function ApplicationsPage() {
 
             <div className="flex flex-col gap-3 border-t border-studio-ink/15 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-md text-xs leading-5 text-[#617066]">
-                导入内容只保存在这次投递中，不会自动写入可复用经历库。
+                导入内容只保存在这次投递中，不会自动写入经历库；选择的库内容会保留独立来源快照。
               </p>
               <button
                 type="submit"

@@ -16,7 +16,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 from app.config import get_settings  # noqa: E402
 from app.database import Base  # noqa: E402
-from app.models import analysis, chat, position, user  # noqa: F401,E402
+from app.models import analysis, chat, experience_library, position, user  # noqa: F401,E402
 
 config = context.config
 

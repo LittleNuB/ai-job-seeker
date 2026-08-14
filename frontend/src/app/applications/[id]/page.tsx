@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, GitMerge, Loader2, RotateCcw, Scissors } from "lucide-react";
-import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot } from "@/lib/api";
+import { ArrowLeft, BookmarkPlus, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, GitMerge, Loader2, RotateCcw, Scissors } from "lucide-react";
+import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot, type ExperienceLibraryLinkSnapshot } from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
 import ClaimStudioPanel from "@/components/applications/ClaimStudioPanel";
 import TargetedResumePanel from "@/components/applications/TargetedResumePanel";
@@ -17,14 +17,16 @@ function itemCount(snapshot: ApplicationSnapshot): number {
   );
 }
 
-function ExperienceItemCard({ item, entries, allItems, busy, onMove, onSplit, onMerge }: {
+function ExperienceItemCard({ item, entries, allItems, libraryLink, busy, onMove, onSplit, onMerge, onSaveToLibrary }: {
   item: ExperienceItemSnapshot;
   entries: ExperienceEntrySnapshot[];
   allItems: ExperienceItemSnapshot[];
+  libraryLink?: ExperienceLibraryLinkSnapshot;
   busy: boolean;
   onMove: (itemId: string, destinationEntryId: string | null) => void;
   onSplit: (itemId: string, factIds: string[], newTitle: string) => Promise<boolean>;
   onMerge: (sourceItemId: string, destinationItemId: string) => Promise<boolean>;
+  onSaveToLibrary: (itemId: string) => Promise<boolean>;
 }) {
   const [editingBoundary, setEditingBoundary] = useState(false);
   const [selectedFactIds, setSelectedFactIds] = useState<string[]>([]);
@@ -59,8 +61,14 @@ function ExperienceItemCard({ item, entries, allItems, busy, onMove, onSplit, on
     <article className="border border-studio-line/15 bg-white p-5 shadow-[3px_3px_0_#e5dfd2]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6b786e]">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6b786e]">
             <CircleDot className="h-3 w-3 text-studio-accent" /> 经历材料
+            {libraryLink?.relationship === "selected_for_application" && (
+              <span className="bg-studio-sage px-2 py-0.5 normal-case tracking-normal text-[#36503a]">来自经历库</span>
+            )}
+            {libraryLink?.relationship === "saved_from_application" && (
+              <span className="bg-[#eee9dd] px-2 py-0.5 normal-case tracking-normal text-[#59675e]">已保存到经历库</span>
+            )}
           </div>
           <h4 className="mt-2 text-lg font-semibold tracking-tight text-[#16221a]">{item.title}</h4>
         </div>
@@ -89,13 +97,26 @@ function ExperienceItemCard({ item, entries, allItems, busy, onMove, onSplit, on
       </ul>
 
       <div className="mt-4 border-t border-studio-line/10 pt-3">
-        <button
-          type="button"
-          onClick={() => setEditingBoundary((current) => !current)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5f6d63] underline decoration-[#5f6d63]/30 underline-offset-4 hover:text-studio-ink"
-        >
-          <Scissors className="h-3.5 w-3.5" /> 调整项目边界
-        </button>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {!libraryLink && (
+            <button
+              type="button"
+              aria-label={`保存 ${item.title} 到经历库`}
+              disabled={busy}
+              onClick={() => onSaveToLibrary(item.id)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#b44128] underline decoration-[#b44128]/30 underline-offset-4 hover:text-[#7f2818] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <BookmarkPlus className="h-3.5 w-3.5" /> 保存到经历库
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditingBoundary((current) => !current)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5f6d63] underline decoration-[#5f6d63]/30 underline-offset-4 hover:text-studio-ink"
+          >
+            <Scissors className="h-3.5 w-3.5" /> 调整项目边界
+          </button>
+        </div>
 
         {editingBoundary && (
           <div className="mt-4 grid gap-4 bg-[#f7f4ed] p-4 lg:grid-cols-2">
@@ -243,6 +264,14 @@ export default function ApplicationWorkspacePage() {
       sourceItemId,
       "经历项目没有合并成功，请重试",
       () => applications.mergeExperienceItems(applicationId, sourceItemId, destinationItemId),
+    );
+  }
+
+  function saveItemToLibrary(itemId: string) {
+    return applyItemMutation(
+      itemId,
+      "经历没有保存到经历库，请重试",
+      () => applications.saveExperienceToLibrary(applicationId, [itemId]),
     );
   }
 
@@ -437,7 +466,7 @@ export default function ApplicationWorkspacePage() {
                 </div>
                 <div className="space-y-3 sm:pl-5">
                   {entry.experience_items.length ? entry.experience_items.map((item) => (
-                    <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} />
+                    <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} libraryLink={snapshot.experience_library_links?.find((link) => link.application_experience_item_id === item.id)} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} onSaveToLibrary={saveItemToLibrary} />
                   )) : <div className="border border-dashed border-studio-ink/25 px-5 py-6 text-sm text-studio-muted">这段经历暂时没有项目材料，可从下方独立项目中调整归入。</div>}
                 </div>
               </section>
@@ -447,7 +476,7 @@ export default function ApplicationWorkspacePage() {
               <div className="mb-3 flex items-center gap-2 border-l-4 border-studio-accent pl-4"><FolderKanban className="h-4 w-4 text-[#b44128]" /><h3 className="text-xl font-semibold">独立项目</h3></div>
               <div className="space-y-3 sm:pl-5">
                 {snapshot.standalone_experience_items.length ? snapshot.standalone_experience_items.map((item) => (
-                  <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} />
+                  <ExperienceItemCard key={item.id} item={item} entries={snapshot.experience_entries} allItems={allItems} libraryLink={snapshot.experience_library_links?.find((link) => link.application_experience_item_id === item.id)} busy={pendingItemId === item.id} onMove={moveItem} onSplit={splitItem} onMerge={mergeItems} onSaveToLibrary={saveItemToLibrary} />
                 )) : <div className="border border-dashed border-studio-ink/25 px-5 py-6 text-sm text-studio-muted">当前没有独立项目，所有材料都已归入工作或实习经历。</div>}
               </div>
             </section>
