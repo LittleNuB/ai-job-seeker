@@ -775,7 +775,7 @@ async def test_claim_studio_generates_fewer_than_three_traceable_claims(
         "claim_studio",
     ]
     assert [run["prompt_version"] for run in snapshot["prompt_runs"][-2:]] == [
-        "claim-studio-v1",
+        "claim-studio-v2",
         "claim-studio-review-v1",
     ]
     assert [run["status"] for run in snapshot["prompt_runs"][-2:]] == [
@@ -1072,6 +1072,18 @@ async def test_claim_studio_independent_review_rejects_semantic_duplicates_and_f
 ):
     headers = await auth_headers(client)
     created = await _create_application(client, headers)
+    preference_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "update_writing_preference_profile",
+            "sentence_length": "detailed",
+            "information_density": "dense",
+            "technical_detail": "explicit",
+            "result_placement": "lead",
+        },
+    )
+    expected_preference = preference_response.json()["writing_preference_profile"]
     model = FakeApplicationModel(
         {
             "role_signals": [
@@ -1169,6 +1181,7 @@ async def test_claim_studio_independent_review_rejects_semantic_duplicates_and_f
         app.dependency_overrides.pop(get_application_model, None)
 
     assert analyzed_response.status_code == 200
+    assert preference_response.status_code == 200
     for response in (duplicate_response, upgrade_response):
         assert response.status_code == 200
         snapshot = response.json()
@@ -1176,13 +1189,19 @@ async def test_claim_studio_independent_review_rejects_semantic_duplicates_and_f
         assert snapshot["claim_studio"]["last_error"]["code"] == "invalid_output"
         assert snapshot["competitive_claims"] == []
         assert [run["prompt_version"] for run in snapshot["prompt_runs"][-2:]] == [
-            "claim-studio-v1",
+            "claim-studio-v2",
             "claim-studio-review-v1",
         ]
         assert [run["status"] for run in snapshot["prompt_runs"][-2:]] == [
             "completed",
             "completed",
         ]
+    assert json.loads(model.requests[1]["user_prompt"])[
+        "writing_preference_profile"
+    ] == expected_preference
+    assert json.loads(model.requests[3]["user_prompt"])[
+        "writing_preference_profile"
+    ] == expected_preference
 
 
 async def test_source_edit_preserves_claim_and_emits_a_non_blocking_notice_without_model_call(
@@ -1712,6 +1731,487 @@ async def test_explicit_save_preserves_claim_provenance_and_emits_the_saved_clai
             "created_at": saved["behavior_events"][0]["created_at"],
         }
     ]
+    assert model.calls == calls_before_save
+
+
+async def test_only_an_explicitly_saved_edit_updates_the_visible_writing_preference(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    assert created["writing_preference_profile"] == {
+        "profile_version": "writing-preference-v1",
+        "enabled": True,
+        "source": "default",
+        "sentence_length": "balanced",
+        "information_density": "balanced",
+        "technical_detail": "balanced",
+        "result_placement": "balanced",
+        "learned_from_saved_edits": 0,
+        "updated_at": None,
+    }
+
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        generated_text = "围绕 120 条高频失败案例建立准确性、完整性和可执行性三类质量评测维度。"
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": generated_text,
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        claim = generated_response.json()["competitive_claims"][0]
+        unedited_save_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+        neutral_edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": claim["id"],
+                "resume_claim": (
+                    "作为 PM 依据 120 条高频失败案例搭建准确性、完整性和可执行性三类质量评测维度。"
+                ),
+            },
+        )
+        neutral_saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+        edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": claim["id"],
+                "resume_claim": (
+                    "将严重错误案例从 18 条降至 7 条；基于 Prompt 评测定位高频失败模式，"
+                    "并协同算法完成两轮迭代，形成可复用的质量评测闭环。"
+                ),
+            },
+        )
+        calls_before_save = model.calls
+        saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+        repeated_save_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    assert unedited_save_response.status_code == 200
+    assert unedited_save_response.json()["writing_preference_profile"]["source"] == "default"
+    assert (
+        unedited_save_response.json()["writing_preference_profile"][
+            "learned_from_saved_edits"
+        ]
+        == 0
+    )
+    assert neutral_edited_response.status_code == 200
+    assert neutral_saved_response.status_code == 200
+    assert neutral_saved_response.json()["writing_preference_profile"]["source"] == "default"
+    assert (
+        neutral_saved_response.json()["writing_preference_profile"][
+            "learned_from_saved_edits"
+        ]
+        == 0
+    )
+    assert edited_response.status_code == 200
+    assert edited_response.json()["writing_preference_profile"]["source"] == "default"
+    assert edited_response.json()["writing_preference_profile"]["learned_from_saved_edits"] == 0
+    assert saved_response.status_code == 200, saved_response.text
+    learned = saved_response.json()["writing_preference_profile"]
+    assert learned["source"] == "learned"
+    assert learned["sentence_length"] == "detailed"
+    assert learned["information_density"] == "dense"
+    assert learned["technical_detail"] == "explicit"
+    assert learned["result_placement"] == "lead"
+    assert learned["learned_from_saved_edits"] == 1
+    assert learned["updated_at"] is not None
+    assert repeated_save_response.status_code == 200
+    assert (
+        repeated_save_response.json()["writing_preference_profile"]
+        ["learned_from_saved_edits"]
+        == 1
+    )
+    assert model.calls == calls_before_save
+
+    later_application = await _create_application(client, headers)
+    assert later_application["writing_preference_profile"] == learned
+    before_profile_change = repeated_save_response.json()
+    manually_changed_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "update_writing_preference_profile",
+            "sentence_length": "concise",
+            "information_density": "focused",
+            "technical_detail": "essential",
+            "result_placement": "close",
+        },
+    )
+    assert manually_changed_response.status_code == 200
+    assert (
+        manually_changed_response.json()["targeted_resume_version"]
+        == before_profile_change["targeted_resume_version"]
+    )
+    assert (
+        manually_changed_response.json()["prompt_runs"]
+        == before_profile_change["prompt_runs"]
+    )
+
+
+async def test_owner_can_edit_disable_and_clear_the_writing_preference(
+    client: AsyncClient, auth_headers
+):
+    owner_headers = await auth_headers(client)
+    other_headers = await auth_headers(client)
+    created = await _create_application(client, owner_headers)
+
+    updated_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=owner_headers,
+        json={
+            "type": "update_writing_preference_profile",
+            "sentence_length": "detailed",
+            "information_density": "dense",
+            "technical_detail": "explicit",
+            "result_placement": "lead",
+        },
+    )
+    forbidden_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=other_headers,
+        json={
+            "type": "set_writing_preference_profile_enabled",
+            "enabled": False,
+        },
+    )
+    disabled_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=owner_headers,
+        json={
+            "type": "set_writing_preference_profile_enabled",
+            "enabled": False,
+        },
+    )
+    other_application = await _create_application(client, other_headers)
+    cleared_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=owner_headers,
+        json={"type": "clear_writing_preference_profile"},
+    )
+
+    assert updated_response.status_code == 200, updated_response.text
+    updated = updated_response.json()["writing_preference_profile"]
+    assert updated == {
+        "profile_version": "writing-preference-v1",
+        "enabled": True,
+        "source": "manual",
+        "sentence_length": "detailed",
+        "information_density": "dense",
+        "technical_detail": "explicit",
+        "result_placement": "lead",
+        "learned_from_saved_edits": 0,
+        "updated_at": updated["updated_at"],
+    }
+    assert updated["updated_at"] is not None
+    assert forbidden_response.status_code == 404
+    disabled = disabled_response.json()["writing_preference_profile"]
+    assert disabled["enabled"] is False
+    assert disabled["source"] == "manual"
+    assert disabled["sentence_length"] == "detailed"
+    assert other_application["writing_preference_profile"]["source"] == "default"
+    assert other_application["writing_preference_profile"]["enabled"] is True
+
+    assert cleared_response.status_code == 200, cleared_response.text
+    assert cleared_response.json()["writing_preference_profile"] == {
+        "profile_version": "writing-preference-v1",
+        "enabled": True,
+        "source": "default",
+        "sentence_length": "balanced",
+        "information_density": "balanced",
+        "technical_detail": "balanced",
+        "result_placement": "balanced",
+        "learned_from_saved_edits": 0,
+        "updated_at": None,
+    }
+
+
+async def test_claim_generation_applies_and_records_the_active_preference_snapshot(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    preference_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "update_writing_preference_profile",
+            "sentence_length": "concise",
+            "information_density": "dense",
+            "technical_detail": "explicit",
+            "result_placement": "lead",
+        },
+    )
+    expected_profile = preference_response.json()["writing_preference_profile"]
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        changed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "update_writing_preference_profile",
+                "sentence_length": "detailed",
+                "information_density": "focused",
+                "technical_detail": "essential",
+                "result_placement": "close",
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert preference_response.status_code == 200
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200, generated_response.text
+    generated = generated_response.json()
+    generation_run = next(
+        run
+        for run in generated["prompt_runs"]
+        if run["prompt_family"] == "claim_studio"
+        and run["prompt_version"] == "claim-studio-v2"
+    )
+    assert generation_run["writing_preference_profile_snapshot"] == expected_profile
+    generation_payload = json.loads(model.requests[1]["user_prompt"])
+    assert generation_payload["writing_preference_profile"] == expected_profile
+    assert "偏好只能改变表达风格" in model.requests[1]["system_prompt"]
+
+    assert changed_response.status_code == 200
+    historical_run = next(
+        run
+        for run in changed_response.json()["prompt_runs"]
+        if run["id"] == generation_run["id"]
+    )
+    assert historical_run["writing_preference_profile_snapshot"] == expected_profile
+
+
+async def test_disabled_preference_uses_the_default_and_does_not_learn_on_save(
+    client: AsyncClient, auth_headers
+):
+    headers = await auth_headers(client)
+    created = await _create_application(client, headers)
+    disabled_response = await client.post(
+        f"/api/applications/{created['application_id']}/commands",
+        headers=headers,
+        json={
+            "type": "set_writing_preference_profile_enabled",
+            "enabled": False,
+        },
+    )
+    model = FakeApplicationModel(
+        {
+            "role_signals": [
+                {
+                    "signal": "大模型工作流与质量评测设计",
+                    "source_type": "explicit",
+                    "jd_excerpt": "设计大模型工作流、质量评测方案及异常处理机制",
+                    "rationale": None,
+                }
+            ]
+        }
+    )
+    app.dependency_overrides[get_application_model] = lambda: model
+    try:
+        analyzed_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "analyze_target"},
+        )
+        analyzed = analyzed_response.json()
+        item = analyzed["experience_entries"][0]["experience_items"][0]
+        signal = analyzed["role_signals"][0]
+        model.output = [
+            {
+                "competitive_claims": [
+                    {
+                        "experience_item_id": item["id"],
+                        "primary_role_signal_id": signal["id"],
+                        "source_focus": "质量评测体系",
+                        "opportunity_value": "体现质量评测方法设计能力。",
+                        "supported_base_fact_ids": [item["base_facts"][0]["id"]],
+                        "competitive_claim": "围绕失败案例建立三类质量评测维度。",
+                        "stretch_direction": {
+                            "expression_gap": "没有说明评测如何驱动决策。",
+                            "why_it_matters": "岗位重视质量评测与迭代闭环。",
+                            "expansion_direction": "回想一次评测结论改变方案的具体取舍。",
+                        },
+                    }
+                ]
+            },
+            {"verdict": "approved", "violations": []},
+        ]
+        generated_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={"type": "generate_claims"},
+        )
+        generated = generated_response.json()
+        claim = generated["competitive_claims"][0]
+        edited_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "edit_resume_claim",
+                "claim_id": claim["id"],
+                "resume_claim": "建立三类评测维度。",
+            },
+        )
+        calls_before_save = model.calls
+        saved_response = await client.post(
+            f"/api/applications/{created['application_id']}/commands",
+            headers=headers,
+            json={
+                "type": "save_targeted_resume_claims",
+                "claim_ids": [claim["id"]],
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_application_model, None)
+
+    assert disabled_response.status_code == 200
+    assert analyzed_response.status_code == 200
+    assert generated_response.status_code == 200
+    generation_run = next(
+        run
+        for run in generated["prompt_runs"]
+        if run["prompt_version"] == "claim-studio-v2"
+    )
+    default_snapshot = {
+        "profile_version": "writing-preference-v1",
+        "enabled": False,
+        "source": "default",
+        "sentence_length": "balanced",
+        "information_density": "balanced",
+        "technical_detail": "balanced",
+        "result_placement": "balanced",
+        "learned_from_saved_edits": 0,
+        "updated_at": None,
+    }
+    assert generation_run["writing_preference_profile_snapshot"] == default_snapshot
+    assert json.loads(model.requests[1]["user_prompt"])["writing_preference_profile"] == default_snapshot
+    assert edited_response.status_code == 200
+    assert saved_response.status_code == 200
+    current = saved_response.json()["writing_preference_profile"]
+    assert current["enabled"] is False
+    assert current["source"] == "default"
+    assert current["learned_from_saved_edits"] == 0
     assert model.calls == calls_before_save
 
 

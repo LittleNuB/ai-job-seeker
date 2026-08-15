@@ -377,6 +377,18 @@ export interface ApplicationBehaviorEventSnapshot {
   created_at: string;
 }
 
+export interface WritingPreferenceProfileSnapshot {
+  profile_version: "writing-preference-v1";
+  enabled: boolean;
+  source: "default" | "learned" | "manual";
+  sentence_length: "concise" | "balanced" | "detailed";
+  information_density: "focused" | "balanced" | "dense";
+  technical_detail: "essential" | "balanced" | "explicit";
+  result_placement: "lead" | "balanced" | "close";
+  learned_from_saved_edits: number;
+  updated_at: string | null;
+}
+
 export interface SourceChangeNoticeSnapshot {
   claim_id: string;
   source_snapshot_id: string;
@@ -394,6 +406,7 @@ export interface PromptRunSnapshot {
   status: "running" | "completed" | "failed";
   error_code: RecoverableAnalysisErrorSnapshot["code"] | null;
   created_at: string;
+  writing_preference_profile_snapshot: WritingPreferenceProfileSnapshot | null;
 }
 
 export interface ApplicationSnapshot {
@@ -414,6 +427,7 @@ export interface ApplicationSnapshot {
   competitive_claims: CompetitiveClaimSnapshot[];
   source_change_notices: SourceChangeNoticeSnapshot[];
   targeted_resume_version: TargetedResumeVersionSnapshot;
+  writing_preference_profile: WritingPreferenceProfileSnapshot;
   behavior_events: ApplicationBehaviorEventSnapshot[];
   interview_rehearsal: Record<string, unknown> | null;
   created_at: string;
@@ -525,6 +539,30 @@ export const applications = {
         type: "save_targeted_resume_claims",
         claim_ids: claimIds,
       }),
+    }),
+  updateWritingPreferenceProfile: (
+    applicationId: string,
+    profile: Pick<
+      WritingPreferenceProfileSnapshot,
+      "sentence_length" | "information_density" | "technical_detail" | "result_placement"
+    >,
+  ) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({ type: "update_writing_preference_profile", ...profile }),
+    }),
+  setWritingPreferenceProfileEnabled: (applicationId: string, enabled: boolean) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "set_writing_preference_profile_enabled",
+        enabled,
+      }),
+    }),
+  clearWritingPreferenceProfile: (applicationId: string) =>
+    request<ApplicationSnapshot>(`/api/applications/${applicationId}/commands`, {
+      method: "POST",
+      body: JSON.stringify({ type: "clear_writing_preference_profile" }),
     }),
   getTargetedResumeText: (applicationId: string) =>
     requestText(
