@@ -54,6 +54,59 @@ test("candidate creates, leaves, and reopens a Target Application", async ({ pag
   await expect(page.getByText("段可用经历")).toBeVisible();
 });
 
+test("candidate inspects, edits, disables, and clears writing preferences", async ({ page, request }) => {
+  const user = await registerUser(request, "writing-preference");
+  const createResponse = await request.post(apiPath("/api/applications/commands"), {
+    headers: { Authorization: `Bearer ${user.token}` },
+    data: {
+      type: "start_application",
+      target_role: "AI 产品经理",
+      jd_text: concreteJd,
+      resume_text: resumeText,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const created = await createResponse.json();
+
+  await installSession(page, user);
+  await page.goto(`/applications/${created.application_id}`);
+  await expect(page.getByRole("heading", { name: "写作校准" })).toBeVisible();
+  await expect(page.getByText("版本化默认风格", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "调整写作偏好" }).click();
+  await page.getByLabel("写作偏好：句长").selectOption("detailed");
+  await page.getByRole("button", { name: "取消" }).click();
+  await page.getByRole("button", { name: "调整写作偏好" }).click();
+  await expect(page.getByLabel("写作偏好：句长")).toHaveValue("balanced");
+  await page.getByLabel("写作偏好：句长").selectOption("detailed");
+  await page.getByLabel("写作偏好：信息密度").selectOption("dense");
+  await page.getByLabel("写作偏好：技术细节").selectOption("explicit");
+  await page.getByLabel("写作偏好：结果位置").selectOption("lead");
+  await page.getByRole("button", { name: "保存偏好" }).click();
+
+  await expect(page.getByText("由你手动设定", { exact: true })).toBeVisible();
+  for (const label of ["完整展开", "高密度", "技术细节明确", "结果前置"]) {
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+  }
+
+  await page.reload();
+  await expect(page.getByText("由你手动设定", { exact: true })).toBeVisible();
+  await page.getByRole("switch", { name: "启用写作偏好" }).click();
+  await expect(page.getByText("已停用：生成使用默认风格，保存也不会继续学习", { exact: true })).toBeVisible();
+  await page.getByRole("switch", { name: "启用写作偏好" }).click();
+  await expect(page.getByText("由你手动设定", { exact: true })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "启用写作偏好" })).toHaveAttribute("aria-checked", "true");
+  for (const label of ["完整展开", "高密度", "技术细节明确", "结果前置"]) {
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "调整写作偏好" }).click();
+  await page.getByRole("button", { name: "清空学习记录并恢复默认" }).click();
+  await page.getByRole("button", { name: "确认清空偏好" }).click();
+  await expect(page.getByText("版本化默认风格", { exact: true })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "启用写作偏好" })).toHaveAttribute("aria-checked", "true");
+});
+
 test("unauthenticated candidate is sent to login before opening the workspace", async ({ page }) => {
   await page.goto("/applications");
   await expect(page).toHaveURL(/\/auth\?next=%2Fapplications$/);

@@ -7,6 +7,10 @@ from .experience_library import (
     ExperienceLibraryEntry,
     ExperienceLibraryItem,
 )
+from .writing_preference import (
+    WritingPreferenceEditEvent,
+    WritingPreferenceProfileRecord,
+)
 from .chat import ChatConversation, ChatMessage
 
 __all__ = [
@@ -18,6 +22,8 @@ __all__ = [
     "ExperienceLibraryEntry",
     "ExperienceLibraryItem",
     "ExperienceLibraryBaseFact",
+    "WritingPreferenceProfileRecord",
+    "WritingPreferenceEditEvent",
     "ChatConversation",
     "ChatMessage",
 ]

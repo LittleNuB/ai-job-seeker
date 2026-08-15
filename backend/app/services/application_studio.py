@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from pydantic import ValidationError
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.application import TargetApplication
@@ -15,6 +16,10 @@ from ..models.experience_library import (
     ExperienceLibraryBaseFact,
     ExperienceLibraryEntry,
     ExperienceLibraryItem,
+)
+from ..models.writing_preference import (
+    WritingPreferenceEditEvent,
+    WritingPreferenceProfileRecord,
 )
 from ..prompts.claim_studio import (
     CLAIM_STUDIO_PROMPT_VERSION,
@@ -38,6 +43,7 @@ from ..schemas.application import (
     ClaimStudioModelOutput,
     ClaimStudioReviewModelOutput,
     ClaimStudioSnapshot,
+    ClearWritingPreferenceProfileCommand,
     CompetitiveClaimSnapshot,
     EditResumeClaimCommand,
     ExperienceLibraryEntrySnapshot,
@@ -57,6 +63,7 @@ from ..schemas.application import (
     RoleSignalSnapshot,
     SaveTargetedResumeClaimsCommand,
     SaveExperienceToLibraryCommand,
+    SetWritingPreferenceProfileEnabledCommand,
     SourceChangeNoticeSnapshot,
     SplitExperienceItemCommand,
     StartApplicationCommand,
@@ -66,6 +73,8 @@ from ..schemas.application import (
     TargetedResumeExport,
     TargetedResumeClaimSnapshot,
     UpdateExperienceLibraryItemCommand,
+    UpdateWritingPreferenceProfileCommand,
+    WritingPreferenceProfileSnapshot,
 )
 from .application_model import (
     ApplicationModelError,
@@ -120,6 +129,28 @@ _SECTION_NAMES = {
     "自我评价": "ignored",
     "summary": "ignored",
 }
+
+_WRITING_PREFERENCE_PROFILE_VERSION = "writing-preference-v1"
+_WRITING_CLAUSE_SPLIT = re.compile(r"[，,；;。.!！？?]+")
+_TECHNICAL_DETAIL_TOKEN = re.compile(
+    r"\b(?:API|SDK|SQL|Python|Java|TypeScript|RAG|Prompt|Agent|LLM|Embedding|"
+    r"FastAPI|React|Next\.js|Docker|PostgreSQL|SQLite)\b|"
+    r"大模型|提示词|向量检索|向量数据库|知识图谱|微调|评测集|召回率|准确率",
+    re.IGNORECASE,
+)
+_RESULT_MARKERS = (
+    "提升",
+    "提高",
+    "降低",
+    "降至",
+    "减少",
+    "增长",
+    "达到",
+    "实现",
+    "转化",
+    "节省",
+    "缩短",
+)
 _BULLET_PREFIX = re.compile(r"^(?:[-*•·▪◦]|\d+[.)、])\s*")
 _EXPERIENCE_ACTION_MARKERS = (
     "负责",
@@ -324,6 +355,9 @@ class ApplicationStudio:
             | EditResumeClaimCommand
             | SaveTargetedResumeClaimsCommand
             | SaveExperienceToLibraryCommand
+            | UpdateWritingPreferenceProfileCommand
+            | SetWritingPreferenceProfileEnabledCommand
+            | ClearWritingPreferenceProfileCommand
         ),
         *,
         owner_id: str,
@@ -373,14 +407,32 @@ class ApplicationStudio:
             snapshot = await self._save_experience_to_library(
                 command, owner_id, application_id
             )
+        elif isinstance(command, UpdateWritingPreferenceProfileCommand):
+            if application_id is None:
+                raise ApplicationCommandError("修改 Writing Preference Profile 需要目标投递")
+            snapshot = await self._update_writing_preference_profile(
+                command, owner_id, application_id
+            )
+        elif isinstance(command, SetWritingPreferenceProfileEnabledCommand):
+            if application_id is None:
+                raise ApplicationCommandError("启停 Writing Preference Profile 需要目标投递")
+            snapshot = await self._set_writing_preference_profile_enabled(
+                command, owner_id, application_id
+            )
+        elif isinstance(command, ClearWritingPreferenceProfileCommand):
+            if application_id is None:
+                raise ApplicationCommandError("清空 Writing Preference Profile 需要目标投递")
+            snapshot = await self._clear_writing_preference_profile(
+                owner_id, application_id
+            )
         else:
             raise ApplicationCommandError("不支持的工作台命令")
-        return await self._with_current_source_notices(snapshot, owner_id)
+        return await self._with_current_context(snapshot, owner_id)
 
     async def get_snapshot(self, application_id: str, owner_id: str) -> ApplicationSnapshot:
         record = await self._get_record(application_id, owner_id)
         snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
-        return await self._with_current_source_notices(snapshot, owner_id)
+        return await self._with_current_context(snapshot, owner_id)
 
     async def list_applications(self, owner_id: str) -> list[ApplicationListItem]:
         result = await self.db.execute(
@@ -957,7 +1009,7 @@ class ApplicationStudio:
     async def _generate_claims(
         self, owner_id: str, application_id: str
     ) -> ApplicationSnapshot:
-        prepared_snapshot, prepared_sources, run_id, _ = (
+        prepared_snapshot, prepared_sources, run_id, _, preference_snapshot = (
             await self._prepare_claim_generation(owner_id, application_id)
         )
         claims, failure_code, failure_message, review_run = (
@@ -965,6 +1017,7 @@ class ApplicationStudio:
                 snapshot=prepared_snapshot,
                 source_snapshots=prepared_sources,
                 role_signals=prepared_snapshot.role_signals,
+                writing_preference_profile=preference_snapshot,
             )
         )
         return await self._save_claim_outcome(
@@ -984,7 +1037,7 @@ class ApplicationStudio:
         owner_id: str,
         application_id: str,
     ) -> ApplicationSnapshot:
-        prepared_snapshot, prepared_sources, run_id = (
+        prepared_snapshot, prepared_sources, run_id, preference_snapshot = (
             await self._prepare_claim_reanalysis(command, owner_id, application_id)
         )
         original_claim = next(
@@ -998,6 +1051,7 @@ class ApplicationStudio:
                 snapshot=prepared_snapshot,
                 source_snapshots=prepared_sources,
                 role_signals=role_signals,
+                writing_preference_profile=preference_snapshot,
             )
         )
         return await self._save_claim_outcome(
@@ -1017,6 +1071,7 @@ class ApplicationStudio:
         snapshot: ApplicationSnapshot,
         source_snapshots: list[ClaimSourceSnapshot],
         role_signals: list[RoleSignalSnapshot],
+        writing_preference_profile: WritingPreferenceProfileSnapshot,
     ) -> tuple[
         list[CompetitiveClaimSnapshot] | None,
         str | None,
@@ -1028,6 +1083,7 @@ class ApplicationStudio:
             jd_text=snapshot.target_application.jd_text,
             role_signals=role_signals,
             source_snapshots=source_snapshots,
+            writing_preference_profile=writing_preference_profile,
         )
         claims: list[CompetitiveClaimSnapshot] | None = None
         failure_code: str | None = None
@@ -1108,7 +1164,12 @@ class ApplicationStudio:
         command: ReanalyzeClaimCommand,
         owner_id: str,
         application_id: str,
-    ) -> tuple[ApplicationSnapshot, list[ClaimSourceSnapshot], str]:
+    ) -> tuple[
+        ApplicationSnapshot,
+        list[ClaimSourceSnapshot],
+        str,
+        WritingPreferenceProfileSnapshot,
+    ]:
         record = await self._get_record(application_id, owner_id)
         snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
         current_sources = await self._current_claim_sources(snapshot, owner_id)
@@ -1146,6 +1207,7 @@ class ApplicationStudio:
 
         run_id = _new_id()
         run_created_at = _now_iso()
+        preference_snapshot = await self._effective_writing_preference_profile(owner_id)
         source = ClaimSourceSnapshot(
             id=_new_id(),
             prompt_run_id=run_id,
@@ -1169,14 +1231,23 @@ class ApplicationStudio:
                 status="running",
                 error_code=None,
                 created_at=run_created_at,
+                writing_preference_profile_snapshot=preference_snapshot.model_copy(
+                    deep=True
+                ),
             )
         )
         saved = await self._save_snapshot(record, snapshot)
-        return saved, [source], run_id
+        return saved, [source], run_id, preference_snapshot
 
     async def _prepare_claim_generation(
         self, owner_id: str, application_id: str
-    ) -> tuple[ApplicationSnapshot, list[ClaimSourceSnapshot], str, str]:
+    ) -> tuple[
+        ApplicationSnapshot,
+        list[ClaimSourceSnapshot],
+        str,
+        str,
+        WritingPreferenceProfileSnapshot,
+    ]:
         record = await self._get_record(application_id, owner_id)
         snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
         if not snapshot.role_signals:
@@ -1192,6 +1263,7 @@ class ApplicationStudio:
 
         run_id = _new_id()
         run_created_at = _now_iso()
+        preference_snapshot = await self._effective_writing_preference_profile(owner_id)
         source_snapshots = self._capture_claim_sources(
             current_sources=current_sources,
             run_id=run_id,
@@ -1209,10 +1281,13 @@ class ApplicationStudio:
                 status="running",
                 error_code=None,
                 created_at=run_created_at,
+                writing_preference_profile_snapshot=preference_snapshot.model_copy(
+                    deep=True
+                ),
             )
         )
         saved = await self._save_snapshot(record, snapshot)
-        return saved, source_snapshots, run_id, run_created_at
+        return saved, source_snapshots, run_id, run_created_at, preference_snapshot
 
     @staticmethod
     def _capture_claim_sources(
@@ -1450,6 +1525,12 @@ class ApplicationStudio:
                 created_at=saved_at,
             )
         )
+        await self._learn_writing_preference_from_saved_claims(
+            snapshot=snapshot,
+            owner_id=owner_id,
+            application_id=application_id,
+            claim_ids=command.claim_ids,
+        )
         return await self._save_snapshot(record, snapshot)
 
     async def _save_experience_to_library(
@@ -1557,13 +1638,256 @@ class ApplicationStudio:
             return "竞争主张独立审查返回的格式不完整，请重试。"
         return "竞争主张独立审查服务暂时不可用，已捕获的来源和现有主张均已保留，请稍后重试。"
 
-    async def _with_current_source_notices(
+    async def _with_current_context(
         self, snapshot: ApplicationSnapshot, owner_id: str
     ) -> ApplicationSnapshot:
         current_sources = await self._current_claim_sources(snapshot, owner_id)
         snapshot.source_change_notices = self._source_change_notices(
             snapshot, current_sources=current_sources
         )
+        snapshot.writing_preference_profile = (
+            await self._get_writing_preference_profile(owner_id)
+        )
+        return snapshot
+
+    async def _get_writing_preference_profile_record(
+        self, owner_id: str
+    ) -> WritingPreferenceProfileRecord | None:
+        return (
+            (
+                await self.db.execute(
+                    select(WritingPreferenceProfileRecord)
+                    .where(WritingPreferenceProfileRecord.user_id == owner_id)
+                    .execution_options(populate_existing=True)
+                )
+            )
+            .scalars()
+            .one_or_none()
+        )
+
+    async def _get_writing_preference_profile(
+        self, owner_id: str
+    ) -> WritingPreferenceProfileSnapshot:
+        record = await self._get_writing_preference_profile_record(owner_id)
+        if record is None:
+            return WritingPreferenceProfileSnapshot()
+        return WritingPreferenceProfileSnapshot(
+            profile_version=record.profile_version,
+            enabled=record.enabled,
+            source=record.source,
+            sentence_length=record.sentence_length,
+            information_density=record.information_density,
+            technical_detail=record.technical_detail,
+            result_placement=record.result_placement,
+            learned_from_saved_edits=record.learned_from_saved_edits,
+            updated_at=record.updated_at.isoformat(),
+        )
+
+    async def _effective_writing_preference_profile(
+        self, owner_id: str
+    ) -> WritingPreferenceProfileSnapshot:
+        current = await self._get_writing_preference_profile(owner_id)
+        if current.enabled:
+            return current
+        return WritingPreferenceProfileSnapshot(enabled=False)
+
+    @staticmethod
+    def _new_default_writing_preference_profile(
+        owner_id: str, *, enabled: bool = True
+    ) -> WritingPreferenceProfileRecord:
+        return WritingPreferenceProfileRecord(
+            user_id=owner_id,
+            profile_version=_WRITING_PREFERENCE_PROFILE_VERSION,
+            enabled=enabled,
+            source="default",
+            sentence_length="balanced",
+            information_density="balanced",
+            technical_detail="balanced",
+            result_placement="balanced",
+            learned_from_saved_edits=0,
+        )
+
+    async def _learn_writing_preference_from_saved_claims(
+        self,
+        *,
+        snapshot: ApplicationSnapshot,
+        owner_id: str,
+        application_id: str,
+        claim_ids: list[str],
+    ) -> None:
+        profile = await self._get_writing_preference_profile_record(owner_id)
+        if profile is not None and not profile.enabled:
+            return
+
+        claims_by_id = {claim.id: claim for claim in snapshot.competitive_claims}
+        for claim_id in claim_ids:
+            claim = claims_by_id[claim_id]
+            if (
+                not claim.selected_resume_claim_is_edited
+                or claim.selected_resume_claim == claim.competitive_claim
+            ):
+                continue
+            fingerprint = hashlib.sha256(
+                "\0".join(
+                    [
+                        application_id,
+                        claim.id,
+                        claim.competitive_claim,
+                        claim.selected_resume_claim,
+                    ]
+                ).encode("utf-8")
+            ).hexdigest()
+            existing_event = (
+                await self.db.execute(
+                    select(WritingPreferenceEditEvent.id).where(
+                        WritingPreferenceEditEvent.fingerprint == fingerprint,
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing_event is not None:
+                continue
+
+            learned_dimensions = self._infer_writing_preference_dimensions(
+                generated_text=claim.competitive_claim,
+                saved_text=claim.selected_resume_claim,
+            )
+            if not learned_dimensions:
+                continue
+            if profile is None:
+                profile = self._new_default_writing_preference_profile(owner_id)
+                self.db.add(profile)
+
+            for field_name, value in learned_dimensions.items():
+                setattr(profile, field_name, value)
+            profile.source = "learned"
+            profile.learned_from_saved_edits += 1
+            self.db.add(
+                WritingPreferenceEditEvent(
+                    application_id=application_id,
+                    claim_id=claim.id,
+                    learned_dimensions_json=json.dumps(
+                        learned_dimensions, ensure_ascii=False, separators=(",", ":")
+                    ),
+                    fingerprint=fingerprint,
+                )
+            )
+
+    @staticmethod
+    def _infer_writing_preference_dimensions(
+        *, generated_text: str, saved_text: str
+    ) -> dict[str, str]:
+        learned: dict[str, str] = {}
+        generated_length = max(len(generated_text.strip()), 1)
+        length_ratio = len(saved_text.strip()) / generated_length
+        if length_ratio <= 0.8:
+            learned["sentence_length"] = "concise"
+        elif length_ratio >= 1.2:
+            learned["sentence_length"] = "detailed"
+
+        generated_clauses = ApplicationStudio._writing_clause_count(generated_text)
+        saved_clauses = ApplicationStudio._writing_clause_count(saved_text)
+        if saved_clauses > generated_clauses:
+            learned["information_density"] = "dense"
+        elif saved_clauses < generated_clauses:
+            learned["information_density"] = "focused"
+
+        generated_technical = len(_TECHNICAL_DETAIL_TOKEN.findall(generated_text))
+        saved_technical = len(_TECHNICAL_DETAIL_TOKEN.findall(saved_text))
+        if saved_technical > generated_technical:
+            learned["technical_detail"] = "explicit"
+        elif saved_technical < generated_technical:
+            learned["technical_detail"] = "essential"
+
+        generated_result_placement = ApplicationStudio._result_placement(generated_text)
+        saved_result_placement = ApplicationStudio._result_placement(saved_text)
+        if (
+            saved_result_placement is not None
+            and saved_result_placement != generated_result_placement
+        ):
+            learned["result_placement"] = saved_result_placement
+        return learned
+
+    @staticmethod
+    def _writing_clause_count(text: str) -> int:
+        return len(
+            [part for part in _WRITING_CLAUSE_SPLIT.split(text.strip()) if part.strip()]
+        )
+
+    @staticmethod
+    def _result_placement(text: str) -> str | None:
+        normalized = text.strip()
+        positions = [
+            position
+            for marker in _RESULT_MARKERS
+            if (position := normalized.find(marker)) >= 0
+        ]
+        if not positions:
+            return None
+        ratio = min(positions) / max(len(normalized), 1)
+        if ratio <= 0.35:
+            return "lead"
+        if ratio >= 0.65:
+            return "close"
+        return "balanced"
+
+    async def _update_writing_preference_profile(
+        self,
+        command: UpdateWritingPreferenceProfileCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        profile = await self._get_writing_preference_profile_record(owner_id)
+        if profile is None:
+            profile = self._new_default_writing_preference_profile(owner_id)
+            self.db.add(profile)
+        profile.source = "manual"
+        profile.sentence_length = command.sentence_length
+        profile.information_density = command.information_density
+        profile.technical_detail = command.technical_detail
+        profile.result_placement = command.result_placement
+        await self.db.commit()
+        return snapshot
+
+    async def _set_writing_preference_profile_enabled(
+        self,
+        command: SetWritingPreferenceProfileEnabledCommand,
+        owner_id: str,
+        application_id: str,
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        profile = await self._get_writing_preference_profile_record(owner_id)
+        if profile is None:
+            profile = self._new_default_writing_preference_profile(
+                owner_id, enabled=command.enabled
+            )
+            self.db.add(profile)
+        else:
+            profile.enabled = command.enabled
+        await self.db.commit()
+        return snapshot
+
+    async def _clear_writing_preference_profile(
+        self, owner_id: str, application_id: str
+    ) -> ApplicationSnapshot:
+        record = await self._get_record(application_id, owner_id)
+        snapshot = ApplicationSnapshot.model_validate_json(record.snapshot_json)
+        owner_application_ids = select(TargetApplication.id).where(
+            TargetApplication.user_id == owner_id
+        )
+        await self.db.execute(
+            delete(WritingPreferenceEditEvent).where(
+                WritingPreferenceEditEvent.application_id.in_(owner_application_ids)
+            )
+        )
+        await self.db.execute(
+            delete(WritingPreferenceProfileRecord).where(
+                WritingPreferenceProfileRecord.user_id == owner_id
+            )
+        )
+        await self.db.commit()
         return snapshot
 
     async def _current_claim_sources(

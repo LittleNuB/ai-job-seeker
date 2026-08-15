@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BookmarkPlus, BriefcaseBusiness, Check, ChevronRight, CircleDot, FileText, FolderKanban, GitMerge, Loader2, RotateCcw, Scissors } from "lucide-react";
-import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot, type ExperienceLibraryLinkSnapshot } from "@/lib/api";
+import { applications, type ApplicationSnapshot, type ExperienceEntrySnapshot, type ExperienceItemSnapshot, type ExperienceLibraryLinkSnapshot, type WritingPreferenceProfileSnapshot } from "@/lib/api";
 import { AuthRequiredError, getLoginPath, isAuthenticated } from "@/lib/auth";
 import ClaimStudioPanel from "@/components/applications/ClaimStudioPanel";
 import TargetedResumePanel from "@/components/applications/TargetedResumePanel";
 import TargetAnalysisPanel from "@/components/applications/TargetAnalysisPanel";
+import WritingPreferencePanel from "@/components/applications/WritingPreferencePanel";
 
 function itemCount(snapshot: ApplicationSnapshot): number {
   return snapshot.standalone_experience_items.length + snapshot.experience_entries.reduce(
@@ -201,6 +202,7 @@ export default function ApplicationWorkspacePage() {
   const [pendingClaimId, setPendingClaimId] = useState<string | null>(null);
   const [analyzingTarget, setAnalyzingTarget] = useState(false);
   const [generatingClaims, setGeneratingClaims] = useState(false);
+  const [updatingPreference, setUpdatingPreference] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -382,6 +384,47 @@ export default function ApplicationWorkspacePage() {
     }
   }
 
+  async function applyPreferenceMutation(
+    fallback: string,
+    mutation: () => Promise<ApplicationSnapshot>,
+  ): Promise<boolean> {
+    setUpdatingPreference(true);
+    setError("");
+    try {
+      setSnapshot(await mutation());
+      return true;
+    } catch (err: unknown) {
+      handleClaimActionError(err, fallback);
+      return false;
+    } finally {
+      setUpdatingPreference(false);
+    }
+  }
+
+  function updateWritingPreference(profile: Pick<
+    WritingPreferenceProfileSnapshot,
+    "sentence_length" | "information_density" | "technical_detail" | "result_placement"
+  >) {
+    return applyPreferenceMutation(
+      "写作偏好没有保存，请重试",
+      () => applications.updateWritingPreferenceProfile(applicationId, profile),
+    );
+  }
+
+  function setWritingPreferenceEnabled(enabled: boolean) {
+    return applyPreferenceMutation(
+      enabled ? "写作偏好没有启用，请重试" : "写作偏好没有停用，请重试",
+      () => applications.setWritingPreferenceProfileEnabled(applicationId, enabled),
+    );
+  }
+
+  function clearWritingPreference() {
+    return applyPreferenceMutation(
+      "写作偏好没有清空，请重试",
+      () => applications.clearWritingPreferenceProfile(applicationId),
+    );
+  }
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center bg-studio-canvas text-sm text-[#5f6d63]"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 正在打开投递工作台</div>;
   }
@@ -424,6 +467,13 @@ export default function ApplicationWorkspacePage() {
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-[#536158]">Target JD <FileText className="h-4 w-4" /></div>
             <p className="mt-4 max-h-64 overflow-y-auto whitespace-pre-line pr-2 text-sm leading-6 text-[#344239]">{snapshot.target_application.jd_text}</p>
           </section>
+          <WritingPreferencePanel
+            profile={snapshot.writing_preference_profile}
+            busy={updatingPreference}
+            onUpdate={updateWritingPreference}
+            onSetEnabled={setWritingPreferenceEnabled}
+            onClear={clearWritingPreference}
+          />
           <section className="border-y border-studio-ink/15 py-5">
             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-studio-muted">本次材料边界</div>
             <p className="mt-3 text-sm leading-6 text-[#435047]">当前经历只属于这次投递。修正分组不会改写原始简历，也不会自动写入可复用经历库。</p>

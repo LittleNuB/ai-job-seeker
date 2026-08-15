@@ -182,6 +182,29 @@ class SaveExperienceToLibraryCommand(BaseModel):
         return value
 
 
+class UpdateWritingPreferenceProfileCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["update_writing_preference_profile"]
+    sentence_length: Literal["concise", "balanced", "detailed"]
+    information_density: Literal["focused", "balanced", "dense"]
+    technical_detail: Literal["essential", "balanced", "explicit"]
+    result_placement: Literal["lead", "balanced", "close"]
+
+
+class SetWritingPreferenceProfileEnabledCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["set_writing_preference_profile_enabled"]
+    enabled: bool
+
+
+class ClearWritingPreferenceProfileCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["clear_writing_preference_profile"]
+
+
 class ExperienceLibraryEntryContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -226,7 +249,10 @@ ApplicationMutationCommand = Annotated[
     | ReanalyzeClaimCommand
     | EditResumeClaimCommand
     | SaveTargetedResumeClaimsCommand
-    | SaveExperienceToLibraryCommand,
+    | SaveExperienceToLibraryCommand
+    | UpdateWritingPreferenceProfileCommand
+    | SetWritingPreferenceProfileEnabledCommand
+    | ClearWritingPreferenceProfileCommand,
     Field(discriminator="type"),
 ]
 
@@ -516,6 +542,7 @@ class PromptRunSnapshot(BaseModel):
     status: Literal["running", "completed", "failed"]
     error_code: Literal["invalid_output", "timeout", "provider_unavailable"] | None = None
     created_at: str
+    writing_preference_profile_snapshot: WritingPreferenceProfileSnapshot | None = None
 
 
 class ApplicationBehaviorEventSnapshot(BaseModel):
@@ -523,6 +550,18 @@ class ApplicationBehaviorEventSnapshot(BaseModel):
     event_type: Literal["claim_saved"]
     claim_ids: list[str] = Field(min_length=1)
     created_at: str
+
+
+class WritingPreferenceProfileSnapshot(BaseModel):
+    profile_version: Literal["writing-preference-v1"] = "writing-preference-v1"
+    enabled: bool = True
+    source: Literal["default", "learned", "manual"] = "default"
+    sentence_length: Literal["concise", "balanced", "detailed"] = "balanced"
+    information_density: Literal["focused", "balanced", "dense"] = "balanced"
+    technical_detail: Literal["essential", "balanced", "explicit"] = "balanced"
+    result_placement: Literal["lead", "balanced", "close"] = "balanced"
+    learned_from_saved_edits: int = Field(default=0, ge=0)
+    updated_at: str | None = None
 
 
 class ApplicationSnapshot(BaseModel):
@@ -546,6 +585,9 @@ class ApplicationSnapshot(BaseModel):
     source_change_notices: list[SourceChangeNoticeSnapshot] = Field(default_factory=list)
     targeted_resume_version: TargetedResumeVersionSnapshot = Field(
         default_factory=TargetedResumeVersionSnapshot
+    )
+    writing_preference_profile: WritingPreferenceProfileSnapshot = Field(
+        default_factory=WritingPreferenceProfileSnapshot
     )
     behavior_events: list[ApplicationBehaviorEventSnapshot] = Field(default_factory=list)
     interview_rehearsal: dict | None = None

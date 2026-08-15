@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import json
 
-from ..schemas.application import ClaimSourceSnapshot, RoleSignalSnapshot
+from ..schemas.application import (
+    ClaimSourceSnapshot,
+    RoleSignalSnapshot,
+    WritingPreferenceProfileSnapshot,
+)
 
 
-CLAIM_STUDIO_PROMPT_VERSION = "claim-studio-v1"
+CLAIM_STUDIO_PROMPT_VERSION = "claim-studio-v2"
 
 
 def build_claim_studio_prompts(
@@ -14,6 +18,7 @@ def build_claim_studio_prompts(
     jd_text: str,
     role_signals: list[RoleSignalSnapshot],
     source_snapshots: list[ClaimSourceSnapshot],
+    writing_preference_profile: WritingPreferenceProfileSnapshot,
 ) -> tuple[str, str]:
     system_prompt = """你是 AI Job Copilot 的 Claim Studio 节点。
 
@@ -28,7 +33,9 @@ def build_claim_studio_prompts(
 6. 不向候选人提问，不要求追问，不虚构缺失的数字、技术、责任或结果。
 7. 最多返回三条；材料只支持一条或两条时就返回更少，不得凑数。
 8. 不输出匹配分、覆盖分、面试概率、录用概率或任何评分。
-9. 只输出合法 JSON，不要输出 Markdown 或额外说明。
+9. writing_preference_profile 只能改变句长、信息密度、技术细节呈现和结果位置等表达风格。偏好只能改变表达风格，绝不能增加事实，也不能放宽第 1 条的所有权、因果、技术、规模或结果边界。
+10. 当偏好来源是 default，或 enabled=false 时，使用中性的版本化默认风格；不要推断未声明的隐藏偏好。
+11. 只输出合法 JSON，不要输出 Markdown 或额外说明。
 
 输出结构：
 {"competitive_claims":[{"experience_item_id":"...","primary_role_signal_id":"...","source_focus":"...","opportunity_value":"...","supported_base_fact_ids":["..."],"competitive_claim":"...","stretch_direction":{"expression_gap":"...","why_it_matters":"...","expansion_direction":"..."}}]}"""
@@ -48,5 +55,6 @@ def build_claim_studio_prompts(
             }
             for source in source_snapshots
         ],
+        "writing_preference_profile": writing_preference_profile.model_dump(mode="json"),
     }
     return system_prompt, json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
